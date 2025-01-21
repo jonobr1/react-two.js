@@ -24,8 +24,9 @@ export const Group: React.FC<ComponentProps> = (props) => {
       update();
 
       return () => {
-        // TODO: Release from memory?
         parent.remove(group);
+        two.release(group);
+        set(null);
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

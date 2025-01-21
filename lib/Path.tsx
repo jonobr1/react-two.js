@@ -7,13 +7,13 @@ type PathProps =
   | (typeof Two.Element.Properties)[number]
   | (typeof Two.Shape.Properties)[number]
   | (typeof Two.Path.Properties)[number]
-  | 'vertices'; // TODO
+  | 'vertices'; // TODO: Make programmatic
 type ComponentProps = React.PropsWithChildren<{
   [K in PathProps]?: Instance[K];
 }>;
 
 export const Path: React.FC<ComponentProps> = (props) => {
-  const { parent } = useTwo();
+  const { two, parent } = useTwo();
   const ref = useRef<Instance | null>(null);
 
   useEffect(() => {
@@ -25,8 +25,9 @@ export const Path: React.FC<ComponentProps> = (props) => {
       update();
 
       return () => {
-        // TODO: Release from memory?
         parent.remove(path);
+        two?.release(path);
+        ref.current = null;
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
