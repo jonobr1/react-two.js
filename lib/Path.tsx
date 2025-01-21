@@ -7,7 +7,7 @@ type PathProps =
   | (typeof Two.Element.Properties)[number]
   | (typeof Two.Shape.Properties)[number]
   | (typeof Two.Path.Properties)[number]
-  | 'vertices';
+  | 'vertices'; // TODO
 type ComponentProps = React.PropsWithChildren<{
   [K in PathProps]?: Instance[K];
 }>;
