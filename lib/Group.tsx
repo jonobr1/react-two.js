@@ -16,11 +16,29 @@ export const Group: React.FC<ComponentProps> = (props) => {
       parent.add(group);
       ref.current = group;
 
+      update();
+
       return () => {
+        // TODO: Release from memory?
         parent.remove(group);
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [two, parent]);
+
+  useEffect(update, [props]);
+
+  function update() {
+    if (ref.current) {
+      const group = ref.current;
+      for (const key in props) {
+        if (key in group) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (group as any)[key] = (props as any)[key];
+        }
+      }
+    }
+  }
 
   return (
     <Context.Provider value={{ two, parent: ref.current }}>
