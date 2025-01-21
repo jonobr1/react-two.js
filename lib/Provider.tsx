@@ -23,7 +23,9 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     const isRoot = !two;
 
     if (isRoot) {
-      const two = new Two(props).appendTo(container.current!);
+      const args = { ...props };
+      delete args.children;
+      const two = new Two(args).appendTo(container.current!);
       set({ two, parent: two.scene });
       unmount = () => {
         // TODO: Release memory

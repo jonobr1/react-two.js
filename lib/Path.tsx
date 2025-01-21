@@ -3,8 +3,14 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 import type { Path as Instance } from 'two.js/src/path';
 
-type PathConstructorProps = (typeof Two.Path.Properties)[number];
-type ComponentProps = React.PropsWithChildren<PathConstructorProps>;
+type PathProps =
+  | (typeof Two.Element.Properties)[number]
+  | (typeof Two.Shape.Properties)[number]
+  | (typeof Two.Path.Properties)[number]
+  | 'vertices';
+type ComponentProps = React.PropsWithChildren<{
+  [K in PathProps]?: Instance[K];
+}>;
 
 export const Path: React.FC<ComponentProps> = (props) => {
   const { parent } = useTwo();

@@ -1,35 +1,33 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import Two from 'two.js';
+import { Group, Canvas, Path, useTwo } from '../lib/main';
 
-function App() {
-  const [count, setCount] = useState(0)
-
+function Scene() {
+  const { two } = useTwo();
+  if (!two) {
+    return null;
+  }
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Group position={new Two.Vector(two.width / 2, two.height / 2)}>
+      <Path
+        vertices={[
+          new Two.Anchor(-10, 0),
+          new Two.Anchor(0, 10),
+          new Two.Anchor(0, -10),
+          new Two.Anchor(10, 0),
+        ]}
+        stroke="black"
+        fill="transparent"
+      />
+    </Group>
+  );
 }
 
-export default App
+function App() {
+  return (
+    <Canvas fullscreen={true} autostart={true}>
+      <Scene />
+    </Canvas>
+  );
+}
+
+export default App;
