@@ -24,7 +24,7 @@ function Scene() {
 
 function App() {
   return (
-    <Canvas fullscreen={true} autostart={true}>
+    <Canvas type={Two.Types.canvas} fullscreen={true} autostart={true}>
       <Scene />
     </Canvas>
   );
