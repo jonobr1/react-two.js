@@ -1,9 +1,9 @@
 import { createContext, useContext } from 'react';
 import Two from 'two.js';
-import { Element } from 'two.js/src/element';
+import type { Group } from 'two.js/src/group';
 
 export const Context = createContext<{
   two: Two | null;
-  parent: Element | null;
+  parent: Group | null;
 }>({ two: null, parent: null });
 export const useTwo = () => useContext(Context);

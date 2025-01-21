@@ -36,6 +36,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     return unmount;
   }
 
+  // TODO: Control auto-updating, animation loop, etc.
   function update() {
     set(({ two, parent }) => {
       if (two) {
