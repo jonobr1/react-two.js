@@ -3,9 +3,11 @@ import { Group, Canvas, Path, useTwo } from '../lib/main';
 import { useRef } from 'react';
 import { useFrame } from '../lib/Context';
 
+import type { Path as TwoPath } from 'two.js/src/path';
+
 function Scene() {
   const { two } = useTwo();
-  const path = useRef<Two.Path | null>(null);
+  const path = useRef<TwoPath | null>(null);
 
   useFrame((elapsed) => {
     if (path.current) {
