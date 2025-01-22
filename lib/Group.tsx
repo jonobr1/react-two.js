@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useImperativeHandle, useState } from 'react';
 import Two from 'two.js';
 import { Context, useTwo } from './Context';
 import type { Group as Instance } from 'two.js/src/group';
@@ -11,48 +11,59 @@ type ComponentProps = React.PropsWithChildren<{
   [K in GroupProps]?: Instance[K];
 }>;
 
-export const Group: React.FC<ComponentProps> = (props) => {
-  const { two, parent } = useTwo();
-  const [ref, set] = useState<Instance | null>(null);
+export const Group = React.forwardRef<Instance | null, ComponentProps>(
+  (props, forwardedRef) => {
+    const { two, parent } = useTwo();
+    const [ref, set] = useState<Instance | null>(null);
 
-  useEffect(() => {
-    if (two && parent) {
-      const group = new Two.Group();
-      parent.add(group);
-      set(group);
+    useEffect(() => {
+      if (two) {
+        const group = new Two.Group();
+        set(group);
 
-      update();
+        return () => {
+          set(null);
+        };
+      }
+    }, [two]);
 
-      return () => {
-        parent.remove(group);
-        two.release(group);
-        set(null);
-      };
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [two, parent]);
+    useEffect(() => {
+      const group = ref;
+      if (parent && group) {
+        parent.add(group);
+        update();
 
-  useEffect(update, [props]);
+        return () => {
+          parent.remove(group);
+        };
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ref, parent]);
 
-  function update() {
-    set((group) => {
-      if (group) {
-        const args = { ...props };
-        delete args.children;
-        for (const key in args) {
-          if (key in group) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (group as any)[key] = (args as any)[key];
+    useEffect(update, [props]);
+
+    function update() {
+      set((group) => {
+        if (group) {
+          const args = { ...props };
+          delete args.children;
+          for (const key in args) {
+            if (key in group) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (group as any)[key] = (args as any)[key];
+            }
           }
         }
-      }
-      return group;
-    });
-  }
+        return group;
+      });
+    }
 
-  return (
-    <Context.Provider value={{ two, parent: ref }}>
-      {props.children}
-    </Context.Provider>
-  );
-};
+    useImperativeHandle(forwardedRef, () => ref as Instance);
+
+    return (
+      <Context.Provider value={{ two, parent: ref }}>
+        {props.children}
+      </Context.Provider>
+    );
+  }
+);

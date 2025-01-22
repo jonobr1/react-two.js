@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 import type { Path as Instance } from 'two.js/src/path';
@@ -12,40 +12,49 @@ type ComponentProps = React.PropsWithChildren<{
   [K in PathProps]?: Instance[K];
 }>;
 
-export const Path: React.FC<ComponentProps> = (props) => {
-  const { two, parent } = useTwo();
-  const ref = useRef<Instance | null>(null);
+export const Path = React.forwardRef<Instance | null, ComponentProps>(
+  (props, forwardedRef) => {
+    const { two, parent } = useTwo();
+    const ref = useRef<Instance | null>(null);
 
-  useEffect(() => {
-    if (parent) {
+    useEffect(() => {
       const path = new Two.Path();
-      parent.add(path);
       ref.current = path;
 
-      update();
-
       return () => {
-        parent.remove(path);
-        two?.release(path);
         ref.current = null;
       };
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parent]);
+    }, [two]);
 
-  useEffect(update, [props]);
-
-  function update() {
-    if (ref.current) {
+    useEffect(() => {
       const path = ref.current;
-      for (const key in props) {
-        if (key in path) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (path as any)[key] = (props as any)[key];
+      if (parent && path) {
+        parent.add(path);
+        update();
+
+        return () => {
+          parent.remove(path);
+        };
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [parent]);
+
+    useEffect(update, [props]);
+
+    function update() {
+      if (ref.current) {
+        const path = ref.current;
+        for (const key in props) {
+          if (key in path) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (path as any)[key] = (props as any)[key];
+          }
         }
       }
     }
-  }
 
-  return <></>;
-};
+    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+
+    return <></>;
+  }
+);

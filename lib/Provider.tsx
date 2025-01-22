@@ -9,14 +9,16 @@ type ComponentProps = React.PropsWithChildren<TwoConstructorPropsKeys>;
 export const Provider: React.FC<ComponentProps> = (props) => {
   const { two, parent } = useTwo();
   const container = useRef<HTMLDivElement | null>(null);
-  const [state, set] = useState<{ two: typeof two; parent: typeof parent }>({
+  const [state, set] = useState<{
+    two: typeof two;
+    parent: typeof parent;
+  }>({
     two,
     parent,
   });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(mount, []);
-  useEffect(update, [props]);
+  useEffect(mount, [props]);
 
   function mount() {
     let unmount = () => {};
@@ -28,30 +30,17 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       const two = new Two(args).appendTo(container.current!);
       set({ two, parent: two.scene });
       unmount = () => {
-        // TODO: Release memory
+        two.renderer.domElement.parentElement?.removeChild(
+          two.renderer.domElement
+        );
         const index = Two.Instances.indexOf(two);
         Two.Instances.splice(index, 1);
         two.pause();
+        two.release();
       };
     }
 
     return unmount;
-  }
-
-  // TODO: Control auto-updating, animation loop, etc.
-  function update() {
-    set(({ two, parent }) => {
-      if (two) {
-        for (const key in props) {
-          if (key in two) {
-            // TODO: Test
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (two as any)[key] = (props as any)[key];
-          }
-        }
-      }
-      return { two, parent };
-    });
   }
 
   return (
