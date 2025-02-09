@@ -1,13 +1,11 @@
 import Two from 'two.js';
-import { Group, Canvas, Path, useTwo } from '../lib/main';
+import { Group, Canvas, Path, RefPath, useTwo } from '../lib/main';
 import { useRef } from 'react';
 import { useFrame } from '../lib/Context';
 
-import type { Path as TwoPath } from 'two.js/src/path';
-
 function Scene() {
   const { two } = useTwo();
-  const path = useRef<TwoPath | null>(null);
+  const path = useRef<RefPath | null>(null);
 
   useFrame((elapsed) => {
     if (path.current) {

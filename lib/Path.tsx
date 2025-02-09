@@ -1,6 +1,7 @@
 import React, { useEffect, useImperativeHandle, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
+
 import type { Path as Instance } from 'two.js/src/path';
 
 type PathProps =
@@ -11,6 +12,8 @@ type PathProps =
 type ComponentProps = React.PropsWithChildren<{
   [K in PathProps]?: Instance[K];
 }>;
+
+export type RefPath = Instance;
 
 export const Path = React.forwardRef<Instance | null, ComponentProps>(
   (props, forwardedRef) => {

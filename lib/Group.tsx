@@ -1,6 +1,7 @@
 import React, { useEffect, useImperativeHandle, useState } from 'react';
 import Two from 'two.js';
 import { Context, useTwo } from './Context';
+
 import type { Group as Instance } from 'two.js/src/group';
 
 type GroupProps =
@@ -10,6 +11,8 @@ type GroupProps =
 type ComponentProps = React.PropsWithChildren<{
   [K in GroupProps]?: Instance[K];
 }>;
+
+export type RefGroup = Instance;
 
 export const Group = React.forwardRef<Instance | null, ComponentProps>(
   (props, forwardedRef) => {
