@@ -2,23 +2,23 @@ import React, { useEffect, useImperativeHandle, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
-import type { Path as Instance } from 'two.js/src/path';
+import type { Points as Instance } from 'two.js/src/shapes/points';
 
 type PathProps = keyof Instance;
 type ComponentProps = React.PropsWithChildren<{
   [K in PathProps]?: Instance[K];
 }>;
 
-export type RefPath = Instance;
+export type RefPoints = Instance;
 
-export const Path = React.forwardRef<Instance | null, ComponentProps>(
+export const Points = React.forwardRef<Instance | null, ComponentProps>(
   (props, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
     useEffect(() => {
-      const path = new Two.Path();
-      ref.current = path;
+      const points = new Two.Points();
+      ref.current = points;
 
       return () => {
         ref.current = null;
@@ -26,13 +26,13 @@ export const Path = React.forwardRef<Instance | null, ComponentProps>(
     }, [two]);
 
     useEffect(() => {
-      const path = ref.current;
-      if (parent && path) {
-        parent.add(path);
+      const points = ref.current;
+      if (parent && points) {
+        parent.add(points);
         update();
 
         return () => {
-          parent.remove(path);
+          parent.remove(points);
         };
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -42,11 +42,11 @@ export const Path = React.forwardRef<Instance | null, ComponentProps>(
 
     function update() {
       if (ref.current) {
-        const path = ref.current;
+        const points = ref.current;
         for (const key in props) {
-          if (key in path) {
+          if (key in points) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (path as any)[key] = (props as any)[key];
+            (points as any)[key] = (props as any)[key];
           }
         }
       }

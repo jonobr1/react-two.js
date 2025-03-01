@@ -2,23 +2,23 @@ import React, { useEffect, useImperativeHandle, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
-import type { Path as Instance } from 'two.js/src/path';
+import type { Text as Instance } from 'two.js/src/text';
 
-type PathProps = keyof Instance;
+type TextProps = keyof Instance;
 type ComponentProps = React.PropsWithChildren<{
-  [K in PathProps]?: Instance[K];
+  [K in TextProps]?: Instance[K];
 }>;
 
-export type RefPath = Instance;
+export type RefText = Instance;
 
-export const Path = React.forwardRef<Instance | null, ComponentProps>(
+export const Text = React.forwardRef<Instance | null, ComponentProps>(
   (props, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
     useEffect(() => {
-      const path = new Two.Path();
-      ref.current = path;
+      const text = new Two.Text();
+      ref.current = text;
 
       return () => {
         ref.current = null;
@@ -26,13 +26,13 @@ export const Path = React.forwardRef<Instance | null, ComponentProps>(
     }, [two]);
 
     useEffect(() => {
-      const path = ref.current;
-      if (parent && path) {
-        parent.add(path);
+      const text = ref.current;
+      if (parent && text) {
+        parent.add(text);
         update();
 
         return () => {
-          parent.remove(path);
+          parent.remove(text);
         };
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -42,11 +42,11 @@ export const Path = React.forwardRef<Instance | null, ComponentProps>(
 
     function update() {
       if (ref.current) {
-        const path = ref.current;
+        const text = ref.current;
         for (const key in props) {
-          if (key in path) {
+          if (key in text) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (path as any)[key] = (props as any)[key];
+            (text as any)[key] = (props as any)[key];
           }
         }
       }
