@@ -12,9 +12,13 @@ export const Provider: React.FC<ComponentProps> = (props) => {
   const [state, set] = useState<{
     two: typeof two;
     parent: typeof parent;
+    width: number;
+    height: number;
   }>({
     two,
     parent,
+    width: 0,
+    height: 0,
   });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -27,17 +31,39 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     if (isRoot) {
       const args = { ...props };
       delete args.children;
+
       const two = new Two(args).appendTo(container.current!);
-      set({ two, parent: two.scene });
+      let width = two.width;
+      let height = two.height;
+
+      set({ two, parent: two.scene, width, height });
+      two.bind('update', update);
+
       unmount = () => {
         two.renderer.domElement.parentElement?.removeChild(
           two.renderer.domElement
         );
+        two.unbind('update', update);
         const index = Two.Instances.indexOf(two);
         Two.Instances.splice(index, 1);
         two.pause();
         two.release();
       };
+
+      function update() {
+        const widthFlagged = two.width !== width;
+        const heightFlagged = false;
+
+        if (widthFlagged) {
+          width = two.width;
+        }
+        if (heightFlagged) {
+          height = two.height;
+        }
+        if (widthFlagged || heightFlagged) {
+          set((state) => ({ ...state, width, height }));
+        }
+      }
     }
 
     return unmount;

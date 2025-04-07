@@ -16,7 +16,7 @@ export type RefGroup = Instance;
 
 export const Group = React.forwardRef<Instance | null, ComponentProps>(
   (props, forwardedRef) => {
-    const { two, parent } = useTwo();
+    const { two, parent, width, height } = useTwo();
     const [ref, set] = useState<Instance | null>(null);
 
     useEffect(() => {
@@ -64,7 +64,7 @@ export const Group = React.forwardRef<Instance | null, ComponentProps>(
     useImperativeHandle(forwardedRef, () => ref as Instance);
 
     return (
-      <Context.Provider value={{ two, parent: ref }}>
+      <Context.Provider value={{ two, parent: ref, width, height }}>
         {props.children}
       </Context.Provider>
     );

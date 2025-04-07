@@ -4,7 +4,10 @@ import { useTwo } from './Context';
 
 import type { Points as Instance } from 'two.js/src/shapes/points';
 
-type PathProps = keyof Instance;
+type PathProps =
+  | (typeof Instance.Properties)[number]
+  | (typeof Two.Shape.Properties)[number]
+  | 'vertices';
 type ComponentProps = React.PropsWithChildren<{
   [K in PathProps]?: Instance[K];
 }>;

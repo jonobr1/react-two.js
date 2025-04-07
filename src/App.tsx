@@ -1,15 +1,28 @@
 import Two from 'two.js';
-import { Group, Canvas, Path, RefPath, useTwo } from '../lib/main';
+import {
+  Group,
+  Canvas,
+  Path,
+  RefPath,
+  useTwo,
+  Points,
+  RefPoints,
+} from '../lib/main';
 import { useRef } from 'react';
 import { useFrame } from '../lib/Context';
 
 function Scene() {
-  const { two } = useTwo();
+  const { two, width, height } = useTwo();
+
   const path = useRef<RefPath | null>(null);
+  const points = useRef<RefPoints | null>(null);
 
   useFrame((elapsed) => {
     if (path.current) {
       path.current.rotation = elapsed;
+    }
+    if (points.current) {
+      points.current.rotation = -elapsed;
     }
   });
 
@@ -18,7 +31,7 @@ function Scene() {
   }
 
   return (
-    <Group position={new Two.Vector(two.width / 2, two.height / 2)}>
+    <Group position={new Two.Vector(width / 2, height / 2)}>
       <Path
         ref={path}
         vertices={[
@@ -30,6 +43,17 @@ function Scene() {
         scale={5}
         stroke="black"
         fill="transparent"
+      />
+      <Points
+        ref={points}
+        vertices={[
+          new Two.Vector(0, -100),
+          new Two.Vector(0, 0),
+          new Two.Vector(0, 100),
+        ]}
+        stroke="transparent"
+        fill="blue"
+        size={10}
       />
     </Group>
   );
