@@ -4,10 +4,13 @@ import { useTwo } from './Context';
 
 import type { Path as Instance } from 'two.js/src/path';
 
-type PathProps =
-  | (typeof Instance.Properties)[number]
-  | (typeof Two.Shape.Properties)[number]
-  | 'vertices';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const Properties = [
+  ...Two.Shape.Properties,
+  ...Two.Path.Properties,
+  'vertices',
+] as const;
+type PathProps = (typeof Properties)[number];
 type ComponentProps = React.PropsWithChildren<{
   [K in PathProps]?: Instance[K];
 }>;

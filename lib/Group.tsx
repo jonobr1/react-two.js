@@ -4,10 +4,13 @@ import { Context, useTwo } from './Context';
 
 import type { Group as Instance } from 'two.js/src/group';
 
-type GroupProps =
-  | (typeof Two.Element.Properties)[number]
-  | (typeof Two.Shape.Properties)[number]
-  | (typeof Two.Group.Properties)[number];
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const Properties = [
+  ...Two.Element.Properties,
+  ...Two.Shape.Properties,
+  ...Two.Group.Properties,
+] as const;
+type GroupProps = (typeof Properties)[number];
 type ComponentProps = React.PropsWithChildren<{
   [K in GroupProps]?: Instance[K];
 }>;
