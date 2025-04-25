@@ -170,8 +170,7 @@ function Scene() {
       <Group position={new Two.Vector(cellWidth * 2.5, cellHeight * 1.5)}>
         <Line
           ref={line}
-          left={new Two.Anchor(-30, -20)}
-          right={new Two.Anchor(30, 20)}
+          vertices={[new Two.Anchor(-30, -20), new Two.Anchor(30, 20)]}
           stroke="#34495E"
           linewidth={4}
           cap="round"
@@ -182,13 +181,9 @@ function Scene() {
       <Group position={new Two.Vector(cellWidth * 0.5, cellHeight * 2.5)}>
         <Polygon
           ref={polygon}
-          vertices={[
-            new Two.Anchor(0, -30),
-            new Two.Anchor(30, -10),
-            new Two.Anchor(20, 20),
-            new Two.Anchor(-20, 20),
-            new Two.Anchor(-30, -10),
-          ]}
+          width={100}
+          height={100}
+          sides={5}
           fill="#16A085"
           stroke="#1ABC9C"
           linewidth={2}
@@ -227,7 +222,7 @@ function Scene() {
 
 function App() {
   return (
-    <Canvas type={Two.Types.canvas} fullscreen={true} autostart={true}>
+    <Canvas type={Two.Types.svg} fullscreen={true} autostart={true}>
       <Scene />
     </Canvas>
   );

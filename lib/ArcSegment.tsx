@@ -3,17 +3,16 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { ArcSegment as Instance } from 'two.js/src/shapes/arc-segment';
+import { PathProps } from './Path';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [
-  ...Two.Element.Properties,
-  ...Two.Shape.Properties,
-  ...Two.Path.Properties,
-  ...Two.ArcSegment.Properties,
-];
-type ArcSegmentProps = (typeof Properties)[number];
+type ArcSegmentProps =
+  | PathProps
+  | 'startAngle'
+  | 'endAngle'
+  | 'innerRadius'
+  | 'outerRadius';
 type ComponentProps = React.PropsWithChildren<{
-  [K in ArcSegmentProps extends keyof Instance ? K : never]?: Instance[K];
+  [K in ArcSegmentProps]?: Instance[K];
 }>;
 
 export type RefArcSegment = Instance;

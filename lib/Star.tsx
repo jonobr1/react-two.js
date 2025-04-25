@@ -3,17 +3,11 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Star as Instance } from 'two.js/src/shapes/star';
+import { PathProps } from './Path';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [
-  ...Two.Element.Properties,
-  ...Two.Shape.Properties,
-  ...Two.Path.Properties,
-  ...Two.Star.Properties,
-];
-type StarProps = (typeof Properties)[number];
+type StarProps = PathProps | 'innerRadius' | 'outerRadius' | 'sides';
 type ComponentProps = React.PropsWithChildren<{
-  [K in StarProps extends keyof Instance ? K : never]?: Instance[K];
+  [K in StarProps]?: Instance[K];
 }>;
 
 export type RefStar = Instance;

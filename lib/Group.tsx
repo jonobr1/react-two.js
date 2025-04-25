@@ -3,16 +3,21 @@ import Two from 'two.js';
 import { Context, useTwo } from './Context';
 
 import type { Group as Instance } from 'two.js/src/group';
+import { ShapeProps } from './Properties';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [
-  ...Two.Element.Properties,
-  ...Two.Shape.Properties,
-  ...Two.Group.Properties,
-] as const;
-type GroupProps = (typeof Properties)[number];
+type GroupProps =
+  | ShapeProps
+  | 'fill'
+  | 'stroke'
+  | 'linewidth'
+  | 'cap'
+  | 'join'
+  | 'miter'
+  | 'closed'
+  | 'curved'
+  | 'automatic';
 type ComponentProps = React.PropsWithChildren<{
-  [K in GroupProps extends keyof Instance ? K : never]?: Instance[K];
+  [K in GroupProps]?: Instance[K];
 }>;
 
 export type RefGroup = Instance;

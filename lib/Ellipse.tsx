@@ -3,17 +3,11 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Ellipse as Instance } from 'two.js/src/shapes/ellipse';
+import { PathProps } from './Path';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [
-  ...Two.Element.Properties,
-  ...Two.Shape.Properties,
-  ...Two.Path.Properties,
-  ...Two.Ellipse.Properties,
-];
-type EllipseProps = (typeof Properties)[number];
+type EllipseProps = PathProps | 'width' | 'height';
 type ComponentProps = React.PropsWithChildren<{
-  [K in EllipseProps extends keyof Instance ? K : never]?: Instance[K];
+  [K in EllipseProps]?: Instance[K];
 }>;
 
 export type RefEllipse = Instance;

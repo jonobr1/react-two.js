@@ -3,17 +3,27 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Path as Instance } from 'two.js/src/path';
+import { ShapeProps } from './Properties';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [
-  ...Two.Element.Properties,
-  ...Two.Shape.Properties,
-  ...Two.Path.Properties,
-  'vertices',
-] as const;
-type PathProps = (typeof Properties)[number];
+export type PathProps =
+  | ShapeProps
+  | 'fill'
+  | 'stroke'
+  | 'linewidth'
+  | 'opacity'
+  | 'visible'
+  | 'cap'
+  | 'join'
+  | 'miter'
+  | 'closed'
+  | 'curved'
+  | 'automatic'
+  | 'beginning'
+  | 'ending'
+  | 'dashes'
+  | 'vertices';
 type ComponentProps = React.PropsWithChildren<{
-  [K in PathProps extends keyof Instance ? K : never]?: Instance[K];
+  [K in PathProps]?: Instance[K];
 }>;
 
 export type RefPath = Instance;

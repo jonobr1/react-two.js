@@ -3,17 +3,11 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Rectangle as Instance } from 'two.js/src/shapes/rectangle';
+import { PathProps } from './Path';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [
-  ...Two.Element.Properties,
-  ...Two.Shape.Properties,
-  ...Two.Path.Properties,
-  ...Two.Rectangle.Properties,
-];
-type RectangleProps = (typeof Properties)[number];
+type RectangleProps = PathProps | 'width' | 'height';
 type ComponentProps = React.PropsWithChildren<{
-  [K in RectangleProps extends keyof Instance ? K : never]?: Instance[K];
+  [K in RectangleProps]?: Instance[K];
 }>;
 
 export type RefRectangle = Instance;

@@ -3,16 +3,28 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Text as Instance } from 'two.js/src/text';
+import { ShapeProps } from './Properties';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [
-  ...Two.Element.Properties,
-  ...Two.Shape.Properties,
-  ...Two.Text.Properties,
-];
-type TextProps = (typeof Properties)[number];
+type TextProps =
+  | ShapeProps
+  | 'value'
+  | 'family'
+  | 'size'
+  | 'leading'
+  | 'alignment'
+  | 'linewidth'
+  | 'style'
+  | 'weight'
+  | 'decoration'
+  | 'direction'
+  | 'baseline'
+  | 'opacity'
+  | 'visible'
+  | 'fill'
+  | 'stroke'
+  | 'dashes';
 type ComponentProps = React.PropsWithChildren<{
-  [K in TextProps extends keyof Instance ? K : never]?: Instance[K];
+  [K in TextProps]?: Instance[K];
 }>;
 
 export type RefText = Instance;

@@ -3,18 +3,11 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Polygon as Instance } from 'two.js/src/shapes/polygon';
+import { PathProps } from './Path';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [
-  ...Two.Element.Properties,
-  ...Two.Shape.Properties,
-  ...Two.Path.Properties,
-  ...Two.Polygon.Properties,
-  'vertices',
-] as const;
-type PolygonProps = (typeof Properties)[number];
+type PolygonProps = PathProps | 'width' | 'height' | 'sides';
 type ComponentProps = React.PropsWithChildren<{
-  [K in PolygonProps extends keyof Instance ? K : never]?: Instance[K];
+  [K in PolygonProps]?: Instance[K];
 }>;
 
 export type RefPolygon = Instance;

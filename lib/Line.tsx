@@ -3,17 +3,11 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Line as Instance } from 'two.js/src/shapes/line';
+import { PathProps } from './Path';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [
-  ...Two.Element.Properties,
-  ...Two.Shape.Properties,
-  ...Two.Path.Properties,
-  ...Two.Line.Properties,
-];
-type LineProps = (typeof Properties)[number];
+type LineProps = PathProps | 'left' | 'right';
 type ComponentProps = React.PropsWithChildren<{
-  [K in LineProps extends keyof Instance ? K : never]?: Instance[K];
+  [K in LineProps]?: Instance[K];
 }>;
 
 export type RefLine = Instance;
