@@ -6,13 +6,15 @@ import type { Polygon as Instance } from 'two.js/src/shapes/polygon';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Properties = [
+  ...Two.Element.Properties,
   ...Two.Shape.Properties,
+  ...Two.Path.Properties,
   ...Two.Polygon.Properties,
   'vertices',
 ] as const;
 type PolygonProps = (typeof Properties)[number];
 type ComponentProps = React.PropsWithChildren<{
-  [K in PolygonProps]?: Instance[K];
+  [K in PolygonProps extends keyof Instance ? K : never]?: Instance[K];
 }>;
 
 export type RefPolygon = Instance;

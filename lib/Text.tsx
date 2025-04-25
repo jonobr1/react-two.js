@@ -5,10 +5,14 @@ import { useTwo } from './Context';
 import type { Text as Instance } from 'two.js/src/text';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [...Two.Shape.Properties, ...Two.Text.Properties];
+const Properties = [
+  ...Two.Element.Properties,
+  ...Two.Shape.Properties,
+  ...Two.Text.Properties,
+];
 type TextProps = (typeof Properties)[number];
 type ComponentProps = React.PropsWithChildren<{
-  [K in TextProps]?: Instance[K];
+  [K in TextProps extends keyof Instance ? K : never]?: Instance[K];
 }>;
 
 export type RefText = Instance;

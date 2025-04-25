@@ -6,13 +6,14 @@ import type { Path as Instance } from 'two.js/src/path';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Properties = [
+  ...Two.Element.Properties,
   ...Two.Shape.Properties,
   ...Two.Path.Properties,
   'vertices',
 ] as const;
 type PathProps = (typeof Properties)[number];
 type ComponentProps = React.PropsWithChildren<{
-  [K in PathProps]?: Instance[K];
+  [K in PathProps extends keyof Instance ? K : never]?: Instance[K];
 }>;
 
 export type RefPath = Instance;

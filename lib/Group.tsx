@@ -12,7 +12,7 @@ const Properties = [
 ] as const;
 type GroupProps = (typeof Properties)[number];
 type ComponentProps = React.PropsWithChildren<{
-  [K in GroupProps]?: Instance[K];
+  [K in GroupProps extends keyof Instance ? K : never]?: Instance[K];
 }>;
 
 export type RefGroup = Instance;

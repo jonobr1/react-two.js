@@ -5,10 +5,15 @@ import { useTwo } from './Context';
 import type { Circle as Instance } from 'two.js/src/shapes/circle';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [...Two.Shape.Properties, ...Two.Circle.Properties];
+const Properties = [
+  ...Two.Element.Properties,
+  ...Two.Shape.Properties,
+  ...Two.Path.Properties,
+  ...Two.Circle.Properties,
+];
 type CircleProps = (typeof Properties)[number];
 type ComponentProps = React.PropsWithChildren<{
-  [K in CircleProps]?: Instance[K];
+  [K in CircleProps extends keyof Instance ? K : never]?: Instance[K];
 }>;
 
 export type RefCircle = Instance;

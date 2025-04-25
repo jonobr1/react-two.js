@@ -5,10 +5,15 @@ import { useTwo } from './Context';
 import type { Line as Instance } from 'two.js/src/shapes/line';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [...Two.Shape.Properties, ...Two.Line.Properties];
+const Properties = [
+  ...Two.Element.Properties,
+  ...Two.Shape.Properties,
+  ...Two.Path.Properties,
+  ...Two.Line.Properties,
+];
 type LineProps = (typeof Properties)[number];
 type ComponentProps = React.PropsWithChildren<{
-  [K in LineProps]?: Instance[K];
+  [K in LineProps extends keyof Instance ? K : never]?: Instance[K];
 }>;
 
 export type RefLine = Instance;

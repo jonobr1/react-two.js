@@ -5,10 +5,15 @@ import { useTwo } from './Context';
 import type { ArcSegment as Instance } from 'two.js/src/shapes/arc-segment';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [...Two.Shape.Properties, ...Two.ArcSegment.Properties];
+const Properties = [
+  ...Two.Element.Properties,
+  ...Two.Shape.Properties,
+  ...Two.Path.Properties,
+  ...Two.ArcSegment.Properties,
+];
 type ArcSegmentProps = (typeof Properties)[number];
 type ComponentProps = React.PropsWithChildren<{
-  [K in ArcSegmentProps]?: Instance[K];
+  [K in ArcSegmentProps extends keyof Instance ? K : never]?: Instance[K];
 }>;
 
 export type RefArcSegment = Instance;

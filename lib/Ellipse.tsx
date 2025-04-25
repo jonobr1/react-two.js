@@ -5,10 +5,15 @@ import { useTwo } from './Context';
 import type { Ellipse as Instance } from 'two.js/src/shapes/ellipse';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Properties = [...Two.Shape.Properties, ...Two.Ellipse.Properties];
+const Properties = [
+  ...Two.Element.Properties,
+  ...Two.Shape.Properties,
+  ...Two.Path.Properties,
+  ...Two.Ellipse.Properties,
+];
 type EllipseProps = (typeof Properties)[number];
 type ComponentProps = React.PropsWithChildren<{
-  [K in EllipseProps]?: Instance[K];
+  [K in EllipseProps extends keyof Instance ? K : never]?: Instance[K];
 }>;
 
 export type RefEllipse = Instance;

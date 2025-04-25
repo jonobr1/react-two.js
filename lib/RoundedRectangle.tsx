@@ -6,12 +6,14 @@ import type { RoundedRectangle as Instance } from 'two.js/src/shapes/rounded-rec
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Properties = [
+  ...Two.Element.Properties,
   ...Two.Shape.Properties,
+  ...Two.Path.Properties,
   ...Two.RoundedRectangle.Properties,
 ];
 type RoundedRectangleProps = (typeof Properties)[number];
 type ComponentProps = React.PropsWithChildren<{
-  [K in RoundedRectangleProps]?: Instance[K];
+  [K in RoundedRectangleProps extends keyof Instance ? K : never]?: Instance[K];
 }>;
 
 export type RefRoundedRectangle = Instance;
