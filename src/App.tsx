@@ -1,3 +1,5 @@
+// TODO: Hot reloading doesn't work
+
 import Two from 'two.js';
 import {
   Group,
@@ -166,7 +168,7 @@ function Scene() {
         />
       </Group>
 
-      {/* Line */}
+      {/* TODO: Line */}
       <Group position={new Two.Vector(cellWidth * 2.5, cellHeight * 1.5)}>
         <Line
           ref={line}
@@ -222,7 +224,7 @@ function Scene() {
 
 function App() {
   return (
-    <Canvas type={Two.Types.svg} fullscreen={true} autostart={true}>
+    <Canvas type={Two.Types.canvas} fullscreen={true} autostart={true}>
       <Scene />
     </Canvas>
   );
