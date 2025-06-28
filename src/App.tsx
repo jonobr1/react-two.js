@@ -23,6 +23,7 @@ import {
   RefStar,
   ArcSegment,
   RefArcSegment,
+  Text,
 } from '../lib/main';
 import { useRef } from 'react';
 import { useFrame } from '../lib/Context';
@@ -217,6 +218,17 @@ function Scene() {
           fill="#E74C3C"
           stroke="#C0392B"
           linewidth={2}
+        />
+      </Group>
+
+      {/* Text */}
+      <Group position={new Two.Vector(10, height * 0.5)}>
+        <Text
+          value="React Two.js"
+          fill="#ccc"
+          rotation={-Math.PI / 2}
+          size={25}
+          baseline="top"
         />
       </Group>
     </Group>
