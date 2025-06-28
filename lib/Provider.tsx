@@ -47,7 +47,6 @@ export const Provider: React.FC<ComponentProps> = (props) => {
         const index = Two.Instances.indexOf(two);
         Two.Instances.splice(index, 1);
         two.pause();
-        two.release();
       };
 
       function update() {

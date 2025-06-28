@@ -1,5 +1,3 @@
-// TODO: Hot reloading doesn't work
-
 import Two from 'two.js';
 import {
   Group,
@@ -168,11 +166,12 @@ function Scene() {
         />
       </Group>
 
-      {/* TODO: Line */}
+      {/* Line */}
       <Group position={new Two.Vector(cellWidth * 2.5, cellHeight * 1.5)}>
         <Line
           ref={line}
-          vertices={[new Two.Anchor(-30, -20), new Two.Anchor(30, 20)]}
+          left={new Two.Anchor(-50, 20)}
+          right={new Two.Anchor(50, 20)}
           stroke="#34495E"
           linewidth={4}
           cap="round"
