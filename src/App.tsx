@@ -61,6 +61,7 @@ function Scene() {
     }
     if (ellipse.current) {
       ellipse.current.scale = Math.cos(elapsed * 0.5) * 0.25 + 1;
+      ellipse.current.dashes.offset = -50 * elapsed;
     }
     if (line.current) {
       line.current.rotation = elapsed * 0.4;
@@ -163,6 +164,7 @@ function Scene() {
           fill="#3498DB"
           stroke="#2980B9"
           linewidth={2}
+          dashes={[5, 5]}
         />
       </Group>
 
