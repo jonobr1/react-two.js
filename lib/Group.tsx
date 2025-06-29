@@ -16,27 +16,40 @@ type GroupProps =
   | 'closed'
   | 'curved'
   | 'automatic';
-type ComponentProps = React.PropsWithChildren<{
-  [K in GroupProps]?: Instance[K];
-}>;
+type ComponentProps = React.PropsWithChildren<
+  {
+    [K in GroupProps]?: Instance[K];
+  } & {
+    x?: number;
+    y?: number;
+  }
+>;
 
 export type RefGroup = Instance;
 
 export const Group = React.forwardRef<Instance | null, ComponentProps>(
-  (props, forwardedRef) => {
+  ({ x, y, ...props }, forwardedRef) => {
     const { two, parent, width, height } = useTwo();
     const [ref, set] = useState<Instance | null>(null);
 
     useEffect(() => {
       if (two) {
         const group = new Two.Group();
+
+        if (typeof x === 'number') {
+          group.position.x = x;
+        }
+        if (typeof y === 'number') {
+          group.position.y = y;
+        }
+
         set(group);
 
         return () => {
           set(null);
         };
       }
-    }, [two]);
+    }, [x, y, two]);
 
     useEffect(() => {
       const group = ref;

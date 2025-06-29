@@ -99,7 +99,7 @@ function Scene() {
   return (
     <Group>
       {/* Original components */}
-      <Group position={new Two.Vector(cellWidth * 0.5, cellHeight * 0.5)}>
+      <Group x={cellWidth * 0.5} y={cellHeight * 0.5}>
         <Path
           ref={path}
           vertices={[
@@ -129,7 +129,7 @@ function Scene() {
       </Group>
 
       {/* Circle */}
-      <Group position={new Two.Vector(cellWidth * 1.5, cellHeight * 0.5)}>
+      <Group x={cellWidth * 1.5} y={cellHeight * 0.5}>
         <Circle
           ref={circle}
           radius={30}
@@ -140,7 +140,7 @@ function Scene() {
       </Group>
 
       {/* Rectangle */}
-      <Group position={new Two.Vector(cellWidth * 2.5, cellHeight * 0.5)}>
+      <Group x={cellWidth * 2.5} y={cellHeight * 0.5}>
         <Rectangle
           ref={rectangle}
           width={60}
@@ -152,12 +152,12 @@ function Scene() {
       </Group>
 
       {/* Text */}
-      <Group position={new Two.Vector(cellWidth * 3.5, cellHeight * 0.5)}>
+      <Group x={cellWidth * 3.5} y={cellHeight * 0.5}>
         <Text value="React" fill="#ccc" size={20} baseline="middle" />
       </Group>
 
       {/* Rounded Rectangle */}
-      <Group position={new Two.Vector(cellWidth * 0.5, cellHeight * 1.5)}>
+      <Group x={cellWidth * 0.5} y={cellHeight * 1.5}>
         <RoundedRectangle
           ref={roundedRectangle}
           width={60}
@@ -170,7 +170,7 @@ function Scene() {
       </Group>
 
       {/* Ellipse */}
-      <Group position={new Two.Vector(cellWidth * 1.5, cellHeight * 1.5)}>
+      <Group x={cellWidth * 1.5} y={cellHeight * 1.5}>
         <Ellipse
           ref={ellipse}
           width={70}
@@ -183,7 +183,7 @@ function Scene() {
       </Group>
 
       {/* Line */}
-      <Group position={new Two.Vector(cellWidth * 2.5, cellHeight * 1.5)}>
+      <Group x={cellWidth * 2.5} y={cellHeight * 1.5}>
         <Line
           ref={line}
           left={new Two.Anchor(-50, 20)}
@@ -195,12 +195,12 @@ function Scene() {
       </Group>
 
       {/* Text */}
-      <Group position={new Two.Vector(cellWidth * 3.5, cellHeight * 1.5)}>
+      <Group x={cellWidth * 3.5} y={cellHeight * 1.5}>
         <Text value="Two.js" fill="#61DAFB" size={24} baseline="middle" />
       </Group>
 
       {/* Polygon */}
-      <Group position={new Two.Vector(cellWidth * 0.5, cellHeight * 2.5)}>
+      <Group x={cellWidth * 0.5} y={cellHeight * 2.5}>
         <Polygon
           ref={polygon}
           width={100}
@@ -213,7 +213,7 @@ function Scene() {
       </Group>
 
       {/* Star */}
-      <Group position={new Two.Vector(cellWidth * 1.5, cellHeight * 2.5)}>
+      <Group x={cellWidth * 1.5} y={cellHeight * 2.5}>
         <Star
           ref={star}
           innerRadius={20}
@@ -226,7 +226,7 @@ function Scene() {
       </Group>
 
       {/* ArcSegment */}
-      <Group position={new Two.Vector(cellWidth * 2.5, cellHeight * 2.5)}>
+      <Group x={cellWidth * 2.5} y={cellHeight * 2.5}>
         <ArcSegment
           ref={arcSegment}
           innerRadius={20}
@@ -240,12 +240,12 @@ function Scene() {
       </Group>
 
       {/* Sprite */}
-      <Group position={new Two.Vector(cellWidth * 3.5, cellHeight * 2.5)}>
+      <Group x={cellWidth * 3.5} y={cellHeight * 2.5}>
         <Sprite ref={sprite} path="https://placehold.co/60x60" />
       </Group>
 
       {/* Extra components in the 4th row */}
-      <Group position={new Two.Vector(cellWidth * 0.5, cellHeight * 3.5)}>
+      <Group x={cellWidth * 0.5} y={cellHeight * 3.5}>
         <ImageSequence
           ref={imageSequence}
           paths={[
@@ -259,7 +259,7 @@ function Scene() {
         />
       </Group>
 
-      {/* <Group position={new Two.Vector(cellWidth * 1.5, cellHeight * 3.5)}>
+      {/* <Group x={cellWidth * 1.5} y={cellHeight * 3.5}>
         <Text value="Demo" fill="#E67E22" size={18} baseline="middle" />
       </Group> */}
     </Group>
