@@ -3,5 +3,5 @@ A react virtual dom for Two.js — a renderer agnostic two-dimensional drawing 
 
 ## Roadmap
 - [ ] Support for effects
-- [ ] Make prop cascase more discrete
+- [ ] Make props cascade and updates more discrete
 - [ ] Add helpers (aka gizmos)
