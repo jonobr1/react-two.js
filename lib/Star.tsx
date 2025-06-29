@@ -6,25 +6,37 @@ import type { Star as Instance } from 'two.js/src/shapes/star';
 import { PathProps } from './Path';
 
 type StarProps = PathProps | 'innerRadius' | 'outerRadius' | 'sides';
-type ComponentProps = React.PropsWithChildren<{
-  [K in StarProps]?: Instance[K];
-}>;
+type ComponentProps = React.PropsWithChildren<
+  {
+    [K in StarProps]?: Instance[K];
+  } & {
+    x?: number;
+    y?: number;
+  }
+>;
 
 export type RefStar = Instance;
 
 export const Star = React.forwardRef<Instance | null, ComponentProps>(
-  (props, forwardedRef) => {
+  ({ x, y, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
     useEffect(() => {
-      const star = new Two.Star();
+      const star = new Two.Star(
+        x,
+        y,
+        props.innerRadius,
+        props.outerRadius,
+        props.sides
+      );
       ref.current = star;
 
       return () => {
         ref.current = null;
       };
-    }, [two]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [x, y, two]);
 
     useEffect(() => {
       const star = ref.current;

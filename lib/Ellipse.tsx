@@ -6,25 +6,38 @@ import type { Ellipse as Instance } from 'two.js/src/shapes/ellipse';
 import { PathProps } from './Path';
 
 type EllipseProps = PathProps | 'width' | 'height';
-type ComponentProps = React.PropsWithChildren<{
-  [K in EllipseProps]?: Instance[K];
-}>;
+type ComponentProps = React.PropsWithChildren<
+  {
+    [K in EllipseProps]?: Instance[K];
+  } & {
+    x?: number;
+    y?: number;
+    resolution?: number;
+  }
+>;
 
 export type RefEllipse = Instance;
 
 export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
-  (props, forwardedRef) => {
+  ({ x, y, resolution, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
     useEffect(() => {
-      const ellipse = new Two.Ellipse();
+      const ellipse = new Two.Ellipse(
+        x,
+        y,
+        typeof props.width === 'number' ? props.width / 2 : undefined,
+        typeof props.height === 'number' ? props.height / 2 : undefined,
+        resolution
+      );
       ref.current = ellipse;
 
       return () => {
         ref.current = null;
       };
-    }, [two]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [x, y, resolution, two]);
 
     useEffect(() => {
       const ellipse = ref.current;

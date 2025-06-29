@@ -6,25 +6,32 @@ import type { Line as Instance } from 'two.js/src/shapes/line';
 import { PathProps } from './Path';
 
 type LineProps = PathProps | 'left' | 'right';
-type ComponentProps = React.PropsWithChildren<{
-  [K in LineProps]?: Instance[K];
-}>;
+type ComponentProps = React.PropsWithChildren<
+  {
+    [K in LineProps]?: Instance[K];
+  } & {
+    x1?: number;
+    y1?: number;
+    x2?: number;
+    y2?: number;
+  }
+>;
 
 export type RefLine = Instance;
 
 export const Line = React.forwardRef<Instance | null, ComponentProps>(
-  (props, forwardedRef) => {
+  ({ x1, y1, x2, y2, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
     useEffect(() => {
-      const line = new Two.Line();
+      const line = new Two.Line(x1, y1, x2, y2);
       ref.current = line;
 
       return () => {
         ref.current = null;
       };
-    }, [two]);
+    }, [x1, y1, x2, y2, two]);
 
     useEffect(() => {
       const line = ref.current;

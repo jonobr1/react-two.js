@@ -11,25 +11,40 @@ type ArcSegmentProps =
   | 'endAngle'
   | 'innerRadius'
   | 'outerRadius';
-type ComponentProps = React.PropsWithChildren<{
-  [K in ArcSegmentProps]?: Instance[K];
-}>;
+type ComponentProps = React.PropsWithChildren<
+  {
+    [K in ArcSegmentProps]?: Instance[K];
+  } & {
+    x?: number;
+    y?: number;
+    resolution?: number;
+  }
+>;
 
 export type RefArcSegment = Instance;
 
 export const ArcSegment = React.forwardRef<Instance | null, ComponentProps>(
-  (props, forwardedRef) => {
+  ({ x, y, resolution, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
     useEffect(() => {
-      const arcSegment = new Two.ArcSegment();
+      const arcSegment = new Two.ArcSegment(
+        x,
+        y,
+        props.innerRadius,
+        props.outerRadius,
+        props.startAngle,
+        props.endAngle,
+        resolution
+      );
       ref.current = arcSegment;
 
       return () => {
         ref.current = null;
       };
-    }, [two]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [x, y, resolution, two]);
 
     useEffect(() => {
       const arcSegment = ref.current;

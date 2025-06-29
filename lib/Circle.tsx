@@ -6,25 +6,32 @@ import type { Circle as Instance } from 'two.js/src/shapes/circle';
 import { PathProps } from './Path';
 
 type CircleProps = PathProps | 'radius';
-type ComponentProps = React.PropsWithChildren<{
-  [K in CircleProps]?: Instance[K];
-}>;
+type ComponentProps = React.PropsWithChildren<
+  {
+    [K in CircleProps]?: Instance[K];
+  } & {
+    x?: number;
+    y?: number;
+    resolution?: number;
+  }
+>;
 
 export type RefCircle = Instance;
 
 export const Circle = React.forwardRef<Instance | null, ComponentProps>(
-  (props, forwardedRef) => {
+  ({ x, y, resolution, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
     useEffect(() => {
-      const circle = new Two.Circle();
+      const circle = new Two.Circle(x, y, props.radius, resolution);
       ref.current = circle;
 
       return () => {
         ref.current = null;
       };
-    }, [two]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [x, y, resolution, two]);
 
     useEffect(() => {
       const circle = ref.current;

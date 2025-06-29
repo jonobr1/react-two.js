@@ -23,25 +23,31 @@ type TextProps =
   | 'fill'
   | 'stroke'
   | 'dashes';
-type ComponentProps = React.PropsWithChildren<{
-  [K in TextProps]?: Instance[K];
-}>;
+type ComponentProps = React.PropsWithChildren<
+  {
+    [K in TextProps]?: Instance[K];
+  } & {
+    x?: number;
+    y?: number;
+  }
+>;
 
 export type RefText = Instance;
 
 export const Text = React.forwardRef<Instance | null, ComponentProps>(
-  (props, forwardedRef) => {
+  ({ x, y, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
     useEffect(() => {
-      const text = new Two.Text();
+      const text = new Two.Text(props.value, x, y);
       ref.current = text;
 
       return () => {
         ref.current = null;
       };
-    }, [two]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [x, y, two]);
 
     useEffect(() => {
       const text = ref.current;

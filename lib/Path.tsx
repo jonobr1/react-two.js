@@ -22,14 +22,18 @@ export type PathProps =
   | 'ending'
   | 'dashes'
   | 'vertices';
-type ComponentProps = React.PropsWithChildren<{
-  [K in PathProps]?: Instance[K];
-}>;
+type ComponentProps = React.PropsWithChildren<
+  {
+    [K in PathProps]?: Instance[K];
+  } & {
+    manual?: boolean;
+  }
+>;
 
 export type RefPath = Instance;
 
 export const Path = React.forwardRef<Instance | null, ComponentProps>(
-  (props, forwardedRef) => {
+  ({ manual, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
@@ -37,10 +41,14 @@ export const Path = React.forwardRef<Instance | null, ComponentProps>(
       const path = new Two.Path();
       ref.current = path;
 
+      if (manual) {
+        ref.current.automatic = false;
+      }
+
       return () => {
         ref.current = null;
       };
-    }, [two]);
+    }, [manual, two]);
 
     useEffect(() => {
       const path = ref.current;

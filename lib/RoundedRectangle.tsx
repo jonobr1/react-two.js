@@ -6,27 +6,39 @@ import type { RoundedRectangle as Instance } from 'two.js/src/shapes/rounded-rec
 import { PathProps } from './Path';
 
 type RoundedRectangleProps = PathProps | 'width' | 'height' | 'radius';
-type ComponentProps = React.PropsWithChildren<{
-  [K in RoundedRectangleProps]?: Instance[K];
-}>;
+type ComponentProps = React.PropsWithChildren<
+  {
+    [K in RoundedRectangleProps]?: Instance[K];
+  } & {
+    x?: number;
+    y?: number;
+  }
+>;
 
 export type RefRoundedRectangle = Instance;
 
 export const RoundedRectangle = React.forwardRef<
   Instance | null,
   ComponentProps
->((props, forwardedRef) => {
+>(({ x, y, ...props }, forwardedRef) => {
   const { two, parent } = useTwo();
   const ref = useRef<Instance | null>(null);
 
   useEffect(() => {
-    const roundedRectangle = new Two.RoundedRectangle();
+    const roundedRectangle = new Two.RoundedRectangle(
+      x,
+      y,
+      props.width,
+      props.height,
+      props.radius
+    );
     ref.current = roundedRectangle;
 
     return () => {
       ref.current = null;
     };
-  }, [two]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [x, y, two]);
 
   useEffect(() => {
     const roundedRectangle = ref.current;
