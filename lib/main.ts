@@ -13,4 +13,5 @@ export { Line, type RefLine } from './Line';
 export { Polygon, type RefPolygon } from './Polygon';
 export { Rectangle, type RefRectangle } from './Rectangle';
 export { RoundedRectangle, type RefRoundedRectangle } from './RoundedRectangle';
+export { Sprite, type RefSprite } from './Sprite';
 export { Star, type RefStar } from './Star';

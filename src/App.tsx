@@ -23,6 +23,8 @@ import {
   RefStar,
   ArcSegment,
   RefArcSegment,
+  Sprite,
+  RefSprite,
   Text,
 } from '../lib/main';
 import { useRef } from 'react';
@@ -42,6 +44,7 @@ function Scene() {
   const polygon = useRef<RefPolygon | null>(null);
   const star = useRef<RefStar | null>(null);
   const arcSegment = useRef<RefArcSegment | null>(null);
+  const sprite = useRef<RefSprite | null>(null);
 
   useFrame((elapsed) => {
     // Animate all the components
@@ -77,6 +80,10 @@ function Scene() {
     if (arcSegment.current) {
       arcSegment.current.startAngle = elapsed % (Math.PI * 2);
     }
+    if (sprite.current) {
+      sprite.current.rotation = elapsed * 0.3;
+      sprite.current.scale = Math.sin(elapsed * 1.5) * 0.2 + 1;
+    }
   });
 
   if (!two) {
@@ -84,7 +91,7 @@ function Scene() {
   }
 
   // Calculate grid positions
-  const gridSize = 3;
+  const gridSize = 4;
   const cellWidth = width / gridSize;
   const cellHeight = height / gridSize;
 
@@ -143,6 +150,11 @@ function Scene() {
         />
       </Group>
 
+      {/* Text */}
+      <Group position={new Two.Vector(cellWidth * 3.5, cellHeight * 0.5)}>
+        <Text value="React" fill="#ccc" size={20} baseline="middle" />
+      </Group>
+
       {/* Rounded Rectangle */}
       <Group position={new Two.Vector(cellWidth * 0.5, cellHeight * 1.5)}>
         <RoundedRectangle
@@ -179,6 +191,11 @@ function Scene() {
           linewidth={4}
           cap="round"
         />
+      </Group>
+
+      {/* Text */}
+      <Group position={new Two.Vector(cellWidth * 3.5, cellHeight * 1.5)}>
+        <Text value="Two.js" fill="#61DAFB" size={24} baseline="middle" />
       </Group>
 
       {/* Polygon */}
@@ -221,16 +238,19 @@ function Scene() {
         />
       </Group>
 
-      {/* Text */}
-      <Group position={new Two.Vector(10, height * 0.5)}>
-        <Text
-          value="React Two.js"
-          fill="#ccc"
-          rotation={-Math.PI / 2}
-          size={25}
-          baseline="top"
-        />
+      {/* Sprite */}
+      <Group position={new Two.Vector(cellWidth * 3.5, cellHeight * 2.5)}>
+        <Sprite ref={sprite} path="https://placehold.co/60x60" />
       </Group>
+
+      {/* Extra components in the 4th row
+      <Group position={new Two.Vector(cellWidth * 0.5, cellHeight * 3.5)}>
+        <Circle radius={25} fill="#8E44AD" stroke="#9B59B6" linewidth={2} />
+      </Group>
+
+      <Group position={new Two.Vector(cellWidth * 1.5, cellWidth * 3.5)}>
+        <Text value="Demo" fill="#E67E22" size={18} baseline="middle" />
+      </Group> */}
     </Group>
   );
 }
