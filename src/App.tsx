@@ -25,13 +25,15 @@ import {
   RefArcSegment,
   Sprite,
   RefSprite,
+  ImageSequence,
+  RefImageSequence,
   Text,
 } from '../lib/main';
 import { useRef } from 'react';
 import { useFrame } from '../lib/Context';
 
 function Scene() {
-  const { two, width, height } = useTwo();
+  const { width, height } = useTwo();
 
   // Create refs for all components
   const path = useRef<RefPath | null>(null);
@@ -45,6 +47,7 @@ function Scene() {
   const star = useRef<RefStar | null>(null);
   const arcSegment = useRef<RefArcSegment | null>(null);
   const sprite = useRef<RefSprite | null>(null);
+  const imageSequence = useRef<RefImageSequence | null>(null);
 
   useFrame((elapsed) => {
     // Animate all the components
@@ -82,13 +85,11 @@ function Scene() {
     }
     if (sprite.current) {
       sprite.current.rotation = elapsed * 0.3;
-      sprite.current.scale = Math.sin(elapsed * 1.5) * 0.2 + 1;
+    }
+    if (imageSequence.current) {
+      imageSequence.current.scale = Math.cos(elapsed * 1.2) * 0.15 + 1;
     }
   });
-
-  if (!two) {
-    return null;
-  }
 
   // Calculate grid positions
   const gridSize = 4;
@@ -243,12 +244,22 @@ function Scene() {
         <Sprite ref={sprite} path="https://placehold.co/60x60" />
       </Group>
 
-      {/* Extra components in the 4th row
+      {/* Extra components in the 4th row */}
       <Group position={new Two.Vector(cellWidth * 0.5, cellHeight * 3.5)}>
-        <Circle radius={25} fill="#8E44AD" stroke="#9B59B6" linewidth={2} />
+        <ImageSequence
+          ref={imageSequence}
+          paths={[
+            'https://placehold.co/60x60/FF6B6B/FFFFFF?text=1',
+            'https://placehold.co/60x60/4ECDC4/FFFFFF?text=2',
+            'https://placehold.co/60x60/45B7D1/FFFFFF?text=3',
+            'https://placehold.co/60x60/F7DC6F/FFFFFF?text=4',
+          ]}
+          frameRate={1}
+          autoPlay={true}
+        />
       </Group>
 
-      <Group position={new Two.Vector(cellWidth * 1.5, cellWidth * 3.5)}>
+      {/* <Group position={new Two.Vector(cellWidth * 1.5, cellHeight * 3.5)}>
         <Text value="Demo" fill="#E67E22" size={18} baseline="middle" />
       </Group> */}
     </Group>

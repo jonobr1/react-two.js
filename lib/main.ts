@@ -9,6 +9,7 @@ export { Text, type RefText } from './Text';
 export { ArcSegment, type RefArcSegment } from './ArcSegment';
 export { Circle, type RefCircle } from './Circle';
 export { Ellipse, type RefEllipse } from './Ellipse';
+export { ImageSequence, type RefImageSequence } from './ImageSequence';
 export { Line, type RefLine } from './Line';
 export { Polygon, type RefPolygon } from './Polygon';
 export { Rectangle, type RefRectangle } from './Rectangle';

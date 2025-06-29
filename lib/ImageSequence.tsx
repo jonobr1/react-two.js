@@ -7,16 +7,15 @@ import React, {
 import Two from 'two.js';
 import { useTwo } from './Context';
 
-import type { Sprite as Instance } from 'two.js/src/effects/sprite';
+import type { ImageSequence as Instance } from 'two.js/src/effects/image-sequence';
 import { PathProps } from './Path';
+import type { Texture } from 'two.js/src/effects/texture';
 
-type SpriteProps =
+type ImageSequenceProps =
   | PathProps
   | 'width'
   | 'height'
-  | 'texture'
-  | 'columns'
-  | 'rows'
+  | 'textures'
   | 'frameRate'
   | 'index'
   | 'firstFrame'
@@ -25,33 +24,26 @@ type SpriteProps =
 
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in SpriteProps]?: K extends keyof Instance ? Instance[K] : never;
+    [K in ImageSequenceProps]?: K extends keyof Instance ? Instance[K] : never;
   } & {
-    path?: string;
+    paths?: string | string[] | Texture | Texture[];
     x?: number;
     y?: number;
     autoPlay?: boolean;
   }
 >;
 
-export type RefSprite = Instance;
+export type RefImageSequence = Instance;
 
-export const Sprite = React.forwardRef<Instance | null, ComponentProps>(
-  ({ path, x, y, autoPlay, ...props }, forwardedRef) => {
+export const ImageSequence = React.forwardRef<Instance | null, ComponentProps>(
+  ({ paths, x, y, autoPlay, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
     // TODO: Make more synchronous for instant ref usage in parent components
     useLayoutEffect(() => {
-      const sprite = new Two.Sprite(
-        path,
-        x,
-        y,
-        props.columns,
-        props.rows,
-        props.frameRate
-      );
-      ref.current = sprite;
+      const imageSequence = new Two.ImageSequence(paths, x, y, props.frameRate);
+      ref.current = imageSequence;
 
       if (autoPlay) {
         ref.current.play();
@@ -61,16 +53,16 @@ export const Sprite = React.forwardRef<Instance | null, ComponentProps>(
         ref.current = null;
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [path, x, y, two]);
+    }, [paths, x, y, two]);
 
     useEffect(() => {
-      const sprite = ref.current;
-      if (parent && sprite) {
-        parent.add(sprite);
+      const imageSequence = ref.current;
+      if (parent && imageSequence) {
+        parent.add(imageSequence);
         update();
 
         return () => {
-          parent.remove(sprite);
+          parent.remove(imageSequence);
         };
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -88,11 +80,11 @@ export const Sprite = React.forwardRef<Instance | null, ComponentProps>(
 
     function update() {
       if (ref.current) {
-        const sprite = ref.current;
+        const imageSequence = ref.current;
         for (const key in props) {
-          if (key in sprite) {
+          if (key in imageSequence) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (sprite as any)[key] = (props as any)[key];
+            (imageSequence as any)[key] = (props as any)[key];
           }
         }
       }
