@@ -8,3 +8,4 @@ export type ShapeProps =
   | 'skewY'
   | 'matrix'
   | 'worldMatrix';
+export type GradientProps = ElementProps | 'spread' | 'units' | 'stops';

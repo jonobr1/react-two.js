@@ -27,9 +27,13 @@ import {
   RefSprite,
   ImageSequence,
   RefImageSequence,
+  LinearGradient,
+  RefLinearGradient,
+  RadialGradient,
+  RefRadialGradient,
   Text,
 } from '../lib/main';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useFrame } from '../lib/Context';
 
 function Scene() {
@@ -48,6 +52,14 @@ function Scene() {
   const arcSegment = useRef<RefArcSegment | null>(null);
   const sprite = useRef<RefSprite | null>(null);
   const imageSequence = useRef<RefImageSequence | null>(null);
+
+  // Gradient refs
+  const [linearGradient, setLinearGradient] = useState<
+    string | RefLinearGradient
+  >('#FF6B6B');
+  const [radialGradient, setRadialGradient] = useState<
+    string | RefRadialGradient
+  >('#F7DC6F');
 
   useFrame((elapsed) => {
     // Animate all the components
@@ -256,6 +268,45 @@ function Scene() {
           ]}
           frameRate={1}
           autoPlay={true}
+        />
+      </Group>
+
+      {/* Linear Gradient Example */}
+      <Group x={cellWidth * 1.5} y={cellHeight * 3.5}>
+        <LinearGradient
+          ref={(ref) => ref && setLinearGradient(ref)}
+          x1={0}
+          y1={0}
+          x2={1}
+          y2={1}
+          stops={[
+            new Two.Stop(0, 'red'),
+            new Two.Stop(0.5, 'green'),
+            new Two.Stop(1, 'blue'),
+          ]}
+        />
+        <Circle radius={30} fill={linearGradient} stroke="#333" linewidth={2} />
+      </Group>
+
+      {/* Radial Gradient Example */}
+      <Group x={cellWidth * 2.5} y={cellHeight * 3.5}>
+        <RadialGradient
+          ref={(ref) => ref && setRadialGradient(ref)}
+          x={0}
+          y={0}
+          radius={1}
+          stops={[
+            new Two.Stop(0, '#F7DC6F'),
+            new Two.Stop(0.7, '#F39C12'),
+            new Two.Stop(1, '#E67E22'),
+          ]}
+        />
+        <Rectangle
+          width={60}
+          height={40}
+          fill={radialGradient}
+          stroke="#333"
+          linewidth={2}
         />
       </Group>
 
