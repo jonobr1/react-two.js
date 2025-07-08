@@ -31,6 +31,8 @@ import {
   RefLinearGradient,
   RadialGradient,
   RefRadialGradient,
+  Texture,
+  RefTexture,
   Text,
 } from '../lib/main';
 import { useRef, useState } from 'react';
@@ -60,6 +62,9 @@ function Scene() {
   const [radialGradient, setRadialGradient] = useState<
     string | RefRadialGradient
   >('#F7DC6F');
+  
+  // Texture ref
+  const [texture, setTexture] = useState<string | RefTexture>('#E8E8E8');
 
   useFrame((elapsed) => {
     // Animate all the components
@@ -310,9 +315,20 @@ function Scene() {
         />
       </Group>
 
-      {/* <Group x={cellWidth * 1.5} y={cellHeight * 3.5}>
-        <Text value="Demo" fill="#E67E22" size={18} baseline="middle" />
-      </Group> */}
+      {/* Texture Example */}
+      <Group x={cellWidth * 3.5} y={cellHeight * 3.5}>
+        <Texture
+          ref={(ref) => ref && setTexture(ref)}
+          source="https://placehold.co/60x60/9B59B6/FFFFFF?text=TEX"
+        />
+        <Rectangle
+          width={60}
+          height={40}
+          fill={texture}
+          stroke="#333"
+          linewidth={2}
+        />
+      </Group>
     </Group>
   );
 }
