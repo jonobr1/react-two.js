@@ -20,3 +20,6 @@ export { Star, type RefStar } from './Star';
 // Gradient exports
 export { LinearGradient, type RefLinearGradient } from './LinearGradient';
 export { RadialGradient, type RefRadialGradient } from './RadialGradient';
+
+// Texture exports
+export { Texture, type RefTexture } from './Texture';
