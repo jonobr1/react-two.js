@@ -1,4 +1,4 @@
-import React, { useImperativeHandle, useEffect, useRef } from 'react';
+import React, { useImperativeHandle, useEffect, useRef, useCallback } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -23,19 +23,12 @@ export const Texture = React.forwardRef<Instance | null, ComponentProps>(
 
     const ref = useRef<Instance | null>(null);
 
-    if (!ref.current && two) {
+    if (!ref.current && two && source) {
       ref.current = new Two.Texture(source);
     }
 
-    useEffect(() => {
-      if (ref.current && source) {
-        ref.current.src = source;
-      }
-    }, [source]);
 
-    useEffect(update, [props]);
-
-    function update() {
+    const update = useCallback(() => {
       if (ref.current) {
         const texture = ref.current;
         for (const key in props) {
@@ -45,9 +38,11 @@ export const Texture = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [props]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useEffect(update, [update]);
+
+    useImperativeHandle(forwardedRef, () => ref.current, []);
 
     return null; // No visual representation
   }
