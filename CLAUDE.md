@@ -9,6 +9,7 @@ This is **@react/two.js** - a React wrapper library for Two.js, providing declar
 - **Vite** - Development server and build tool
 - **Two.js** - Core graphics library (peer dependency from @jonobr1/two.js#dev)
 - **ESLint** - Code linting with React-specific rules
+- **Vitest** - Next-generation testing framework with React Testing Library
 
 ## Development Commands
 ```bash
@@ -16,6 +17,12 @@ npm run dev      # Start Vite dev server on port 3000
 npm run build    # Build library with TypeScript + Vite
 npm run lint     # Run ESLint on all files
 npm run preview  # Preview built library
+
+# Testing Commands
+npm test              # Run all tests with Vitest
+npm run test:watch    # Run tests in watch mode
+npm run test:ui       # Run tests with UI interface
+npm run test:coverage # Generate coverage report
 ```
 
 ## Architecture Overview
@@ -184,10 +191,32 @@ export const Shape = forwardRef<RefShape, ShapeProps>((props, ref) => {
 - [ ] Make props cascade and updates more discrete  
 - [ ] Add helpers (aka gizmos)
 
+## Testing Framework
+
+### Current Setup
+- **Vitest** - Fast test runner with ES modules support
+- **React Testing Library** - Component testing utilities  
+- **jsdom** - Browser environment for testing
+- **@testing-library/jest-dom** - Custom DOM matchers
+
+### Testing Strategy
+- **Unit tests** - Individual component logic and utilities
+- **Integration tests** - Component + Two.js interactions (TODO)
+- **Visual tests** - Canvas rendering verification (TODO)
+
+### Known Limitations
+Component testing requires sophisticated Two.js mocking due to:
+- Canvas/SVG/WebGL rendering complexity
+- Context provider dependencies (useTwo, useFrame)
+- Direct Two.js object manipulation via refs
+
+Basic utility and logic tests are working. Component tests need enhanced mocking strategy.
+
 ## Contributing
 This library follows React patterns with Two.js integration. When adding features:
 1. Maintain TypeScript strict mode compliance
 2. Follow existing component patterns
-3. Test across different Two.js renderer types
-4. Update documentation and examples
-5. Ensure proper ref forwarding and type safety
+3. Write tests for new functionality
+4. Test across different Two.js renderer types
+5. Update documentation and examples
+6. Ensure proper ref forwarding and type safety
