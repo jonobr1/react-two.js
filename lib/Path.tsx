@@ -36,6 +36,7 @@ export const Path = React.forwardRef<Instance | null, ComponentProps>(
   ({ manual, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
+    const previousPropsRef = useRef<Partial<ComponentProps>>({});
 
     useEffect(() => {
       const path = new Two.Path();
@@ -63,15 +64,23 @@ export const Path = React.forwardRef<Instance | null, ComponentProps>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [parent]);
 
-    useEffect(update, [props]);
+    useEffect(() => {
+      update();
+      previousPropsRef.current = { ...props };
+    }, [props]);
 
     function update() {
       if (ref.current) {
         const path = ref.current;
+        const previousProps = previousPropsRef.current;
+        
         for (const key in props) {
           if (key in path) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (path as any)[key] = (props as any)[key];
+            // Only update if the prop value has changed
+            if (previousProps[key] !== props[key]) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (path as any)[key] = (props as any)[key];
+            }
           }
         }
       }
