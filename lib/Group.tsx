@@ -18,7 +18,7 @@ type GroupProps =
   | 'automatic';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in GroupProps]?: Instance[K];
+    [K in Extract<GroupProps, keyof Instance>]?: Instance[K];
   } & {
     x?: number;
     y?: number;
@@ -82,7 +82,7 @@ export const Group = React.forwardRef<Instance | null, ComponentProps>(
       });
     }
 
-    useImperativeHandle(forwardedRef, () => ref as Instance);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return (
       <Context.Provider value={{ two, parent: ref, width, height }}>

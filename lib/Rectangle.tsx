@@ -8,7 +8,7 @@ import { PathProps } from './Path';
 type RectangleProps = PathProps | 'width' | 'height';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in RectangleProps]?: Instance[K];
+    [K in Extract<RectangleProps, keyof Instance>]?: Instance[K];
   } & {
     x?: number;
     y?: number;
@@ -59,7 +59,7 @@ export const Rectangle = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }

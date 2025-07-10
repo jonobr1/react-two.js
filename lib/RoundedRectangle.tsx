@@ -8,7 +8,7 @@ import { PathProps } from './Path';
 type RoundedRectangleProps = PathProps | 'width' | 'height' | 'radius';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in RoundedRectangleProps]?: Instance[K];
+    [K in Extract<RoundedRectangleProps, keyof Instance>]?: Instance[K];
   } & {
     x?: number;
     y?: number;
@@ -67,7 +67,7 @@ export const RoundedRectangle = React.forwardRef<
     }
   }
 
-  useImperativeHandle(forwardedRef, () => ref.current as Instance);
+  useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
   return <></>;
 });

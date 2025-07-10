@@ -24,7 +24,7 @@ export type PathProps =
   | 'vertices';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in PathProps]?: Instance[K];
+    [K in Extract<PathProps, keyof Instance>]?: Instance[K];
   } & {
     manual?: boolean;
   }
@@ -77,7 +77,7 @@ export const Path = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }

@@ -25,7 +25,9 @@ type SpriteProps =
 
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in SpriteProps]?: K extends keyof Instance ? Instance[K] : never;
+    [K in Extract<SpriteProps, keyof Instance>]?: K extends keyof Instance
+      ? Instance[K]
+      : never;
   } & {
     path?: string;
     x?: number;
@@ -98,7 +100,7 @@ export const Sprite = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }

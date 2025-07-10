@@ -13,7 +13,7 @@ type ArcSegmentProps =
   | 'outerRadius';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in ArcSegmentProps]?: Instance[K];
+    [K in Extract<ArcSegmentProps, keyof Instance>]?: Instance[K];
   } & {
     x?: number;
     y?: number;
@@ -73,7 +73,7 @@ export const ArcSegment = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }

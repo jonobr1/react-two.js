@@ -8,7 +8,7 @@ import { PathProps } from './Path';
 type LineProps = PathProps | 'left' | 'right';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in LineProps]?: Instance[K];
+    [K in Extract<LineProps, keyof Instance>]?: Instance[K];
   } & {
     x1?: number;
     y1?: number;
@@ -60,7 +60,7 @@ export const Line = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }

@@ -8,7 +8,7 @@ import { PathProps } from './Path';
 type EllipseProps = PathProps | 'width' | 'height';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in EllipseProps]?: Instance[K];
+    [K in Extract<EllipseProps, keyof Instance>]?: Instance[K];
   } & {
     x?: number;
     y?: number;
@@ -66,7 +66,7 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }

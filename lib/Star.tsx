@@ -8,7 +8,7 @@ import { PathProps } from './Path';
 type StarProps = PathProps | 'innerRadius' | 'outerRadius' | 'sides';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in StarProps]?: Instance[K];
+    [K in Extract<StarProps, keyof Instance>]?: Instance[K];
   } & {
     x?: number;
     y?: number;
@@ -65,7 +65,7 @@ export const Star = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }

@@ -9,7 +9,7 @@ type RadialGradientProps = GradientProps | 'center' | 'radius' | 'focal';
 
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in RadialGradientProps]?: Instance[K];
+    [K in Extract<RadialGradientProps, keyof Instance>]?: Instance[K];
   } & {
     x?: number;
     y?: number;
@@ -73,7 +73,7 @@ export const RadialGradient = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return null; // No visual representation
   }

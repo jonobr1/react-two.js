@@ -24,7 +24,7 @@ type ImageSequenceProps =
 
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in ImageSequenceProps]?: K extends keyof Instance ? Instance[K] : never;
+    [K in Extract<ImageSequenceProps, keyof Instance>]?: Instance[K];
   } & {
     paths?: string | string[] | Texture | Texture[];
     x?: number;
@@ -90,7 +90,7 @@ export const ImageSequence = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }

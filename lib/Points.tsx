@@ -5,7 +5,7 @@ import { useTwo } from './Context';
 import type { Points as Instance } from 'two.js/src/shapes/points';
 import { ShapeProps } from './Properties';
 
-type PathProps =
+type PointsProps =
   | ShapeProps
   | 'fill'
   | 'stroke'
@@ -19,7 +19,7 @@ type PathProps =
   | 'dashes'
   | 'vertices';
 type ComponentProps = React.PropsWithChildren<{
-  [K in PathProps]?: Instance[K];
+  [K in Extract<PointsProps, keyof Instance>]?: Instance[K];
 }>;
 
 export type RefPoints = Instance;
@@ -65,7 +65,7 @@ export const Points = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }

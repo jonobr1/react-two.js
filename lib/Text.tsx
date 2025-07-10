@@ -25,7 +25,7 @@ type TextProps =
   | 'dashes';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in TextProps]?: Instance[K];
+    [K in Extract<TextProps, keyof Instance>]?: Instance[K];
   } & {
     x?: number;
     y?: number;
@@ -76,7 +76,7 @@ export const Text = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }

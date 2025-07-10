@@ -9,7 +9,7 @@ type LinearGradientProps = GradientProps | 'left' | 'right';
 
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in LinearGradientProps]?: Instance[K];
+    [K in Extract<LinearGradientProps, keyof Instance>]?: Instance[K];
   } & {
     x1?: number;
     y1?: number;
@@ -61,7 +61,7 @@ export const LinearGradient = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return null; // No visual representation
   }

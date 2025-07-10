@@ -8,7 +8,7 @@ import { PathProps } from './Path';
 type PolygonProps = PathProps | 'width' | 'height' | 'sides';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in PolygonProps]?: Instance[K];
+    [K in Extract<PolygonProps, keyof Instance>]?: Instance[K];
   } & {
     x?: number;
     y?: number;
@@ -60,7 +60,7 @@ export const Polygon = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }

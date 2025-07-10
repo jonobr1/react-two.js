@@ -8,7 +8,7 @@ import { PathProps } from './Path';
 type CircleProps = PathProps | 'radius';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in CircleProps]?: Instance[K];
+    [K in Extract<CircleProps, keyof Instance>]?: Instance[K];
   } & {
     x?: number;
     y?: number;
@@ -60,7 +60,7 @@ export const Circle = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance);
+    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
 
     return <></>;
   }
