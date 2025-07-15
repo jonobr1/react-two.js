@@ -97,10 +97,4 @@ const circleRef = useRef<RefCircle>(null);
 ```
 
 ## Roadmap
-- [ ] Support for effects
-- [ ] Make props cascade and updates more discrete
 - [ ] Add helpers (aka gizmos)
-
-## License
-
-MIT
