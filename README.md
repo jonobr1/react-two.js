@@ -5,12 +5,7 @@ A React virtual DOM for Two.js — a renderer agnostic two-dimensional drawing A
 ## Installation
 
 ```bash
-npm install @react/two.js react react-dom
-```
-
-**Note:** You'll also need to install Two.js from the dev branch:
-```bash
-npm install github:jonobr1/two.js#dev
+npm install @react/two.js react react-dom two.js
 ```
 
 ## Quick Start
