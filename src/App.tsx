@@ -62,7 +62,7 @@ function Scene() {
   const [radialGradient, setRadialGradient] = useState<
     string | RefRadialGradient
   >('#F7DC6F');
-  
+
   // Texture ref
   const [texture, setTexture] = useState<string | RefTexture>('#E8E8E8');
 

@@ -1,11 +1,44 @@
 {
   "name": "@react/two.js",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
+  "description": "A React virtual DOM for Two.js — a renderer agnostic two-dimensional drawing API for the web",
+  "main": "./dist/react-two-main.es.js",
+  "module": "./dist/react-two-main.es.js",
+  "types": "./dist/main.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/react-two-main.es.js",
+      "types": "./dist/main.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonobr1/react-two.js.git"
+  },
+  "keywords": [
+    "react",
+    "two.js",
+    "canvas",
+    "svg",
+    "webgl",
+    "graphics",
+    "animation",
+    "2d",
+    "drawing"
+  ],
+  "author": "Jono Brandel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jonobr1/react-two.js/issues"
+  },
+  "homepage": "https://github.com/jonobr1/react-two.js#readme",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --p ./tsconfig.build.json && vite build",
+    "build": "vite build && tsc --p ./tsconfig.build.json",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
@@ -37,6 +70,6 @@
   "peerDependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "two.js": "github:jonobr1/two.js#dev"
+    "two.js": "^v0.8.19"
   }
 }

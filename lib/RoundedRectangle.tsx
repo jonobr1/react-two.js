@@ -67,7 +67,7 @@ export const RoundedRectangle = React.forwardRef<
     }
   }
 
-  useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
+  useImperativeHandle(forwardedRef, () => ref.current!);
 
   return <></>;
 });

@@ -48,7 +48,7 @@ export const Texture = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
+    useImperativeHandle(forwardedRef, () => ref.current!);
 
     return null; // No visual representation
   }

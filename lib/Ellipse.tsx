@@ -66,7 +66,7 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
       }
     }
 
-    useImperativeHandle(forwardedRef, () => ref.current as Instance, []);
+    useImperativeHandle(forwardedRef, () => ref.current!);
 
     return <></>;
   }
