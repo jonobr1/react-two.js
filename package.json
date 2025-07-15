@@ -1,5 +1,5 @@
 {
-  "name": "@react/two.js",
+  "name": "react-two.js",
   "version": "0.1.0",
   "type": "module",
   "description": "A React virtual DOM for Two.js — a renderer agnostic two-dimensional drawing API for the web",
