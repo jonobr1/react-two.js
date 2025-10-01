@@ -5,7 +5,7 @@ import { useTwo } from './Context';
 import type { Rectangle as Instance } from 'two.js/src/shapes/rectangle';
 import { PathProps } from './Path';
 
-type RectangleProps = PathProps | 'width' | 'height';
+export type RectangleProps = PathProps | 'width' | 'height';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<RectangleProps, keyof Instance>]?: Instance[K];

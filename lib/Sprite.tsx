@@ -8,12 +8,10 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Sprite as Instance } from 'two.js/src/effects/sprite';
-import { PathProps } from './Path';
+import { RectangleProps } from './Rectangle';
 
 type SpriteProps =
-  | PathProps
-  | 'width'
-  | 'height'
+  | RectangleProps
   | 'texture'
   | 'columns'
   | 'rows'

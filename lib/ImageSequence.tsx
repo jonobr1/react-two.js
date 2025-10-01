@@ -8,13 +8,11 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { ImageSequence as Instance } from 'two.js/src/effects/image-sequence';
-import { PathProps } from './Path';
+import { RectangleProps } from './Rectangle';
 import type { Texture } from 'two.js/src/effects/texture';
 
 type ImageSequenceProps =
-  | PathProps
-  | 'width'
-  | 'height'
+  | RectangleProps
   | 'textures'
   | 'frameRate'
   | 'index'
