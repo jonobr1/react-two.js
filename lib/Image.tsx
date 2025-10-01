@@ -17,6 +17,8 @@ type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<ImageProps, keyof Instance>]?: Instance[K];
   } & {
+    x?: number;
+    y?: number;
     mode?: string;
     texture?: Texture;
   }
@@ -25,19 +27,19 @@ type ComponentProps = React.PropsWithChildren<
 export type RefImage = Instance;
 
 export const Image = React.forwardRef<Instance | null, ComponentProps>(
-  ({ mode, texture, ...props }, forwardedRef) => {
+  ({ mode, texture, x, y, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
     // TODO: Make more synchronous for instant ref usage in parent components
     useLayoutEffect(() => {
-      const image = new Two.Image(texture);
+      const image = new Two.Image(texture, x, y);
       ref.current = image;
 
       return () => {
         ref.current = null;
       };
-    }, [mode, texture, two]);
+    }, [mode, texture, two, x, y]);
 
     useEffect(() => {
       const image = ref.current;

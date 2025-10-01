@@ -27,13 +27,15 @@ type ComponentProps = React.PropsWithChildren<
     [K in Extract<PathProps, keyof Instance>]?: Instance[K];
   } & {
     manual?: boolean;
+    x?: number;
+    y?: number;
   }
 >;
 
 export type RefPath = Instance;
 
 export const Path = React.forwardRef<Instance | null, ComponentProps>(
-  ({ manual, ...props }, forwardedRef) => {
+  ({ manual, x, y, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
     const ref = useRef<Instance | null>(null);
 
@@ -45,10 +47,13 @@ export const Path = React.forwardRef<Instance | null, ComponentProps>(
         ref.current.automatic = false;
       }
 
+      if (typeof x === 'number') path.translation.x = x;
+      if (typeof y === 'number') path.translation.y = y;
+
       return () => {
         ref.current = null;
       };
-    }, [manual, two]);
+    }, [manual, two, x, y]);
 
     useEffect(() => {
       const path = ref.current;
