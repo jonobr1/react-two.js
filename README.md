@@ -1,17 +1,17 @@
-# @react/two.js
+# @react-two.js
 
 A React virtual DOM for Two.js — a renderer agnostic two-dimensional drawing API for the web. Supports SVG, Canvas, and WebGL rendering. Declaratively describe your Two.js scene within your React application.
 
 ## Installation
 
 ```bash
-npm install @react/two.js react react-dom two.js
+npm install @react-two.js react react-dom two.js
 ```
 
 ## Quick Start
 
 ```jsx
-import { Canvas, Circle, Rectangle, useFrame } from '@react/two.js';
+import { Canvas, Circle, Rectangle, useFrame } from '@react-two.js';
 import { useRef } from 'react';
 
 function AnimatedRectangle() {
@@ -85,7 +85,7 @@ useFrame((elapsed) => {
 Full TypeScript support with proper types for all components and refs:
 
 ```tsx
-import { RefCircle } from '@react/two.js';
+import { RefCircle } from '@react-two.js';
 
 const circleRef = useRef<RefCircle>(null);
 ```
