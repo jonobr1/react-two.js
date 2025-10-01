@@ -14,23 +14,22 @@ npm install @react/two.js react react-dom two.js
 import { Canvas, Circle, Rectangle, useFrame } from '@react/two.js';
 import { useRef } from 'react';
 
-function AnimatedCircle() {
-  const circleRef = useRef();
+function AnimatedRectangle() {
+  const rectangle = useRef();
   
   useFrame((elapsed) => {
-    if (circleRef.current) {
-      circleRef.current.rotation = elapsed * 0.5;
+    if (rectangle.current) {
+      rectangle.current.rotation = elapsed * 0.5;
     }
   });
   
-  return <Circle ref={circleRef} radius={50} fill="red" />;
+  return <Rectangle ref={rectangle} width={100} height={100} fill="#00AEFF" x={400} y={400} />;
 }
 
 function App() {
   return (
     <Canvas width={800} height={600}>
-      <Rectangle width={100} height={100} fill="blue" x={100} y={100} />
-      <AnimatedCircle />
+      <AnimatedRectangle />
     </Canvas>
   );
 }
