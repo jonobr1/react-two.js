@@ -1,0 +1,65 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Introduction" />
+
+# react-two.js
+
+A React renderer for [Two.js](https://two.js.org) — bringing declarative, component-based 2D graphics to React.
+
+## Features
+
+- 🎨 **Declarative 2D Graphics** — Describe your Two.js scene using React components
+- ⚡ **Renderer Agnostic** — Switch between SVG, Canvas, and WebGL without changing code
+- 🪝 **React Hooks** — Built-in `useFrame` for smooth animations and `useTwo` for instance access
+- 📦 **Fully Typed** — Complete TypeScript support with proper types for all components
+- 🎯 **Zero Overhead** — Direct mapping to Two.js primitives with no performance penalty
+
+## Quick Start
+
+```jsx
+import { Canvas, Circle, useFrame } from 'react-two.js'
+import { useRef } from 'react'
+
+function RotatingCircle() {
+  const ref = useRef()
+  useFrame((t) => ref.current.rotation = t * 0.5)
+  return <Circle ref={ref} radius={50} fill="#00AEFF" />
+}
+
+function App() {
+  return (
+    <Canvas width={800} height={600}>
+      <RotatingCircle />
+    </Canvas>
+  )
+}
+```
+
+## Installation
+
+```bash
+npm install react-two.js react react-dom two.js
+```
+
+## Component Categories
+
+### Core Components
+- **Canvas** - Main container component that creates the Two.js instance
+- **Group** - Container for organizing and transforming multiple shapes
+
+### Primitive Shapes
+- Circle, Rectangle, RoundedRectangle
+- Ellipse, Line, Polygon, Star
+- ArcSegment
+- Text
+
+### Advanced Components
+- Path, Points
+- LinearGradient, RadialGradient
+- Texture, Sprite, ImageSequence
+
+## Resources
+
+- [Two.js Documentation](https://two.js.org/docs/)
+- [GitHub Repository](https://github.com/jonobr1/react-two.js)
+- [npm Package](https://www.npmjs.com/package/react-two.js)
