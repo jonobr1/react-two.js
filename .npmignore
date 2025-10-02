@@ -1,0 +1,36 @@
+# Source files
+src/
+lib/
+public/
+.github/
+docs-dist/
+
+# Configuration files
+*.config.ts
+*.config.js
+tsconfig.*.json
+vitest.config.ts
+eslint.config.js
+
+# Development files
+.vscode/
+.DS_Store
+*.log
+node_modules/
+
+# Documentation and meta files
+README.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+CLAUDE.md
+index.html
+
+# Test files
+**/__tests__/
+**/*.test.*
+**/*.spec.*
+test-setup.ts
+
+# Only include the built library in the npm package
+!dist/

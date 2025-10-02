@@ -4,7 +4,7 @@ import { resolve } from 'path';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
 
-// Default configuration for library build
+// Configuration for library build
 export default defineConfig({
   plugins: [react(), dts({ include: ['lib'] })],
   build: {
@@ -23,11 +23,6 @@ export default defineConfig({
           'two.js': 'Two',
         },
       },
-    },
-  },
-  resolve: {
-    alias: {
-      'react-two.js': resolve(__dirname, 'lib/main.ts'),
     },
   },
   server: {
