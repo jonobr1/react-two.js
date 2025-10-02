@@ -2,7 +2,7 @@ import React, {
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
-  useRef,
+  useState,
 } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
@@ -26,39 +26,41 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefImage = Instance;
 
-export const Image = React.forwardRef<Instance | null, ComponentProps>(
+export const Image = React.forwardRef<Instance, ComponentProps>(
   ({ mode, texture, x, y, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
-    const ref = useRef<Instance | null>(null);
+    const [ref, set] = useState<Instance | null>(null);
 
-    // TODO: Make more synchronous for instant ref usage in parent components
     useLayoutEffect(() => {
-      const image = new Two.Image(texture, x, y);
-      ref.current = image;
+      const image = new Two.Image();
+      set(image);
 
       return () => {
-        ref.current = null;
+        set(null);
       };
-    }, [mode, texture, two, x, y]);
+    }, [two]);
 
     useEffect(() => {
-      const image = ref.current;
-      if (parent && image) {
-        parent.add(image);
-        update();
+      if (parent && ref) {
+        parent.add(ref);
 
         return () => {
-          parent.remove(image);
+          parent.remove(ref);
         };
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parent]);
+    }, [parent, ref]);
 
-    useEffect(update, [props]);
+    useEffect(() => {
+      if (ref) {
+        const image = ref;
+        if (typeof mode !== 'undefined') image.mode = mode;
+        if (typeof texture !== 'undefined') image.texture = texture;
 
-    function update() {
-      if (ref.current) {
-        const image = ref.current;
+        // Update position
+        if (typeof x === 'number') image.translation.x = x;
+        if (typeof y === 'number') image.translation.y = y;
+
+        // Update other properties
         for (const key in props) {
           if (key in image) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,9 +68,9 @@ export const Image = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [ref, props, mode, texture, x, y]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return <></>;
   }

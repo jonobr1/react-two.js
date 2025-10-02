@@ -2,7 +2,7 @@ import React, {
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
-  useRef,
+  useState,
 } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
@@ -33,52 +33,44 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefImageSequence = Instance;
 
-export const ImageSequence = React.forwardRef<Instance | null, ComponentProps>(
+export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
   ({ paths, x, y, autoPlay, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
-    const ref = useRef<Instance | null>(null);
+    const [ref, set] = useState<Instance | null>(null);
 
-    // TODO: Make more synchronous for instant ref usage in parent components
     useLayoutEffect(() => {
-      const imageSequence = new Two.ImageSequence(paths, x, y, props.frameRate);
-      ref.current = imageSequence;
-
-      if (autoPlay) {
-        ref.current.play();
-      }
+      const imageSequence = new Two.ImageSequence(paths);
+      set(imageSequence);
 
       return () => {
-        ref.current = null;
+        set(null);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [paths, x, y, two]);
+    }, [two, paths]);
 
     useEffect(() => {
-      const imageSequence = ref.current;
-      if (parent && imageSequence) {
-        parent.add(imageSequence);
-        update();
+      if (parent && ref) {
+        parent.add(ref);
 
         return () => {
-          parent.remove(imageSequence);
+          parent.remove(ref);
         };
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parent]);
+    }, [parent, ref]);
 
     useEffect(() => {
-      if (autoPlay) {
-        ref.current?.play();
-      } else {
-        ref.current?.pause();
-      }
-    }, [autoPlay]);
+      if (ref) {
+        const imageSequence = ref;
+        if (autoPlay) {
+          imageSequence.play();
+        } else {
+          imageSequence.pause();
+        }
 
-    useEffect(update, [props]);
+        // Update position
+        if (typeof x === 'number') imageSequence.translation.x = x;
+        if (typeof y === 'number') imageSequence.translation.y = y;
 
-    function update() {
-      if (ref.current) {
-        const imageSequence = ref.current;
+        // Update other properties
         for (const key in props) {
           if (key in imageSequence) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,9 +78,9 @@ export const ImageSequence = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [props, ref, paths, x, y, autoPlay]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return <></>;
   }

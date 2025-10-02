@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useState } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -18,39 +18,38 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefPolygon = Instance;
 
-export const Polygon = React.forwardRef<Instance | null, ComponentProps>(
-  ({ x, y, radius, ...props }, forwardedRef) => {
+export const Polygon = React.forwardRef<Instance, ComponentProps>(
+  ({ x, y, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
-    const ref = useRef<Instance | null>(null);
+    const [ref, set] = useState<Instance | null>(null);
 
     useEffect(() => {
-      const polygon = new Two.Polygon(x, y, radius, props.sides);
-      ref.current = polygon;
+      const polygon = new Two.Polygon();
+      set(polygon);
 
       return () => {
-        ref.current = null;
+        set(null);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [x, y, radius, two]);
+    }, [two]);
 
     useEffect(() => {
-      const polygon = ref.current;
-      if (parent && polygon) {
-        parent.add(polygon);
-        update();
+      if (parent && ref) {
+        parent.add(ref);
 
         return () => {
-          parent.remove(polygon);
+          parent.remove(ref);
         };
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parent]);
+    }, [parent, ref]);
 
-    useEffect(update, [props]);
+    useEffect(() => {
+      if (ref) {
+        const polygon = ref;
+        // Update position
+        if (typeof x === 'number') polygon.translation.x = x;
+        if (typeof y === 'number') polygon.translation.y = y;
 
-    function update() {
-      if (ref.current) {
-        const polygon = ref.current;
+        // Update other properties
         for (const key in props) {
           if (key in polygon) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,9 +57,9 @@ export const Polygon = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [props, ref, x, y]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return <></>;
   }

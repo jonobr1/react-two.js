@@ -2,7 +2,7 @@ import React, {
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
-  useRef,
+  useState,
 } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
@@ -36,59 +36,45 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefSprite = Instance;
 
-export const Sprite = React.forwardRef<Instance | null, ComponentProps>(
+export const Sprite = React.forwardRef<Instance, ComponentProps>(
   ({ path, x, y, autoPlay, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
-    const ref = useRef<Instance | null>(null);
+    const [ref, set] = useState<Instance | null>(null);
 
-    // TODO: Make more synchronous for instant ref usage in parent components
     useLayoutEffect(() => {
-      const sprite = new Two.Sprite(
-        path,
-        x,
-        y,
-        props.columns,
-        props.rows,
-        props.frameRate
-      );
-      ref.current = sprite;
-
-      if (autoPlay) {
-        ref.current.play();
-      }
+      const sprite = new Two.Sprite(path);
+      set(sprite);
 
       return () => {
-        ref.current = null;
+        set(null);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [path, x, y, two]);
+    }, [path, two]);
 
     useEffect(() => {
-      const sprite = ref.current;
-      if (parent && sprite) {
-        parent.add(sprite);
-        update();
+      if (parent && ref) {
+        parent.add(ref);
 
         return () => {
-          parent.remove(sprite);
+          parent.remove(ref);
         };
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [parent]);
 
     useEffect(() => {
-      if (autoPlay) {
-        ref.current?.play();
-      } else {
-        ref.current?.pause();
-      }
-    }, [autoPlay]);
+      if (ref) {
+        const sprite = ref;
+        // Update position
+        if (typeof x === 'number') sprite.translation.x = x;
+        if (typeof y === 'number') sprite.translation.y = y;
 
-    useEffect(update, [props]);
+        if (autoPlay) {
+          sprite.play();
+        } else {
+          sprite.pause();
+        }
 
-    function update() {
-      if (ref.current) {
-        const sprite = ref.current;
+        // Update other properties
         for (const key in props) {
           if (key in sprite) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,9 +82,9 @@ export const Sprite = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [props, ref, x, y, autoPlay]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return <></>;
   }

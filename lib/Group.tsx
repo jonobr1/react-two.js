@@ -27,7 +27,7 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefGroup = Instance;
 
-export const Group = React.forwardRef<Instance | null, ComponentProps>(
+export const Group = React.forwardRef<Instance, ComponentProps>(
   ({ x, y, ...props }, forwardedRef) => {
     const { two, parent, width, height } = useTwo();
     const [ref, set] = useState<Instance | null>(null);
@@ -36,51 +36,44 @@ export const Group = React.forwardRef<Instance | null, ComponentProps>(
       if (two) {
         const group = new Two.Group();
 
-        if (typeof x === 'number') {
-          group.position.x = x;
-        }
-        if (typeof y === 'number') {
-          group.position.y = y;
-        }
-
         set(group);
 
         return () => {
           set(null);
         };
       }
-    }, [x, y, two]);
+    }, [two]);
 
     useEffect(() => {
       const group = ref;
       if (parent && group) {
         parent.add(group);
-        update();
 
         return () => {
           parent.remove(group);
         };
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ref, parent]);
 
-    useEffect(update, [props]);
+    useEffect(() => {
+      if (ref) {
+        const group = ref;
+        // Update position
+        if (typeof x === 'number') group.translation.x = x;
+        if (typeof y === 'number') group.translation.y = y;
 
-    function update() {
-      set((group) => {
-        if (group) {
-          const args = { ...props };
-          delete args.children;
-          for (const key in args) {
-            if (key in group) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (group as any)[key] = (args as any)[key];
-            }
+        const args = { ...props };
+        delete args.children; // Allow react to handle children
+
+        // Update other properties
+        for (const key in args) {
+          if (key in group) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (group as any)[key] = (args as any)[key];
           }
         }
-        return group;
-      });
-    }
+      }
+    }, [ref, x, y, props]);
 
     useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 

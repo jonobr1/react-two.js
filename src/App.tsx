@@ -59,9 +59,7 @@ function Scene() {
   const [linearGradient, setLinearGradient] = useState<
     string | RefLinearGradient
   >('#FF6B6B');
-  const [radialGradient, setRadialGradient] = useState<
-    string | RefRadialGradient
-  >('#F7DC6F');
+  const radialGradient = useRef<RefRadialGradient | null>(null);
 
   // Texture ref
   const [texture, setTexture] = useState<string | RefTexture>('#E8E8E8');
@@ -296,7 +294,7 @@ function Scene() {
       {/* Radial Gradient Example */}
       <Group x={cellWidth * 2.5} y={cellHeight * 3.5}>
         <RadialGradient
-          ref={(ref) => ref && setRadialGradient(ref)}
+          ref={radialGradient}
           x={0}
           y={0}
           radius={1}
@@ -309,7 +307,7 @@ function Scene() {
         <Rectangle
           width={60}
           height={40}
-          fill={radialGradient}
+          fill={radialGradient.current || '#F7DC6F'}
           stroke="#333"
           linewidth={2}
         />

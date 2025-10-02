@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useState } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -17,57 +17,49 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefRoundedRectangle = Instance;
 
-export const RoundedRectangle = React.forwardRef<
-  Instance | null,
-  ComponentProps
->(({ x, y, ...props }, forwardedRef) => {
-  const { two, parent } = useTwo();
-  const ref = useRef<Instance | null>(null);
+export const RoundedRectangle = React.forwardRef<Instance, ComponentProps>(
+  ({ x, y, ...props }, forwardedRef) => {
+    const { two, parent } = useTwo();
+    const [ref, set] = useState<Instance | null>(null);
 
-  useEffect(() => {
-    const roundedRectangle = new Two.RoundedRectangle(
-      x,
-      y,
-      props.width,
-      props.height,
-      props.radius
-    );
-    ref.current = roundedRectangle;
-
-    return () => {
-      ref.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [x, y, two]);
-
-  useEffect(() => {
-    const roundedRectangle = ref.current;
-    if (parent && roundedRectangle) {
-      parent.add(roundedRectangle);
-      update();
+    useEffect(() => {
+      const roundedRectangle = new Two.RoundedRectangle();
+      set(roundedRectangle);
 
       return () => {
-        parent.remove(roundedRectangle);
+        set(null);
       };
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parent]);
+    }, [two]);
 
-  useEffect(update, [props]);
+    useEffect(() => {
+      if (parent && ref) {
+        parent.add(ref);
 
-  function update() {
-    if (ref.current) {
-      const roundedRectangle = ref.current;
-      for (const key in props) {
-        if (key in roundedRectangle) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (roundedRectangle as any)[key] = (props as any)[key];
+        return () => {
+          parent.remove(ref);
+        };
+      }
+    }, [parent, ref]);
+
+    useEffect(() => {
+      if (ref) {
+        const roundedRectangle = ref;
+        // Update position
+        if (typeof x === 'number') roundedRectangle.translation.x = x;
+        if (typeof y === 'number') roundedRectangle.translation.y = y;
+
+        // Update other properties
+        for (const key in props) {
+          if (key in roundedRectangle) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (roundedRectangle as any)[key] = (props as any)[key];
+          }
         }
       }
-    }
+    }, [props, ref, x, y]);
+
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+
+    return <></>;
   }
-
-  useImperativeHandle(forwardedRef, () => ref.current!);
-
-  return <></>;
-});
+);

@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useState } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -18,39 +18,28 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefCircle = Instance;
 
-export const Circle = React.forwardRef<Instance | null, ComponentProps>(
+export const Circle = React.forwardRef<Instance, ComponentProps>(
   ({ x, y, resolution, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
-    const ref = useRef<Instance | null>(null);
+    const [ref, set] = useState<Instance | null>(null);
 
     useEffect(() => {
-      const circle = new Two.Circle(x, y, props.radius, resolution);
-      ref.current = circle;
+      const circle = new Two.Circle(0, 0, 0, resolution);
+      set(circle);
 
       return () => {
-        ref.current = null;
+        set(null);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [x, y, resolution, two]);
+    }, [resolution, two]);
 
     useEffect(() => {
-      const circle = ref.current;
-      if (parent && circle) {
-        parent.add(circle);
-        update();
+      if (ref) {
+        const circle = ref;
+        // Update position
+        if (typeof x === 'number') circle.translation.x = x;
+        if (typeof y === 'number') circle.translation.y = y;
 
-        return () => {
-          parent.remove(circle);
-        };
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parent]);
-
-    useEffect(update, [props]);
-
-    function update() {
-      if (ref.current) {
-        const circle = ref.current;
+        // Update other properties
         for (const key in props) {
           if (key in circle) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,9 +47,18 @@ export const Circle = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [ref, props, x, y]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useEffect(() => {
+      if (parent && ref) {
+        parent.add(ref);
+        return () => {
+          parent.remove(ref);
+        };
+      }
+    }, [parent, ref]);
+
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return <></>;
   }

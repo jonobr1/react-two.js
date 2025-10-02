@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useState } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -34,45 +34,42 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefPath = Instance;
 
-export const Path = React.forwardRef<Instance | null, ComponentProps>(
+export const Path = React.forwardRef<Instance, ComponentProps>(
   ({ manual, x, y, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
-    const ref = useRef<Instance | null>(null);
+    const [ref, set] = useState<Instance | null>(null);
 
     useEffect(() => {
       const path = new Two.Path();
-      ref.current = path;
-
-      if (manual) {
-        ref.current.automatic = false;
-      }
-
-      if (typeof x === 'number') path.translation.x = x;
-      if (typeof y === 'number') path.translation.y = y;
+      set(path);
 
       return () => {
-        ref.current = null;
+        set(null);
       };
-    }, [manual, two, x, y]);
+    }, [two]);
 
     useEffect(() => {
-      const path = ref.current;
-      if (parent && path) {
-        parent.add(path);
-        update();
+      if (parent && ref) {
+        parent.add(ref);
 
         return () => {
-          parent.remove(path);
+          parent.remove(ref);
         };
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parent]);
+    }, [parent, ref]);
 
-    useEffect(update, [props]);
+    useEffect(() => {
+      if (ref) {
+        const path = ref;
+        // Update position
+        if (typeof x === 'number') path.translation.x = x;
+        if (typeof y === 'number') path.translation.y = y;
 
-    function update() {
-      if (ref.current) {
-        const path = ref.current;
+        if (typeof manual !== 'undefined') {
+          path.automatic = !manual;
+        }
+
+        // Update other properties
         for (const key in props) {
           if (key in path) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,9 +77,9 @@ export const Path = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [props, ref, x, y, manual]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return <></>;
   }

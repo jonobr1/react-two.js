@@ -1,6 +1,5 @@
-import React, { useImperativeHandle, useEffect, useRef } from 'react';
+import React, { useImperativeHandle, useEffect, useMemo } from 'react';
 import Two from 'two.js';
-import { useTwo } from './Context';
 
 import type { RadialGradient as Instance } from 'two.js/src/effects/radial-gradient';
 import { GradientProps } from './Properties';
@@ -22,48 +21,18 @@ export type RefRadialGradient = Instance;
 
 export const RadialGradient = React.forwardRef<Instance | null, ComponentProps>(
   ({ x, y, focalX, focalY, ...props }, forwardedRef) => {
-    const { two } = useTwo();
-
-    const ref = useRef<Instance | null>(null);
-
-    if (!ref.current && two) {
-      ref.current = new Two.RadialGradient(
-        x,
-        y,
-        props.radius,
-        props.stops,
-        focalX,
-        focalY
-      );
-    }
+    const ref = useMemo(() => new Two.RadialGradient(), []);
 
     useEffect(() => {
-      if (ref.current) {
-        if (typeof x === 'number') {
-          ref.current.center.x = x;
-        }
-        if (typeof y === 'number') {
-          ref.current.center.y = y;
-        }
-      }
-    }, [x, y]);
+      if (ref) {
+        const gradient = ref;
+        if (typeof x === 'number') ref.center.x = x;
+        if (typeof y === 'number') ref.center.y = y;
 
-    useEffect(() => {
-      if (ref.current) {
-        if (typeof focalX === 'number') {
-          ref.current.focal.x = focalX;
-        }
-        if (typeof focalY === 'number') {
-          ref.current.focal.y = focalY;
-        }
-      }
-    }, [focalX, focalY]);
+        if (typeof focalX === 'number') ref.focal.x = focalX;
+        if (typeof focalY === 'number') ref.focal.y = focalY;
 
-    useEffect(update, [props]);
-
-    function update() {
-      if (ref.current) {
-        const gradient = ref.current;
+        // Update other properties
         for (const key in props) {
           if (key in gradient) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,9 +40,9 @@ export const RadialGradient = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [props, ref, x, y, focalX, focalY]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return null; // No visual representation
   }

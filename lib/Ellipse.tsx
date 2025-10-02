@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useState } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -21,42 +21,36 @@ export type RefEllipse = Instance;
 export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
   ({ x, y, resolution, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
-    const ref = useRef<Instance | null>(null);
+    const [ref, set] = useState<Instance | null>(null);
 
     useEffect(() => {
-      const ellipse = new Two.Ellipse(
-        x,
-        y,
-        typeof props.width === 'number' ? props.width / 2 : undefined,
-        typeof props.height === 'number' ? props.height / 2 : undefined,
-        resolution
-      );
-      ref.current = ellipse;
+      const ellipse = new Two.Ellipse(0, 0, 0, 0, resolution);
+      set(ellipse);
 
       return () => {
-        ref.current = null;
+        set(null);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [x, y, resolution, two]);
+    }, [resolution, two]);
 
     useEffect(() => {
-      const ellipse = ref.current;
-      if (parent && ellipse) {
-        parent.add(ellipse);
-        update();
+      if (parent && ref) {
+        parent.add(ref);
 
         return () => {
-          parent.remove(ellipse);
+          parent.remove(ref);
         };
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [parent]);
 
-    useEffect(update, [props]);
+    useEffect(() => {
+      if (ref) {
+        const ellipse = ref;
+        // Update position
+        if (typeof x === 'number') ellipse.translation.x = x;
+        if (typeof y === 'number') ellipse.translation.y = y;
 
-    function update() {
-      if (ref.current) {
-        const ellipse = ref.current;
+        // Update other properties
         for (const key in props) {
           if (key in ellipse) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,9 +58,9 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [ref, x, y, props]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return <></>;
   }

@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useState } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -17,39 +17,38 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefRectangle = Instance;
 
-export const Rectangle = React.forwardRef<Instance | null, ComponentProps>(
+export const Rectangle = React.forwardRef<Instance, ComponentProps>(
   ({ x, y, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
-    const ref = useRef<Instance | null>(null);
+    const [ref, set] = useState<Instance | null>(null);
 
     useEffect(() => {
-      const rectangle = new Two.Rectangle(x, y, props.width, props.height);
-      ref.current = rectangle;
+      const rectangle = new Two.Rectangle();
+      set(rectangle);
 
       return () => {
-        ref.current = null;
+        set(null);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [x, y, two]);
+    }, [two]);
 
     useEffect(() => {
-      const rectangle = ref.current;
-      if (parent && rectangle) {
-        parent.add(rectangle);
-        update();
+      if (parent && ref) {
+        parent.add(ref);
 
         return () => {
-          parent.remove(rectangle);
+          parent.remove(ref);
         };
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parent]);
+    }, [parent, ref]);
 
-    useEffect(update, [props]);
+    useEffect(() => {
+      if (ref) {
+        const rectangle = ref;
+        // Update position
+        if (typeof x === 'number') rectangle.translation.x = x;
+        if (typeof y === 'number') rectangle.translation.y = y;
 
-    function update() {
-      if (ref.current) {
-        const rectangle = ref.current;
+        // Update other properties
         for (const key in props) {
           if (key in rectangle) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,9 +56,9 @@ export const Rectangle = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [props, ref, x, y]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return <></>;
   }

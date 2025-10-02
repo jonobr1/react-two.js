@@ -1,4 +1,4 @@
-import React, { useImperativeHandle, useEffect, useRef } from 'react';
+import React, { useImperativeHandle, useEffect, useState } from 'react';
 import Two from 'two.js';
 
 import type { Texture as Instance } from 'two.js/src/effects/texture';
@@ -22,23 +22,23 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefTexture = Instance;
 
-export const Texture = React.forwardRef<Instance | null, ComponentProps>(
+export const Texture = React.forwardRef<Instance, ComponentProps>(
   ({ source, ...props }, forwardedRef) => {
-    const ref = useRef<Instance | null>(null);
+    const [ref, set] = useState<Instance | null>(null);
 
     useEffect(() => {
       const texture = new Two.Texture(source);
-      ref.current = texture;
+      set(texture);
       return () => {
-        // TODO: Release texture
+        set(null);
       };
     }, [source]);
 
-    useEffect(update, [props]);
+    useEffect(() => {
+      if (ref) {
+        const texture = ref;
 
-    function update() {
-      if (ref.current) {
-        const texture = ref.current;
+        // Update other properties
         for (const key in props) {
           if (key in texture) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,9 +46,9 @@ export const Texture = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [props, ref]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return null; // No visual representation
   }

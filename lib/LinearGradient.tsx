@@ -1,6 +1,5 @@
-import React, { useImperativeHandle, useEffect, useRef } from 'react';
+import React, { useImperativeHandle, useEffect, useMemo } from 'react';
 import Two from 'two.js';
-import { useTwo } from './Context';
 
 import type { LinearGradient as Instance } from 'two.js/src/effects/linear-gradient';
 import { GradientProps } from './Properties';
@@ -20,38 +19,27 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefLinearGradient = Instance;
 
-export const LinearGradient = React.forwardRef<Instance | null, ComponentProps>(
+export const LinearGradient = React.forwardRef<Instance, ComponentProps>(
   ({ x1, y1, x2, y2, ...props }, forwardedRef) => {
-    const { two } = useTwo();
-
-    const ref = useRef<Instance | null>(null);
-
-    if (!ref.current && two) {
-      ref.current = new Two.LinearGradient(x1, y1, x2, y2, props.stops);
-    }
+    const ref = useMemo(() => new Two.LinearGradient(), []);
 
     useEffect(() => {
-      if (ref.current) {
+      if (ref) {
+        const gradient = ref;
         if (typeof x1 === 'number') {
-          ref.current.left.x = x1;
+          gradient.left.x = x1;
         }
         if (typeof y1 === 'number') {
-          ref.current.left.y = y1;
+          gradient.left.y = y1;
         }
         if (typeof x2 === 'number') {
-          ref.current.right.x = x2;
+          gradient.right.x = x2;
         }
         if (typeof y2 === 'number') {
-          ref.current.right.y = y2;
+          gradient.right.y = y2;
         }
-      }
-    }, [x1, y1, x2, y2]);
 
-    useEffect(update, [props]);
-
-    function update() {
-      if (ref.current) {
-        const gradient = ref.current;
+        // Update other properties
         for (const key in props) {
           if (key in gradient) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,9 +47,9 @@ export const LinearGradient = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [ref, x1, y1, x2, y2, props]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return null; // No visual representation
   }

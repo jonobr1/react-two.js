@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useState } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -34,39 +34,38 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefText = Instance;
 
-export const Text = React.forwardRef<Instance | null, ComponentProps>(
+export const Text = React.forwardRef<Instance, ComponentProps>(
   ({ x, y, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
-    const ref = useRef<Instance | null>(null);
+    const [ref, set] = useState<Instance | null>(null);
 
     useEffect(() => {
-      const text = new Two.Text(props.value, x, y);
-      ref.current = text;
+      const text = new Two.Text();
+      set(text);
 
       return () => {
-        ref.current = null;
+        set(null);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [x, y, two]);
+    }, [two]);
 
     useEffect(() => {
-      const text = ref.current;
-      if (parent && text) {
-        parent.add(text);
-        update();
+      if (parent && ref) {
+        parent.add(ref);
 
         return () => {
-          parent.remove(text);
+          parent.remove(ref);
         };
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parent]);
+    }, [parent, ref]);
 
-    useEffect(update, [props]);
+    useEffect(() => {
+      if (ref) {
+        const text = ref;
+        // Update position
+        if (typeof x === 'number') text.translation.x = x;
+        if (typeof y === 'number') text.translation.y = y;
 
-    function update() {
-      if (ref.current) {
-        const text = ref.current;
+        // Update other properties
         for (const key in props) {
           if (key in text) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,9 +73,9 @@ export const Text = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [props, ref, x, y]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return <></>;
   }

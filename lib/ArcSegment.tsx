@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useState } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -23,47 +23,37 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefArcSegment = Instance;
 
-export const ArcSegment = React.forwardRef<Instance | null, ComponentProps>(
+export const ArcSegment = React.forwardRef<Instance, ComponentProps>(
   ({ x, y, resolution, ...props }, forwardedRef) => {
     const { two, parent } = useTwo();
-    const ref = useRef<Instance | null>(null);
+    const [ref, set] = useState<Instance | null>(null);
 
     useEffect(() => {
-      const arcSegment = new Two.ArcSegment(
-        x,
-        y,
-        props.innerRadius,
-        props.outerRadius,
-        props.startAngle,
-        props.endAngle,
-        resolution
-      );
-      ref.current = arcSegment;
+      const arcSegment = new Two.ArcSegment(0, 0, 0, 0, 0, 0, resolution);
+      set(arcSegment);
 
       return () => {
-        ref.current = null;
+        set(null);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [x, y, resolution, two]);
+    }, [resolution, two]);
 
     useEffect(() => {
-      const arcSegment = ref.current;
-      if (parent && arcSegment) {
-        parent.add(arcSegment);
-        update();
-
+      if (parent && ref) {
+        parent.add(ref);
         return () => {
-          parent.remove(arcSegment);
+          parent.remove(ref);
         };
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parent]);
+    }, [parent, ref]);
 
-    useEffect(update, [props]);
+    useEffect(() => {
+      if (ref) {
+        const arcSegment = ref;
+        // Update position
+        if (typeof x === 'number') arcSegment.translation.x = x;
+        if (typeof y === 'number') arcSegment.translation.y = y;
 
-    function update() {
-      if (ref.current) {
-        const arcSegment = ref.current;
+        // Update other properties
         for (const key in props) {
           if (key in arcSegment) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,9 +61,9 @@ export const ArcSegment = React.forwardRef<Instance | null, ComponentProps>(
           }
         }
       }
-    }
+    }, [props, ref, x, y]);
 
-    useImperativeHandle(forwardedRef, () => ref.current!);
+    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
     return <></>;
   }
