@@ -1,9 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState, useMemo } from 'react';
-import { Canvas } from './Provider';
-import { LinearGradient } from './LinearGradient';
-import { Rectangle } from './Rectangle';
-import { Circle } from './Circle';
+import { Canvas, LinearGradient, Rectangle, Circle } from './main';
 
 const meta = {
   title: 'Advanced/LinearGradient',

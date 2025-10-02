@@ -1,9 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState, useMemo } from 'react';
-import { Canvas } from './Provider';
-import { RadialGradient } from './RadialGradient';
-import { Circle } from './Circle';
-import { Rectangle } from './Rectangle';
+import { Canvas, RadialGradient, Circle, Rectangle } from './main';
 
 const meta = {
   title: 'Advanced/RadialGradient',

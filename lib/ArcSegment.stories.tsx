@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Canvas } from './Provider';
-import { ArcSegment } from './ArcSegment';
+import { Canvas, ArcSegment } from './main';
 
 const meta = {
   title: 'Primitives/ArcSegment',

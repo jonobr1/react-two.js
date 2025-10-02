@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Canvas } from './Provider';
-import { Path } from './Path';
+import { Canvas, Path } from './main';
 
 const meta = {
   title: 'Advanced/Path',

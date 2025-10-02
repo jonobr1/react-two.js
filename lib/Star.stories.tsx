@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Canvas } from './Provider';
-import { Star } from './Star';
+import { Canvas, Star } from './main';
 
 const meta = {
   title: 'Primitives/Star',

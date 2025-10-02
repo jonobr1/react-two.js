@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Canvas } from './Provider';
-import { Polygon } from './Polygon';
+import { Canvas, Polygon } from './main';
 
 const meta = {
   title: 'Primitives/Polygon',

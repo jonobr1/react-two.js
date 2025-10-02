@@ -1,8 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Canvas } from './Provider';
-import { Circle } from './Circle';
-import { Rectangle } from './Rectangle';
-import { Star } from './Star';
+import { Canvas, Circle, Rectangle, Star } from './main';
 
 const meta = {
   title: 'Core/Canvas',

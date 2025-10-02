@@ -1,11 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useRef } from 'react';
-import { Canvas } from './Provider';
-import { Group } from './Group';
-import { Circle } from './Circle';
-import { Rectangle } from './Rectangle';
-import { Star } from './Star';
-import { useFrame } from './Context';
+import { Canvas, Group, Circle, Rectangle, Star, useFrame } from './main';
 
 const meta = {
   title: 'Core/Group',

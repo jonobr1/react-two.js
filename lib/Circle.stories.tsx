@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Canvas } from './Provider';
-import { Circle } from './Circle';
+import { Canvas, Circle } from './main';
 
 const meta = {
   title: 'Primitives/Circle',

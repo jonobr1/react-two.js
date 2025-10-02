@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Canvas } from './Provider';
-import { Ellipse } from './Ellipse';
+import { Canvas, Ellipse } from './main';
 
 const meta = {
   title: 'Primitives/Ellipse',
