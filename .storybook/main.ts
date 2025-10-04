@@ -1,22 +1,19 @@
 import type { StorybookConfig } from '@storybook/react-vite';
 
 const config: StorybookConfig = {
-  "stories": [
-    "../lib/**/*.stories.@(js|jsx|mjs|ts|tsx)",
-    "../lib/**/*.mdx"
-  ],
-  "addons": [
-    "@storybook/addon-docs"
-  ],
-  "framework": {
-    "name": "@storybook/react-vite",
-    "options": {}
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: ['@storybook/addon-docs', '@storybook/addon-onboarding'],
+  framework: {
+    name: '@storybook/react-vite',
+    options: {},
   },
-  "docs": {
-    "autodocs": "tag"
+  core: {
+    builder: '@storybook/builder-vite',
   },
-  "typescript": {
-    "reactDocgen": "react-docgen-typescript"
-  }
+  typescript: {
+    // Enables the `react-docgen-typescript` parser.
+    // See https://storybook.js.org/docs/api/main-config/main-config-typescript for more information about this option.
+    reactDocgen: 'react-docgen-typescript',
+  },
 };
 export default config;

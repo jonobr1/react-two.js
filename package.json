@@ -53,12 +53,13 @@
     "version:minor": "npm version minor",
     "version:major": "npm version major",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build -o storybook-static"
+    "build-storybook": "storybook build"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
     "@storybook/addon-docs": "^9.1.10",
     "@storybook/addon-onboarding": "^9.1.10",
+    "@storybook/builder-vite": "^9.1.10",
     "@storybook/react-vite": "^9.1.10",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
