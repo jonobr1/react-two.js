@@ -1,6 +1,6 @@
 {
   "name": "react-two.js",
-  "version": "0.1.0",
+  "version": "v0.1.0",
   "type": "module",
   "description": "A React virtual DOM for Two.js — a renderer agnostic two-dimensional drawing API for the web",
   "main": "./dist/react-two-main.es.js",
@@ -79,6 +79,6 @@
   "peerDependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "two.js": "github:jonobr1/two.js#dev"
+    "two.js": "^v0.8.21"
   }
 }
