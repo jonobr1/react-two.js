@@ -1,8 +1,11 @@
-import * as Headless from '@headlessui/react'
-import clsx from 'clsx'
-import type React from 'react'
+import * as Headless from '@headlessui/react';
+import clsx from 'clsx';
+import type React from 'react';
 
-export function CheckboxGroup({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+export function CheckboxGroup({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<'div'>) {
   return (
     <div
       data-slot="control"
@@ -15,7 +18,7 @@ export function CheckboxGroup({ className, ...props }: React.ComponentPropsWitho
         'has-data-[slot=description]:space-y-6 has-data-[slot=description]:**:data-[slot=label]:font-medium'
       )}
     />
-  )
+  );
 }
 
 export function CheckboxField({
@@ -40,7 +43,7 @@ export function CheckboxField({
         'has-data-[slot=description]:**:data-[slot=label]:font-medium'
       )}
     />
-  )
+  );
 }
 
 const base = [
@@ -69,7 +72,7 @@ const base = [
   // Forced colors mode
   'forced-colors:[--checkbox-check:HighlightText] forced-colors:[--checkbox-checked-bg:Highlight] forced-colors:group-data-disabled:[--checkbox-check:Highlight]',
   'dark:forced-colors:[--checkbox-check:HighlightText] dark:forced-colors:[--checkbox-checked-bg:Highlight] dark:forced-colors:group-data-disabled:[--checkbox-check:Highlight]',
-]
+];
 
 const colors = {
   'dark/zinc': [
@@ -110,17 +113,17 @@ const colors = {
     '[--checkbox-check:var(--color-white)] [--checkbox-checked-bg:var(--color-fuchsia-500)] [--checkbox-checked-border:var(--color-fuchsia-600)]/90',
   pink: '[--checkbox-check:var(--color-white)] [--checkbox-checked-bg:var(--color-pink-500)] [--checkbox-checked-border:var(--color-pink-600)]/90',
   rose: '[--checkbox-check:var(--color-white)] [--checkbox-checked-bg:var(--color-rose-500)] [--checkbox-checked-border:var(--color-rose-600)]/90',
-}
+};
 
-type Color = keyof typeof colors
+type Color = keyof typeof colors;
 
 export function Checkbox({
   color = 'dark/zinc',
   className,
   ...props
 }: {
-  color?: Color
-  className?: string
+  color?: Color;
+  className?: string;
 } & Omit<Headless.CheckboxProps, 'as' | 'className'>) {
   return (
     <Headless.Checkbox
@@ -153,5 +156,5 @@ export function Checkbox({
         </svg>
       </span>
     </Headless.Checkbox>
-  )
+  );
 }

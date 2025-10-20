@@ -1,10 +1,13 @@
-import * as Headless from '@headlessui/react'
-import clsx from 'clsx'
+import * as Headless from '@headlessui/react';
+import clsx from 'clsx';
 
 export function RadioGroup({
   className,
   ...props
-}: { className?: string } & Omit<Headless.RadioGroupProps, 'as' | 'className'>) {
+}: { className?: string } & Omit<
+  Headless.RadioGroupProps,
+  'as' | 'className'
+>) {
   return (
     <Headless.RadioGroup
       data-slot="control"
@@ -17,7 +20,7 @@ export function RadioGroup({
         'has-data-[slot=description]:space-y-6 has-data-[slot=description]:**:data-[slot=label]:font-medium'
       )}
     />
-  )
+  );
 }
 
 export function RadioField({
@@ -42,7 +45,7 @@ export function RadioField({
         'has-data-[slot=description]:**:data-[slot=label]:font-medium'
       )}
     />
-  )
+  );
 }
 
 const base = [
@@ -72,7 +75,7 @@ const base = [
   'group-data-disabled:opacity-50',
   'group-data-disabled:border-zinc-950/25 group-data-disabled:bg-zinc-950/5 group-data-disabled:[--radio-checked-indicator:var(--color-zinc-950)]/50 group-data-disabled:before:bg-transparent',
   'dark:group-data-disabled:border-white/20 dark:group-data-disabled:bg-white/2.5 dark:group-data-disabled:[--radio-checked-indicator:var(--color-white)]/50 dark:group-data-checked:group-data-disabled:after:hidden',
-]
+];
 
 const colors = {
   'dark/zinc': [
@@ -113,15 +116,18 @@ const colors = {
     '[--radio-checked-indicator:var(--color-white)] [--radio-checked-bg:var(--color-fuchsia-500)] [--radio-checked-border:var(--color-fuchsia-600)]/90',
   pink: '[--radio-checked-indicator:var(--color-white)] [--radio-checked-bg:var(--color-pink-500)] [--radio-checked-border:var(--color-pink-600)]/90',
   rose: '[--radio-checked-indicator:var(--color-white)] [--radio-checked-bg:var(--color-rose-500)] [--radio-checked-border:var(--color-rose-600)]/90',
-}
+};
 
-type Color = keyof typeof colors
+type Color = keyof typeof colors;
 
 export function Radio({
   color = 'dark/zinc',
   className,
   ...props
-}: { color?: Color; className?: string } & Omit<Headless.RadioProps, 'as' | 'className' | 'children'>) {
+}: { color?: Color; className?: string } & Omit<
+  Headless.RadioProps,
+  'as' | 'className' | 'children'
+>) {
   return (
     <Headless.Radio
       data-slot="control"
@@ -138,5 +144,5 @@ export function Radio({
         />
       </span>
     </Headless.Radio>
-  )
+  );
 }

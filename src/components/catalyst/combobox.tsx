@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import * as Headless from '@headlessui/react'
-import clsx from 'clsx'
-import { useState } from 'react'
+import * as Headless from '@headlessui/react';
+import clsx from 'clsx';
+import { useState } from 'react';
 
 export function Combobox<T>({
   options,
@@ -16,26 +16,35 @@ export function Combobox<T>({
   children,
   ...props
 }: {
-  options: T[]
-  displayValue: (value: T | null) => string | undefined
-  filter?: (value: T, query: string) => boolean
-  className?: string
-  placeholder?: string
-  autoFocus?: boolean
-  'aria-label'?: string
-  children: (value: NonNullable<T>) => React.ReactElement
-} & Omit<Headless.ComboboxProps<T, false>, 'as' | 'multiple' | 'children'> & { anchor?: 'top' | 'bottom' }) {
-  const [query, setQuery] = useState('')
+  options: T[];
+  displayValue: (value: T | null) => string | undefined;
+  filter?: (value: T, query: string) => boolean;
+  className?: string;
+  placeholder?: string;
+  autoFocus?: boolean;
+  'aria-label'?: string;
+  children: (value: NonNullable<T>) => React.ReactElement;
+} & Omit<Headless.ComboboxProps<T, false>, 'as' | 'multiple' | 'children'> & {
+    anchor?: 'top' | 'bottom';
+  }) {
+  const [query, setQuery] = useState('');
 
   const filteredOptions =
     query === ''
       ? options
       : options.filter((option) =>
-          filter ? filter(option, query) : displayValue(option)?.toLowerCase().includes(query.toLowerCase())
-        )
+          filter
+            ? filter(option, query)
+            : displayValue(option)?.toLowerCase().includes(query.toLowerCase())
+        );
 
   return (
-    <Headless.Combobox {...props} multiple={false} virtual={{ options: filteredOptions }} onClose={() => setQuery('')}>
+    <Headless.Combobox
+      {...props}
+      multiple={false}
+      virtual={{ options: filteredOptions }}
+      onClose={() => setQuery('')}
+    >
       <span
         data-slot="control"
         className={clsx([
@@ -90,8 +99,18 @@ export function Combobox<T>({
             aria-hidden="true"
             fill="none"
           >
-            <path d="M5.75 10.75L8 13L10.25 10.75" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M10.25 5.25L8 3L5.75 5.25" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M5.75 10.75L8 13L10.25 10.75"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M10.25 5.25L8 3L5.75 5.25"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </Headless.ComboboxButton>
       </span>
@@ -118,7 +137,7 @@ export function Combobox<T>({
         {({ option }) => children(option)}
       </Headless.ComboboxOptions>
     </Headless.Combobox>
-  )
+  );
 }
 
 export function ComboboxOption<T>({
@@ -129,7 +148,7 @@ export function ComboboxOption<T>({
   Headless.ComboboxOptionProps<'div', T>,
   'as' | 'className'
 >) {
-  let sharedClasses = clsx(
+  const sharedClasses = clsx(
     // Base
     'flex min-w-0 items-center',
     // Icons
@@ -138,7 +157,7 @@ export function ComboboxOption<T>({
     'forced-colors:*:data-[slot=icon]:text-[CanvasText] forced-colors:group-data-focus/option:*:data-[slot=icon]:text-[Canvas]',
     // Avatars
     '*:data-[slot=avatar]:-mx-0.5 *:data-[slot=avatar]:size-6 sm:*:data-[slot=avatar]:size-5'
-  )
+  );
 
   return (
     <Headless.ComboboxOption
@@ -163,17 +182,37 @@ export function ComboboxOption<T>({
         fill="none"
         aria-hidden="true"
       >
-        <path d="M4 8.5l3 3L12 4" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M4 8.5l3 3L12 4"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </Headless.ComboboxOption>
-  )
+  );
 }
 
-export function ComboboxLabel({ className, ...props }: React.ComponentPropsWithoutRef<'span'>) {
-  return <span {...props} className={clsx(className, 'ml-2.5 truncate first:ml-0 sm:ml-2 sm:first:ml-0')} />
+export function ComboboxLabel({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<'span'>) {
+  return (
+    <span
+      {...props}
+      className={clsx(
+        className,
+        'ml-2.5 truncate first:ml-0 sm:ml-2 sm:first:ml-0'
+      )}
+    />
+  );
 }
 
-export function ComboboxDescription({ className, children, ...props }: React.ComponentPropsWithoutRef<'span'>) {
+export function ComboboxDescription({
+  className,
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<'span'>) {
   return (
     <span
       {...props}
@@ -184,5 +223,5 @@ export function ComboboxDescription({ className, children, ...props }: React.Com
     >
       <span className="flex-1 truncate">{children}</span>
     </span>
-  )
+  );
 }
