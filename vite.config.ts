@@ -3,10 +3,11 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
+import tailwindcss from '@tailwindcss/vite';
 
 // Default configuration for library build
 export default defineConfig({
-  plugins: [react(), dts({ include: ['lib'] })],
+  plugins: [react(), dts({ include: ['lib'] }), tailwindcss()],
   build: {
     copyPublicDir: false,
     lib: {
@@ -27,6 +28,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@': resolve(__dirname, 'src'),
       'react-two.js': resolve(__dirname, 'lib/main.ts'),
     },
   },

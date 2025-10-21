@@ -1,0 +1,30 @@
+.marquee {
+  display: block;
+  max-width: 100%;
+  text-wrap: nowrap;
+  text-overflow: clip;
+  overflow-x: hidden;
+  position: relative;
+}
+
+@keyframes marquee {
+  0% {
+    text-indent: 0
+  }
+  100% {
+    text-indent: -50%;
+  }
+}
+
+.content {
+  position: relative;
+  display: inline-block;
+}
+
+.animating {
+  animation-name: marquee;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-delay: 0;
+  animation-direction: normal;
+}
