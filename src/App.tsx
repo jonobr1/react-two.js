@@ -1,4 +1,4 @@
-import { SidebarLayout } from '@/components/ui/SidebarLayout';
+import { SidebarLayout } from '@/components/catalyst/SidebarLayout';
 import {
   Sidebar,
   SidebarBody,
@@ -7,9 +7,9 @@ import {
   SidebarItem,
   SidebarLabel,
   SidebarSection,
-} from '@/components/ui/sidebar';
-import { Text } from '@/components/ui/Text';
-import { Badge } from '@/components/ui/Badge';
+} from '@/components/catalyst/sidebar';
+import { Text } from '@/components/catalyst/Text';
+import { Badge } from '@/components/catalyst/Badge';
 import { Marquee } from '@/components/common/Marquee';
 import {
   CodeBracketSquareIcon,
