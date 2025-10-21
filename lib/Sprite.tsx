@@ -58,8 +58,7 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
           parent.remove(ref);
         };
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parent]);
+    }, [parent, ref]);
 
     useEffect(() => {
       if (ref) {

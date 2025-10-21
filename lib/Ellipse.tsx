@@ -40,8 +40,7 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
           parent.remove(ref);
         };
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parent]);
+    }, [parent, ref]);
 
     useEffect(() => {
       if (ref) {
