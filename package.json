@@ -48,12 +48,7 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
-    "prepublishOnly": "npm run build:lib",
-    "publish": "npm publish",
-    "version:patch": "npm version patch",
-    "version:minor": "npm version minor",
-    "version:major": "npm version major"
+    "test:coverage": "vitest --coverage"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
