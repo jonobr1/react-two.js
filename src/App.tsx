@@ -12,7 +12,7 @@ import { Text } from '@/components/catalyst/Text';
 import { Badge } from '@/components/catalyst/Badge';
 import { Marquee } from '@/components/common/Marquee';
 import {
-  CodeBracketSquareIcon,
+  CodeBracketIcon,
   CommandLineIcon,
   CurrencyDollarIcon,
   SparklesIcon,
@@ -42,7 +42,9 @@ export default function App() {
           <SidebarLabel>
             <Text className={cn('px-2')}>
               <Marquee>
-                <span>Declarative 2D graphics for the web and beyond</span>
+                <span className={cn('mr-2')}>
+                  Declarative 2D graphics for the web and beyond
+                </span>
               </Marquee>
             </Text>
           </SidebarLabel>
@@ -52,7 +54,7 @@ export default function App() {
 
         <SidebarSection>
           <SidebarItem href="https://github.com/jonobr1/react-two.js">
-            <CodeBracketSquareIcon /> <SidebarLabel>Github</SidebarLabel>
+            <CodeBracketIcon /> <SidebarLabel>Github</SidebarLabel>
           </SidebarItem>
           <SidebarItem href="https://npmjs.com/package/react-two.js">
             <CommandLineIcon /> <SidebarLabel>Package</SidebarLabel>
