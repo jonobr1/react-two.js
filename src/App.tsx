@@ -20,6 +20,7 @@ import {
 import cn from 'clsx';
 import Playground from './Playground';
 import { useEffect, useState } from 'react';
+import { version } from '../package.json';
 
 export default function App() {
   const [domElement, setDomElement] = useState<HTMLDivElement | null>(null);
@@ -31,11 +32,17 @@ export default function App() {
         <SidebarSection>
           <SidebarHeading>
             <div className={cn('flex', 'flex-row', 'flex-nowrap')}>
-              <span className={cn('font-semibold', 'text-zinc-900')}>
+              <span
+                className={cn(
+                  'font-semibold',
+                  'text-zinc-900',
+                  'dark:text-zinc-300'
+                )}
+              >
                 React Two.js
               </span>{' '}
               <Badge className={cn('ml-auto')} color="blue">
-                v0.2.2
+                {version}
               </Badge>
             </div>
           </SidebarHeading>
