@@ -293,6 +293,7 @@ function () {
 - **[Two.js Documentation](https://two.js.org/docs/)** — Complete Two.js API reference
 - **[Two.js Examples](https://two.js.org/examples/)** — Interactive examples and demos
 - **[Two.js Repository](https://github.com/jonobr1/two.js)** — Source code and issues
+- **[Two.js Tutor on ChatGPT](https://chatgpt.com/g/g-hkcTX8uPm-two-js-tutor)** - Talk to a custom ChatGPT trained on Two.js and react-two.js
 
 ## Development
 
