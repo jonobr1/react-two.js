@@ -35,7 +35,7 @@ export default function App() {
                 React Two.js
               </span>{' '}
               <Badge className={cn('ml-auto')} color="blue">
-                v0.1.0
+                v0.2.2
               </Badge>
             </div>
           </SidebarHeading>

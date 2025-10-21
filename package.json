@@ -1,6 +1,6 @@
 {
   "name": "react-two.js",
-  "version": "v0.2.1",
+  "version": "v0.2.2",
   "type": "module",
   "description": "A React virtual DOM for Two.js — a renderer agnostic two-dimensional drawing API for the web",
   "main": "./dist/react-two-main.es.js",
