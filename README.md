@@ -10,16 +10,16 @@ npm install react-two.js react react-dom two.js
 ```
 
 ```jsx
-import { Canvas, Circle, useFrame } from 'react-two.js'
+import { Canvas, Rectangle, useFrame } from 'react-two.js'
 
-function RotatingCircle() {
+function RotatingRectangle() {
   const ref = useRef()
   useFrame((t) => ref.current.rotation = t * 0.5)
-  return <Circle ref={ref} radius={50} fill="#00AEFF" />
+  return <Rectangle ref={ref} radius={50} fill="#00AEFF" />
 }
 
-<Canvas width={800} height={600}>
-  <RotatingCircle />
+<Canvas width={800} height={600} autostart={true}>
+  <RotatingRectangle />
 </Canvas>
 ```
 
@@ -71,7 +71,7 @@ npm install react-two.js react react-dom two.js
 - Two.js v0.8.21+
 
 > [!IMPORTANT]
-> react-two.js is a React renderer, it must pair with a major version of React, just like react-dom, react-native, etc.
+> react-two.js is a React renderer, it must pair with a major version of React, like react-dom.
 
 ## First Steps
 
@@ -87,7 +87,7 @@ function App() {
     <Canvas
       width={800}
       height={600}
-      type="svg" // 'svg' | 'canvas' | 'webgl'
+      type="SVGRenderer"
       autostart={true}
     >
       {/* Your scene goes here */}
@@ -101,7 +101,7 @@ function App() {
 All Two.js primitives are available as React components:
 
 ```jsx
-<Canvas width={800} height={600}>
+<Canvas width={800} height={600} autostart={true}>
   <Circle radius={50} fill="#00AEFF" x={400} y={300} />
   <Rectangle width={100} height={60} stroke="#FF0000" linewidth={3} />
   <Polygon sides={6} radius={40} fill="#00FF00" />
@@ -114,9 +114,9 @@ The `useFrame` hook runs on every frame, perfect for animations:
 
 ```jsx
 import { useRef } from 'react'
-import { Circle, useFrame } from 'react-two.js'
+import { Rectangle, useFrame } from 'react-two.js'
 
-function AnimatedCircle() {
+function AnimatedRectangle() {
   const ref = useRef()
 
   useFrame((elapsed) => {
@@ -124,7 +124,7 @@ function AnimatedCircle() {
     ref.current.scale = 1 + Math.sin(elapsed) * 0.2
   })
 
-  return <Circle ref={ref} radius={50} fill="#00AEFF" />
+  return <Rectangle ref={ref} width={50} height={50} fill="#00AEFF" />
 }
 ```
 
@@ -136,9 +136,10 @@ Use `useTwo` to access the underlying Two.js instance:
 import { useTwo } from 'react-two.js'
 
 function Component() {
-  const { instance, width, height } = useTwo()
+  const { two, width, height } = useTwo()
 
   useEffect(() => {
+    two.play();
     console.log('Canvas size:', width, height)
     console.log('Two.js instance:', instance)
   }, [])
@@ -228,7 +229,7 @@ import { useRef } from 'react'
 import { Circle, RefCircle } from 'react-two.js'
 
 function Component() {
-  const circleRef = useRef<RefCircle>(null)
+  const circleRef = useRef<RefCircle | null>(null)
 
   useEffect(() => {
     if (circleRef.current) {
