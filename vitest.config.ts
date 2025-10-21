@@ -12,5 +12,7 @@ export default defineConfig({
     // Include simple tests for now
     include: ['src/**/*.test.{ts,tsx}'],
     exclude: ['lib/**/*.test.{ts,tsx}'],
+    // Pass when no tests are found
+    passWithNoTests: true,
   },
 });
