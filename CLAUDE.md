@@ -1,7 +1,7 @@
 # React Two.js Library - Claude Context
 
 ## Project Overview
-This is **@react/two.js** - a React wrapper library for Two.js, providing declarative React components for the Two.js 2D drawing API. It supports SVG, Canvas, and WebGL rendering with a complete React virtual DOM implementation.
+This is **react-two.js** - a React wrapper library for Two.js, providing declarative React components for the Two.js 2D drawing API. It supports SVG, Canvas, and WebGL rendering with a complete React virtual DOM implementation.
 
 ## Tech Stack
 - **TypeScript** - Primary language with strict typing

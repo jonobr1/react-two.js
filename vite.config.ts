@@ -11,7 +11,7 @@ export default defineConfig({
   build: {
     copyPublicDir: false,
     lib: {
-      name: '@react/two.js',
+      name: 'react-two.js',
       entry: resolve(__dirname, 'lib/main.ts'),
       fileName: (format, entryName) => `react-two-${entryName}.${format}.js`,
       formats: ['es'],
