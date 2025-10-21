@@ -293,7 +293,7 @@ function () {
 - **[Two.js Examples](https://two.js.org/examples/)** — Interactive examples and demos
 - **[Two.js Repository](https://github.com/jonobr1/two.js)** — Source code and issues
 
-## Development & Deployment
+## Development
 
 ### Building the Library
 
@@ -307,37 +307,6 @@ npm run build:docs
 # Preview the documentation locally
 npm run preview:docs
 ```
-
-### Publishing to NPM
-
-1. **Increment version** (choose one):
-   ```bash
-   npm run version:patch  # Bug fixes (0.1.0 → 0.1.1)
-   npm run version:minor  # New features (0.1.0 → 0.2.0)
-   npm run version:major  # Breaking changes (0.1.0 → 1.0.0)
-   ```
-
-2. **Create a GitHub release** with the new version tag. This automatically triggers npm publishing via GitHub Actions.
-
-   Or **publish manually**:
-   ```bash
-   npm run publish:npm
-   ```
-
-### GitHub Pages Deployment
-
-The documentation site automatically deploys to GitHub Pages on every push to `main`. The site will be available at:
-- **Live URL**: https://jonobr1.github.io/react-two.js
-
-#### Manual Setup (if needed):
-
-1. **Enable GitHub Pages** in repository settings:
-   - Go to Settings → Pages
-   - Source: "GitHub Actions"
-
-2. **Set up NPM_TOKEN secret** (for npm publishing):
-   - Go to Settings → Secrets and variables → Actions
-   - Add `NPM_TOKEN` with your npm access token
 
 ### Local Development
 
