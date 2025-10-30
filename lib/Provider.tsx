@@ -10,7 +10,7 @@ type ComponentProps = React.PropsWithChildren<TwoConstructorPropsKeys>;
  * Validates that children are compatible with react-two.js Canvas.
  * Warns in development mode if DOM elements or incompatible components are found.
  */
-function validateChildren(children: React.ReactNode, depth = 0): void {
+function validateChildren(children: React.ReactNode): void {
   if (process.env.NODE_ENV === 'production') {
     return;
   }
@@ -35,13 +35,13 @@ function validateChildren(children: React.ReactNode, depth = 0): void {
 
     // Allow React.Fragment and other built-in React elements
     if (childType === React.Fragment) {
-      validateChildren(child.props.children, depth + 1);
+      validateChildren(child.props.children);
       return;
     }
 
     // Check for function/class components - validate their children recursively
     if (typeof childType === 'function' && child.props.children) {
-      validateChildren(child.props.children, depth + 1);
+      validateChildren(child.props.children);
     }
   });
 }
