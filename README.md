@@ -96,6 +96,25 @@ function App() {
 }
 ```
 
+> [!IMPORTANT]
+> **Canvas Children Restrictions:** Similar to [react-three-fiber](https://github.com/pmndrs/react-three-fiber), the `<Canvas>` component only accepts react-two.js components as children. DOM elements like `<div>` or `<span>` cannot be used inside Canvas. Place UI elements outside the Canvas:
+>
+> ```jsx
+> // ✅ Correct
+> <div>
+>   <Canvas>
+>     <Circle radius={50} />
+>   </Canvas>
+>   <div className="controls">UI here</div>
+> </div>
+>
+> // ❌ Incorrect - will trigger warnings
+> <Canvas>
+>   <div>This will warn</div>
+>   <Circle radius={50} />
+> </Canvas>
+> ```
+
 ### Adding Shapes
 
 All Two.js primitives are available as React components:

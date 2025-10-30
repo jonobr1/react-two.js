@@ -29,6 +29,10 @@ npm run test:coverage # Generate coverage report
 
 ### Core Components
 - **Canvas** - Main container component (`<Canvas>`)
+  - **IMPORTANT**: Canvas only accepts react-two.js components as children
+  - DOM elements (`<div>`, `<span>`, etc.) cannot be used inside Canvas
+  - This follows React Three Fiber's strict boundary pattern
+  - Warnings are issued in development mode for invalid children
 - **Context System** - `useTwo()` and `useFrame()` hooks
 - **Group** - Container for organizing components
 - **15+ Shape Components** - All Two.js primitives wrapped
@@ -170,6 +174,26 @@ export const Shape = forwardRef<RefShape, ShapeProps>((props, ref) => {
 - Outputs to `dist/` directory
 
 ## Common Issues & Solutions
+
+### Canvas Children Restrictions
+- **Problem**: DOM elements inside `<Canvas>` cause warnings
+- **Solution**: Only use react-two.js components inside Canvas
+- **Pattern**: Place DOM elements outside of Canvas
+```tsx
+// ✅ Correct
+<div>
+  <Canvas>
+    <Circle radius={50} />
+  </Canvas>
+  <div>UI controls here</div>
+</div>
+
+// ❌ Incorrect - triggers warning
+<Canvas>
+  <div>This will warn</div>
+  <Circle radius={50} />
+</Canvas>
+```
 
 ### Peer Dependencies
 - Ensure React 18.3+ is installed

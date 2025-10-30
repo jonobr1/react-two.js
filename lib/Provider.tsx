@@ -6,6 +6,46 @@ type TwoConstructorProps = ConstructorParameters<typeof Two>[0];
 type TwoConstructorPropsKeys = NonNullable<TwoConstructorProps>;
 type ComponentProps = React.PropsWithChildren<TwoConstructorPropsKeys>;
 
+/**
+ * Validates that children are compatible with react-two.js Canvas.
+ * Warns in development mode if DOM elements or incompatible components are found.
+ */
+function validateChildren(children: React.ReactNode, depth = 0): void {
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) {
+      return;
+    }
+
+    const childType = child.type;
+
+    // Check for DOM elements (string types like 'div', 'span', etc.)
+    if (typeof childType === 'string') {
+      console.warn(
+        `[react-two.js] <${childType}> is not compatible with Canvas.\n` +
+        `Only react-two.js components (Circle, Rectangle, Group, etc.) can be used inside <Canvas>.\n` +
+        `Place DOM elements outside of the Canvas component.\n` +
+        `See: https://github.com/jonobr1/react-two.js#usage`
+      );
+      return;
+    }
+
+    // Allow React.Fragment and other built-in React elements
+    if (childType === React.Fragment) {
+      validateChildren(child.props.children, depth + 1);
+      return;
+    }
+
+    // Check for function/class components - validate their children recursively
+    if (typeof childType === 'function' && child.props.children) {
+      validateChildren(child.props.children, depth + 1);
+    }
+  });
+}
+
 export const Provider: React.FC<ComponentProps> = (props) => {
   const { two, parent } = useTwo();
   const container = useRef<HTMLDivElement | null>(null);
@@ -66,6 +106,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     }
 
     return unmount;
+  }
+
+  // Validate children in development mode
+  if (process.env.NODE_ENV !== 'production') {
+    validateChildren(props.children);
   }
 
   return (
