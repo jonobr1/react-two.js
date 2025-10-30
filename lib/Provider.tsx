@@ -109,9 +109,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
   }
 
   // Validate children in development mode
-  if (process.env.NODE_ENV !== 'production') {
-    validateChildren(props.children);
-  }
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') {
+      validateChildren(props.children);
+    }
+  }, [props.children]);
 
   return (
     <Context.Provider value={state}>
