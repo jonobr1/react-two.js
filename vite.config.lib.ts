@@ -11,16 +11,20 @@ export default defineConfig({
     copyPublicDir: false,
     lib: {
       name: 'react-two.js',
-      entry: resolve(__dirname, 'lib/main.ts'),
+      entry: {
+        main: resolve(__dirname, 'lib/main.ts'),
+        native: resolve(__dirname, 'lib/native.ts'),
+      },
       fileName: (format, entryName) => `react-two-${entryName}.${format}.js`,
       formats: ['es'],
     },
     rollupOptions: {
-      external: ['react', 'react/jsx-runtime', 'two.js'],
+      external: ['react', 'react/jsx-runtime', 'two.js', 'react-native'],
       output: {
         globals: {
           react: 'React',
           'two.js': 'Two',
+          'react-native': 'ReactNative',
         },
       },
     },
