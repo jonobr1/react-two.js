@@ -2,6 +2,7 @@ import React, {
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
+  useMemo,
   useState,
 } from 'react';
 import Two from 'two.js';
@@ -10,6 +11,8 @@ import { useTwo } from './Context';
 import type { Image as Instance } from 'two.js/src/effects/image';
 import { RectangleProps } from './Rectangle';
 import type { Texture } from 'two.js/src/effects/texture';
+import { type EventHandlers } from './Properties';
+import { EVENT_HANDLER_NAMES } from './Events';
 
 type ImageProps = RectangleProps | 'mode' | 'texture';
 
@@ -21,15 +24,33 @@ type ComponentProps = React.PropsWithChildren<
     y?: number;
     mode?: string;
     texture?: Texture;
-  }
+  } & Partial<EventHandlers>
 >;
 
 export type RefImage = Instance;
 
 export const Image = React.forwardRef<Instance, ComponentProps>(
   ({ mode, texture, x, y, ...props }, forwardedRef) => {
-    const { two, parent } = useTwo();
+    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
     const [ref, set] = useState<Instance | null>(null);
+
+    // Extract event handlers from props
+    const { eventHandlers, shapeProps } = useMemo(() => {
+      const eventHandlers: Partial<EventHandlers> = {};
+      const shapeProps: Record<string, unknown> = {};
+
+      for (const key in props) {
+        if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
+          eventHandlers[key as keyof EventHandlers] = props[
+            key as keyof EventHandlers
+          ] as any;
+        } else {
+          shapeProps[key] = (props as any)[key];
+        }
+      }
+
+      return { eventHandlers, shapeProps };
+    }, [props]);
 
     useLayoutEffect(() => {
       const image = new Two.Image();
@@ -60,15 +81,26 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
         if (typeof x === 'number') image.translation.x = x;
         if (typeof y === 'number') image.translation.y = y;
 
-        // Update other properties
-        for (const key in props) {
+        // Update other properties (excluding event handlers)
+        for (const key in shapeProps) {
           if (key in image) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (image as any)[key] = (props as any)[key];
+            (image as any)[key] = (shapeProps as any)[key];
           }
         }
       }
-    }, [ref, props, mode, texture, x, y]);
+    }, [ref, shapeProps, mode, texture, x, y]);
+
+    // Register event handlers
+    useEffect(() => {
+      if (ref && Object.keys(eventHandlers).length > 0) {
+        registerEventShape(ref, eventHandlers, parent ?? undefined);
+
+        return () => {
+          unregisterEventShape(ref);
+        };
+      }
+    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
 
