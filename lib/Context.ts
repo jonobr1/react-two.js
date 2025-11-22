@@ -1,13 +1,30 @@
 import { createContext, useContext, useEffect, useRef } from 'react';
 import Two from 'two.js';
 import type { Group } from 'two.js/src/group';
+import type { Shape } from 'two.js/src/shape';
+import type { EventHandlers } from './Events';
 
-export const Context = createContext<{
+export interface TwoContext {
   two: Two | null;
   parent: Group | null;
   width: number;
   height: number;
-}>({ two: null, parent: null, width: 0, height: 0 });
+  registerEventShape: (
+    shape: Shape | Group,
+    handlers: Partial<EventHandlers>,
+    parent?: Group
+  ) => void;
+  unregisterEventShape: (shape: Shape | Group) => void;
+}
+
+export const Context = createContext<TwoContext>({
+  two: null,
+  parent: null,
+  width: 0,
+  height: 0,
+  registerEventShape: () => {},
+  unregisterEventShape: () => {},
+});
 
 export const useTwo = () => useContext(Context);
 export const useFrame = (

@@ -64,6 +64,11 @@ function Scene() {
   // Texture ref
   const [texture, setTexture] = useState<string | RefTexture>('#E8E8E8');
 
+  // Interactive state
+  const [circleHovered, setCircleHovered] = useState(false);
+  const [rectangleClicked, setRectangleClicked] = useState(false);
+  const [starHovered, setStarHovered] = useState(false);
+
   useFrame((elapsed) => {
     // Animate all the components
     if (path.current) {
@@ -143,26 +148,29 @@ function Scene() {
         />
       </Group>
 
-      {/* Circle */}
+      {/* Circle - Interactive with hover */}
       <Group x={cellWidth * 1.5} y={cellHeight * 0.5}>
         <Circle
           ref={circle}
           radius={30}
-          fill="#F1C40F"
-          stroke="#E67E22"
-          linewidth={3}
+          fill={circleHovered ? '#FFD700' : '#F1C40F'}
+          stroke={circleHovered ? '#FF8C00' : '#E67E22'}
+          linewidth={circleHovered ? 5 : 3}
+          onPointerOver={() => setCircleHovered(true)}
+          onPointerOut={() => setCircleHovered(false)}
         />
       </Group>
 
-      {/* Rectangle */}
+      {/* Rectangle - Interactive with click */}
       <Group x={cellWidth * 2.5} y={cellHeight * 0.5}>
         <Rectangle
           ref={rectangle}
           width={60}
           height={40}
-          fill="#2ECC71"
-          stroke="#27AE60"
-          linewidth={2}
+          fill={rectangleClicked ? '#E74C3C' : '#2ECC71'}
+          stroke={rectangleClicked ? '#C0392B' : '#27AE60'}
+          linewidth={rectangleClicked ? 4 : 2}
+          onClick={() => setRectangleClicked(!rectangleClicked)}
         />
       </Group>
 
@@ -227,16 +235,18 @@ function Scene() {
         />
       </Group>
 
-      {/* Star */}
+      {/* Star - Interactive with hover and pointer events */}
       <Group x={cellWidth * 1.5} y={cellHeight * 2.5}>
         <Star
           ref={star}
           innerRadius={20}
-          outerRadius={40}
+          outerRadius={starHovered ? 45 : 40}
           sides={5}
-          fill="#F39C12"
-          stroke="#D35400"
-          linewidth={2}
+          fill={starHovered ? '#F1C40F' : '#F39C12'}
+          stroke={starHovered ? '#E67E22' : '#D35400'}
+          linewidth={starHovered ? 3 : 2}
+          onPointerEnter={() => setStarHovered(true)}
+          onPointerLeave={() => setStarHovered(false)}
         />
       </Group>
 
