@@ -7,6 +7,7 @@ import type { EventHandlers } from './Events';
 import {
   createTwoEvent,
   getCanvasCoordinates,
+  getWorldCoordinates,
   getParentHierarchy,
   getShapesAtPoint,
   type EventShape,
@@ -215,8 +216,8 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
     // Click handler
     const handleClick = (e: MouseEvent) => {
-      const point = getCanvasCoordinates(e, canvas, state.two!);
-      const shapes = getShapesAtPoint(eventShapes.current, point.x, point.y);
+      const worldPoint = getWorldCoordinates(e, canvas);
+      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onClick', e);
@@ -225,8 +226,8 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
     // Context menu handler
     const handleContextMenu = (e: MouseEvent) => {
-      const point = getCanvasCoordinates(e, canvas, state.two!);
-      const shapes = getShapesAtPoint(eventShapes.current, point.x, point.y);
+      const worldPoint = getWorldCoordinates(e, canvas);
+      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onContextMenu', e);
@@ -235,8 +236,8 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
     // Double click handler
     const handleDoubleClick = (e: MouseEvent) => {
-      const point = getCanvasCoordinates(e, canvas, state.two!);
-      const shapes = getShapesAtPoint(eventShapes.current, point.x, point.y);
+      const worldPoint = getWorldCoordinates(e, canvas);
+      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onDoubleClick', e);
@@ -245,8 +246,8 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
     // Wheel handler
     const handleWheel = (e: WheelEvent) => {
-      const point = getCanvasCoordinates(e, canvas, state.two!);
-      const shapes = getShapesAtPoint(eventShapes.current, point.x, point.y);
+      const worldPoint = getWorldCoordinates(e, canvas);
+      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onWheel', e);
@@ -255,8 +256,8 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
     // Pointer down handler
     const handlePointerDown = (e: PointerEvent) => {
-      const point = getCanvasCoordinates(e, canvas, state.two!);
-      const shapes = getShapesAtPoint(eventShapes.current, point.x, point.y);
+      const worldPoint = getWorldCoordinates(e, canvas);
+      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onPointerDown', e);
@@ -290,8 +291,8 @@ export const Provider: React.FC<ComponentProps> = (props) => {
         return;
       }
 
-      const point = getCanvasCoordinates(e, canvas, state.two!);
-      const shapes = getShapesAtPoint(eventShapes.current, point.x, point.y);
+      const worldPoint = getWorldCoordinates(e, canvas);
+      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onPointerUp', e);
@@ -302,8 +303,8 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
     // Pointer move handler
     const handlePointerMove = (e: PointerEvent) => {
-      const point = getCanvasCoordinates(e, canvas, state.two!);
-      const shapes = getShapesAtPoint(eventShapes.current, point.x, point.y);
+      const worldPoint = getWorldCoordinates(e, canvas);
+      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
       const currentHovered = new Set(shapes);
 
       // Dispatch pointer move to hovered shapes
@@ -335,8 +336,8 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
     // Pointer cancel handler
     const handlePointerCancel = (e: PointerEvent) => {
-      const point = getCanvasCoordinates(e, canvas, state.two!);
-      const shapes = getShapesAtPoint(eventShapes.current, point.x, point.y);
+      const worldPoint = getWorldCoordinates(e, canvas);
+      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onPointerCancel', e);

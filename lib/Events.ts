@@ -95,6 +95,23 @@ export function getCanvasCoordinates(
 }
 
 /**
+ * Convert DOM event coordinates to world-space coordinates for hit testing
+ * World-space uses top-left origin (same as DOM but relative to canvas)
+ */
+export function getWorldCoordinates(
+  nativeEvent: PointerEvent | MouseEvent,
+  canvas: HTMLElement
+): { x: number; y: number } {
+  const rect = canvas.getBoundingClientRect();
+
+  // Convert from DOM space to canvas-relative space (both top-left origin)
+  const x = nativeEvent.clientX - rect.left;
+  const y = nativeEvent.clientY - rect.top;
+
+  return { x, y };
+}
+
+/**
  * Create a TwoEvent object from a DOM event
  */
 export function createTwoEvent<T extends Shape | Group>(
@@ -133,7 +150,7 @@ export function hitTest(shape: Shape | Group, x: number, y: number): boolean {
     return shape.contains(x, y);
   }
 
-  // Fallback for shapes without hit testing (shouldn't happen with dev branch)
+  // Fallback for shapes without hit testing
   return false;
 }
 
