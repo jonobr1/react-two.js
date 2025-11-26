@@ -26,27 +26,63 @@ type ComponentProps = React.PropsWithChildren<
 export type RefCircle = Instance;
 
 export const Circle = React.forwardRef<Instance, ComponentProps>(
-  ({ x, y, resolution, ...props }, forwardedRef) => {
+  (
+    {
+      x,
+      y,
+      resolution,
+      // Event handlers
+      onClick,
+      onContextMenu,
+      onDoubleClick,
+      onWheel,
+      onPointerDown,
+      onPointerUp,
+      onPointerOver,
+      onPointerOut,
+      onPointerEnter,
+      onPointerLeave,
+      onPointerMove,
+      onPointerCancel,
+      // All other props are shape props
+      ...shapeProps
+    },
+    forwardedRef
+  ) => {
     const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
     const [ref, set] = useState<Instance | null>(null);
 
-    // Extract event handlers from props
-    const { eventHandlers, shapeProps } = useMemo(() => {
-      const eventHandlers: Partial<EventHandlers> = {};
-      const shapeProps: Record<string, unknown> = {};
-
-      for (const key in props) {
-        if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
-          eventHandlers[key as keyof EventHandlers] = props[
-            key as keyof EventHandlers
-          ] as any;
-        } else {
-          shapeProps[key] = (props as any)[key];
-        }
-      }
-
-      return { eventHandlers, shapeProps };
-    }, [props]);
+    // Build event handlers object with explicit dependencies
+    const eventHandlers = useMemo(
+      () => ({
+        ...(onClick && { onClick }),
+        ...(onContextMenu && { onContextMenu }),
+        ...(onDoubleClick && { onDoubleClick }),
+        ...(onWheel && { onWheel }),
+        ...(onPointerDown && { onPointerDown }),
+        ...(onPointerUp && { onPointerUp }),
+        ...(onPointerOver && { onPointerOver }),
+        ...(onPointerOut && { onPointerOut }),
+        ...(onPointerEnter && { onPointerEnter }),
+        ...(onPointerLeave && { onPointerLeave }),
+        ...(onPointerMove && { onPointerMove }),
+        ...(onPointerCancel && { onPointerCancel }),
+      }),
+      [
+        onClick,
+        onContextMenu,
+        onDoubleClick,
+        onWheel,
+        onPointerDown,
+        onPointerUp,
+        onPointerOver,
+        onPointerOut,
+        onPointerEnter,
+        onPointerLeave,
+        onPointerMove,
+        onPointerCancel,
+      ]
+    );
 
     useEffect(() => {
       const circle = new Two.Circle(0, 0, 0, resolution);

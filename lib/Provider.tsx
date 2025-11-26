@@ -366,7 +366,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointercancel', handlePointerCancel);
     };
-  }, [state.two, props, registerEventShape, unregisterEventShape]);
+  }, [state.two, props.onPointerMissed, registerEventShape, unregisterEventShape]);
 
   return (
     <Context.Provider value={state}>
