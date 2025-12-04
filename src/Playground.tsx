@@ -308,7 +308,9 @@ function Scene() {
       {/* Linear Gradient Example */}
       <Group x={cellWidth * 1.5} y={cellHeight * 3.5}>
         <LinearGradient
-          ref={(ref) => ref && setLinearGradient(ref)}
+          ref={(instance) => {
+            if (instance) setLinearGradient(instance);
+          }}
           x1={0}
           y1={0}
           x2={1}
@@ -347,7 +349,9 @@ function Scene() {
       {/* Texture Example */}
       <Group x={cellWidth * 3.5} y={cellHeight * 3.5}>
         <Texture
-          ref={(ref) => ref && setTexture(ref)}
+          ref={(ref) => {
+            if (ref) setTexture(ref);
+          }}
           src="https://placehold.co/60x60/9B59B6/FFFFFF?text=TEX"
         />
         <Rectangle
