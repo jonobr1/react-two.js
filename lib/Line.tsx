@@ -83,6 +83,12 @@ export const Line = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
+      return () => {
+        line.dispose();
+      };
+    }, [line]);
+
+    useEffect(() => {
       if (parent) {
         parent.add(line);
 

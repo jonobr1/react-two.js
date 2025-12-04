@@ -63,6 +63,12 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
     }, [props]);
 
     useEffect(() => {
+      return () => {
+        group.dispose();
+      };
+    }, [group]);
+
+    useEffect(() => {
       if (parent) {
         parent.add(group);
 
@@ -98,7 +104,13 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
           unregisterEventShape(group);
         };
       }
-    }, [group, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      group,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => group, [group]);
 

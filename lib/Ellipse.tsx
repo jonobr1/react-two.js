@@ -25,7 +25,10 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
-    const ellipse = useMemo(() => new Two.Ellipse(0, 0, 0, 0, resolution), [resolution]);
+    const ellipse = useMemo(
+      () => new Two.Ellipse(0, 0, 0, 0, resolution),
+      [resolution]
+    );
 
     // Extract event handlers from props
     const { eventHandlers, shapeProps } = useMemo(() => {
@@ -46,6 +49,12 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
 
       return { eventHandlers, shapeProps };
     }, [props]);
+
+    useEffect(() => {
+      return () => {
+        ellipse.dispose();
+      };
+    }, [ellipse]);
 
     useEffect(() => {
       if (parent) {
@@ -80,7 +89,13 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
           unregisterEventShape(ellipse);
         };
       }
-    }, [ellipse, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      ellipse,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => ellipse, [ellipse]);
 

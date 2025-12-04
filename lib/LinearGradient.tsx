@@ -24,6 +24,12 @@ export const LinearGradient = React.forwardRef<Instance, ComponentProps>(
     const ref = useMemo(() => new Two.LinearGradient(), []);
 
     useEffect(() => {
+      return () => {
+        ref.dispose();
+      };
+    }, [ref]);
+
+    useEffect(() => {
       if (ref) {
         const gradient = ref;
         if (typeof x1 === 'number') {

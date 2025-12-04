@@ -58,6 +58,12 @@ export const Points = React.forwardRef<Instance, ComponentProps>(
     }, [props]);
 
     useEffect(() => {
+      return () => {
+        points.dispose();
+      };
+    }, [points]);
+
+    useEffect(() => {
       if (parent) {
         parent.add(points);
 
@@ -90,7 +96,13 @@ export const Points = React.forwardRef<Instance, ComponentProps>(
           unregisterEventShape(points);
         };
       }
-    }, [points, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      points,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => points, [points]);
 

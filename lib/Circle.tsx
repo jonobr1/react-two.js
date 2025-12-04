@@ -46,7 +46,10 @@ export const Circle = React.forwardRef<Instance, ComponentProps>(
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
-    const circle = useMemo(() => new Two.Circle(0, 0, 0, resolution), [resolution]);
+    const circle = useMemo(
+      () => new Two.Circle(0, 0, 0, resolution),
+      [resolution]
+    );
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -81,6 +84,12 @@ export const Circle = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
+      return () => {
+        circle.dispose();
+      };
+    }, [circle]);
+
+    useEffect(() => {
       // Update position
       if (typeof x === 'number') circle.translation.x = x;
       if (typeof y === 'number') circle.translation.y = y;
@@ -112,7 +121,13 @@ export const Circle = React.forwardRef<Instance, ComponentProps>(
           unregisterEventShape(circle);
         };
       }
-    }, [circle, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      circle,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => circle, [circle]);
 

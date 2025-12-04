@@ -51,7 +51,10 @@ export const ArcSegment = React.forwardRef<Instance, ComponentProps>(
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
-    const arcSegment = useMemo(() => new Two.ArcSegment(0, 0, 0, 0, 0, 0, resolution), [resolution]);
+    const arcSegment = useMemo(
+      () => new Two.ArcSegment(0, 0, 0, 0, 0, 0, resolution),
+      [resolution]
+    );
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -86,6 +89,12 @@ export const ArcSegment = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
+      return () => {
+        arcSegment.dispose();
+      };
+    }, [arcSegment]);
+
+    useEffect(() => {
       if (parent) {
         parent.add(arcSegment);
         return () => {
@@ -117,7 +126,13 @@ export const ArcSegment = React.forwardRef<Instance, ComponentProps>(
           unregisterEventShape(arcSegment);
         };
       }
-    }, [arcSegment, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      arcSegment,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => arcSegment, [arcSegment]);
 

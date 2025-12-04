@@ -95,6 +95,12 @@ export const Text = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
+      return () => {
+        text.dispose();
+      };
+    }, [text]);
+
+    useEffect(() => {
       if (parent) {
         parent.add(text);
 

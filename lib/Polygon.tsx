@@ -48,6 +48,12 @@ export const Polygon = React.forwardRef<Instance, ComponentProps>(
     }, [props]);
 
     useEffect(() => {
+      return () => {
+        polygon.dispose();
+      };
+    }, [polygon]);
+
+    useEffect(() => {
       if (parent) {
         parent.add(polygon);
 
@@ -80,7 +86,13 @@ export const Polygon = React.forwardRef<Instance, ComponentProps>(
           unregisterEventShape(polygon);
         };
       }
-    }, [polygon, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      polygon,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => polygon, [polygon]);
 

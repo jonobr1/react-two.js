@@ -79,6 +79,12 @@ export const Star = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
+      return () => {
+        star.dispose();
+      };
+    }, [star]);
+
+    useEffect(() => {
       if (parent) {
         parent.add(star);
 

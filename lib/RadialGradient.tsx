@@ -24,6 +24,12 @@ export const RadialGradient = React.forwardRef<Instance | null, ComponentProps>(
     const ref = useMemo(() => new Two.RadialGradient(), []);
 
     useEffect(() => {
+      return () => {
+        ref.dispose();
+      };
+    }, [ref]);
+
+    useEffect(() => {
       if (ref) {
         const gradient = ref;
         if (typeof x === 'number') ref.center.x = x;

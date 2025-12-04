@@ -79,6 +79,12 @@ export const Rectangle = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
+      return () => {
+        rectangle.dispose();
+      };
+    }, [rectangle]);
+
+    useEffect(() => {
       if (parent) {
         parent.add(rectangle);
 
