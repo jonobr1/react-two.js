@@ -1,7 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Two from 'two.js';
+import type { Shape } from 'two.js/src/shape';
+import type { Group } from 'two.js/src/group';
 import { requireNativeComponent, ViewProps } from 'react-native';
 import { Context, useTwo } from '../Context';
+import type { EventHandlers } from '../Events';
 
 // Define the native component interface
 interface NativeTwoViewProps extends ViewProps {
@@ -28,17 +31,46 @@ export const Provider: React.FC<ComponentProps> = (props) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nativeRef = useRef<any>(null);
   
+  // Store registered shapes for event handling (future implementation)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const eventShapes = useRef<Map<Shape | Group, { shape: Shape | Group; handlers: Partial<EventHandlers>; parent?: Group }>>(new Map());
+
   const [state, set] = useState<{
     two: typeof two;
     parent: typeof parent;
     width: number;
     height: number;
+    registerEventShape: (
+      shape: Shape | Group,
+      handlers: Partial<EventHandlers>,
+      parent?: Group
+    ) => void;
+    unregisterEventShape: (shape: Shape | Group) => void;
   }>({
     two,
     parent,
     width: 0,
     height: 0,
+    registerEventShape: () => {},
+    unregisterEventShape: () => {},
   });
+
+  // Register a shape with event handlers
+  const registerEventShape = useCallback(
+    (
+      shape: Shape | Group,
+      handlers: Partial<EventHandlers>,
+      parentGroup?: Group
+    ) => {
+      eventShapes.current.set(shape, { shape, handlers, parent: parentGroup });
+    },
+    []
+  );
+
+  // Unregister a shape
+  const unregisterEventShape = useCallback((shape: Shape | Group) => {
+    eventShapes.current.delete(shape);
+  }, []);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(mount, [props]);
@@ -52,13 +84,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       delete args.children;
       delete args.style;
 
-      // Initialize Two.js in headless mode or with a dummy element
-      // We primarily use it for the scene graph and math
+      // Initialize Two.js in headless mode
       const two = new Two({
         ...args,
-        type: Two.Types.canvas, // Default to canvas type for internal logic
-        // We might need to patch the renderer to not try to append to DOM
-        domElement: { // Mock DOM element to satisfy Two.js
+        type: Two.Types.canvas,
+        domElement: {
           style: {},
           addEventListener: () => {},
           removeEventListener: () => {},
@@ -68,7 +98,16 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       let width = two.width;
       let height = two.height;
 
-      set({ two, parent: two.scene, width, height });
+      set((prev) => ({
+        ...prev,
+        two,
+        parent: two.scene,
+        width,
+        height,
+        registerEventShape,
+        unregisterEventShape,
+      }));
+      
       two.bind('update', update);
 
       unmount = () => {
@@ -93,12 +132,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
         }
 
         // SERIALIZATION BRIDGE
-        // This is where we send the scene graph to the native side
         if (nativeRef.current) {
-          // TODO: Implement efficient serialization
-          // For now, we send a basic signal or simplified graph
-          // const commands = serialize(two.scene);
-          // nativeRef.current.setNativeProps({ drawCommands: commands });
+          // Simple serialization of the scene graph
+          // We only serialize what's necessary for the native renderer
+          const commands = serializeScene(two.scene);
+          nativeRef.current.setNativeProps({ drawCommands: commands });
         }
       }
     }
@@ -114,3 +152,52 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     </Context.Provider>
   );
 };
+
+// Helper to serialize the scene graph
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function serializeScene(scene: Group): any {
+  // This is a simplified serializer. 
+  // In a real app, you'd want to optimize this to only send diffs or use a binary format.
+  return {
+    id: scene.id,
+    children: scene.children.map((childNode) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const child = childNode as any;
+      const base = {
+        id: child.id,
+        type: child.constructor.name,
+        translation: { x: child.translation.x, y: child.translation.y },
+        rotation: child.rotation,
+        scale: typeof child.scale === 'number' ? { x: child.scale, y: child.scale } : { x: child.scale.x, y: child.scale.y },
+        opacity: child.opacity,
+        visible: child.visible,
+      };
+
+      if (child instanceof Two.Group) {
+        return {
+          ...base,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          children: (child as any).children.map((c: any) => serializeScene(c)), // Recursive for groups
+        };
+      } else {
+        // Shape specific properties
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const shape = child as any;
+        return {
+          ...base,
+          fill: shape.fill,
+          stroke: shape.stroke,
+          linewidth: shape.linewidth,
+          // Add other shape-specific props here (radius, width, height, vertices, etc.)
+          // For the demo, we assume basic shapes
+          ...(shape.radius && { radius: shape.radius }),
+          ...(shape.width && { width: shape.width }),
+          ...(shape.height && { height: shape.height }),
+          ...(shape.vertices && { 
+            vertices: shape.vertices.map((v: any) => ({ x: v.x, y: v.y, command: v.command })) 
+          }),
+        };
+      }
+    }),
+  };
+}

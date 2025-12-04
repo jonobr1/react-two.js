@@ -7,9 +7,9 @@ class TwoMetalView: MTKView {
 
   @objc var drawCommands: NSDictionary = [:] {
     didSet {
-      // Trigger a redraw when new commands arrive
-      // In a real implementation, we would decode the commands here
-      // and pass them to the renderer.
+      if let commands = drawCommands as? [String: Any] {
+        renderer?.updateDrawCommands(commands)
+      }
       self.setNeedsDisplay()
     }
   }
