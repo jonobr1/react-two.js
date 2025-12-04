@@ -50,13 +50,17 @@ function validateChildren(children: React.ReactNode): void {
 
     // Allow React.Fragment and other built-in React elements
     if (childType === React.Fragment) {
-      validateChildren(child.props.children);
+      const props = child.props as { children?: React.ReactNode };
+      validateChildren(props.children);
       return;
     }
 
     // Check for function/class components - validate their children recursively
-    if (typeof childType === 'function' && child.props.children) {
-      validateChildren(child.props.children);
+    if (typeof childType === 'function') {
+      const props = child.props as { children?: React.ReactNode };
+      if (props.children) {
+        validateChildren(props.children);
+      }
     }
   });
 }
@@ -73,6 +77,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     parent: typeof parent;
     width: number;
     height: number;
+    domElement: HTMLElement | null;
     registerEventShape: (
       shape: Shape | Group,
       handlers: Partial<EventHandlers>,
@@ -84,6 +89,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     parent,
     width: 0,
     height: 0,
+    domElement: null,
     registerEventShape: () => {},
     unregisterEventShape: () => {},
   });
@@ -131,6 +137,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
         parent: two.scene,
         width,
         height,
+        domElement: two.renderer.domElement,
         registerEventShape,
         unregisterEventShape,
       }));

@@ -53,6 +53,7 @@ export const SVG = React.forwardRef<RefSVG, SVGProps>(
       parent,
       width,
       height,
+      domElement,
       registerEventShape,
       unregisterEventShape,
     } = useTwo();
@@ -203,6 +204,7 @@ export const SVG = React.forwardRef<RefSVG, SVGProps>(
           parent: ref,
           width,
           height,
+          domElement,
           registerEventShape,
           unregisterEventShape,
         }}

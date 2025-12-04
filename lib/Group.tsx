@@ -35,6 +35,7 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
       parent,
       width,
       height,
+      domElement,
       registerEventShape,
       unregisterEventShape,
     } = useTwo();
@@ -134,6 +135,7 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
           parent: group,
           width,
           height,
+          domElement,
           registerEventShape,
           unregisterEventShape,
         }}

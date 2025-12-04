@@ -21,6 +21,7 @@ import cn from 'clsx';
 import Playground from './Playground';
 import { useEffect, useState } from 'react';
 import { version } from '../package.json';
+import ZUIExample from './ZUIExample';
 
 export default function App() {
   const [domElement, setDomElement] = useState<HTMLDivElement | null>(null);
@@ -101,7 +102,8 @@ export default function App() {
 
   return (
     <SidebarLayout ref={setDomElement} navbar={null} sidebar={sidebar}>
-      <Playground width={width} height={height} />
+      {/* <Playground width={width} height={height} /> */}
+      <ZUIExample width={width} height={height} />
     </SidebarLayout>
   );
 }

@@ -9,6 +9,7 @@ export interface TwoContext {
   parent: Group | null;
   width: number;
   height: number;
+  domElement: HTMLElement | null;
   registerEventShape: (
     shape: Shape | Group,
     handlers: Partial<EventHandlers>,
@@ -22,6 +23,7 @@ export const Context = createContext<TwoContext>({
   parent: null,
   width: 0,
   height: 0,
+  domElement: null,
   registerEventShape: () => {},
   unregisterEventShape: () => {},
 });

@@ -15,5 +15,5 @@
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true
   },
-  "include": ["lib"]
+  "include": ["lib", "two-zui.d.ts"]
 }
