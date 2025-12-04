@@ -1,16 +1,10 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Star as Instance } from 'two.js/src/shapes/star';
 import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
 
 type StarProps = PathProps | 'innerRadius' | 'outerRadius' | 'sides';
 type ComponentProps = React.PropsWithChildren<
@@ -47,8 +41,10 @@ export const Star = React.forwardRef<Instance, ComponentProps>(
     },
     forwardedRef
   ) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+
+    // Create the instance synchronously so it's available for refs immediately
+    const star = useMemo(() => new Two.Star(), []);
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -83,53 +79,41 @@ export const Star = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
-      const star = new Two.Star();
-      set(star);
-
-      return () => {
-        set(null);
-      };
-    }, [two]);
-
-    useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      if (parent) {
+        parent.add(star);
 
         return () => {
-          parent.remove(ref);
+          parent.remove(star);
         };
       }
-    }, [parent, ref]);
+    }, [parent, star]);
 
     useEffect(() => {
-      if (ref) {
-        const star = ref;
-        // Update position
-        if (typeof x === 'number') star.translation.x = x;
-        if (typeof y === 'number') star.translation.y = y;
+      // Update position
+      if (typeof x === 'number') star.translation.x = x;
+      if (typeof y === 'number') star.translation.y = y;
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in star) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (star as any)[key] = (shapeProps as any)[key];
-          }
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in star) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (star as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [shapeProps, ref, x, y]);
+    }, [shapeProps, star, x, y]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(star, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(star);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [star, registerEventShape, unregisterEventShape, parent, eventHandlers]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => star, [star]);
 
     return <></>;
   }

@@ -1,17 +1,10 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Sprite as Instance } from 'two.js/src/effects/sprite';
 import { RectangleProps } from './Rectangle';
 import { type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
 
 type SpriteProps =
   | RectangleProps
@@ -64,8 +57,10 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
     },
     forwardedRef
   ) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+
+    // Create the instance synchronously so it's available for refs immediately
+    const sprite = useMemo(() => new Two.Sprite(path), [path]);
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -99,60 +94,48 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
       ]
     );
 
-    useLayoutEffect(() => {
-      const sprite = new Two.Sprite(path);
-      set(sprite);
-
-      return () => {
-        set(null);
-      };
-    }, [path, two]);
-
     useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      if (parent) {
+        parent.add(sprite);
 
         return () => {
-          parent.remove(ref);
+          parent.remove(sprite);
         };
       }
-    }, [parent, ref]);
+    }, [parent, sprite]);
 
     useEffect(() => {
-      if (ref) {
-        const sprite = ref;
-        // Update position
-        if (typeof x === 'number') sprite.translation.x = x;
-        if (typeof y === 'number') sprite.translation.y = y;
+      // Update position
+      if (typeof x === 'number') sprite.translation.x = x;
+      if (typeof y === 'number') sprite.translation.y = y;
 
-        if (autoPlay) {
-          sprite.play();
-        } else {
-          sprite.pause();
-        }
+      if (autoPlay) {
+        sprite.play();
+      } else {
+        sprite.pause();
+      }
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in sprite) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (sprite as any)[key] = (shapeProps as any)[key];
-          }
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in sprite) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (sprite as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [shapeProps, ref, x, y, autoPlay]);
+    }, [shapeProps, sprite, x, y, autoPlay]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(sprite, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(sprite);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [sprite, registerEventShape, unregisterEventShape, parent, eventHandlers]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => sprite, [sprite]);
 
     return <></>;
   }

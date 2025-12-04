@@ -1,9 +1,4 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -37,8 +32,10 @@ export type RefPoints = Instance;
 
 export const Points = React.forwardRef<Instance, ComponentProps>(
   ({ x, y, ...props }, forwardedRef) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+
+    // Create the instance synchronously so it's available for refs immediately
+    const points = useMemo(() => new Two.Points(), []);
 
     // Extract event handlers from props
     const { eventHandlers, shapeProps } = useMemo(() => {
@@ -49,8 +46,10 @@ export const Points = React.forwardRef<Instance, ComponentProps>(
         if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
           eventHandlers[key as keyof EventHandlers] = props[
             key as keyof EventHandlers
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ] as any;
         } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           shapeProps[key] = (props as any)[key];
         }
       }
@@ -59,53 +58,41 @@ export const Points = React.forwardRef<Instance, ComponentProps>(
     }, [props]);
 
     useEffect(() => {
-      const points = new Two.Points();
-      set(points);
-
-      return () => {
-        set(null);
-      };
-    }, [two, x, y]);
-
-    useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      if (parent) {
+        parent.add(points);
 
         return () => {
-          parent.remove(ref);
+          parent.remove(points);
         };
       }
-    }, [parent, ref]);
+    }, [parent, points]);
 
     useEffect(() => {
-      if (ref) {
-        const points = ref;
-        // Update position
-        if (typeof x === 'number') points.translation.x = x;
-        if (typeof y === 'number') points.translation.y = y;
+      // Update position
+      if (typeof x === 'number') points.translation.x = x;
+      if (typeof y === 'number') points.translation.y = y;
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in points) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (points as any)[key] = (shapeProps as any)[key];
-          }
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in points) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (points as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [shapeProps, ref, x, y]);
+    }, [shapeProps, points, x, y]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(points, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(points);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [points, registerEventShape, unregisterEventShape, parent, eventHandlers]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => points, [points]);
 
     return <></>;
   }

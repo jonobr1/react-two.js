@@ -1,4 +1,4 @@
-import React, { useImperativeHandle, useEffect, useState } from 'react';
+import React, { useImperativeHandle, useEffect, useMemo } from 'react';
 import Two from 'two.js';
 
 import type { Texture as Instance } from 'two.js/src/effects/texture';
@@ -24,31 +24,20 @@ export type RefTexture = Instance;
 
 export const Texture = React.forwardRef<Instance, ComponentProps>(
   ({ source, ...props }, forwardedRef) => {
-    const [ref, set] = useState<Instance | null>(null);
+    // Create the instance synchronously so it's available for refs immediately
+    const texture = useMemo(() => new Two.Texture(source), [source]);
 
     useEffect(() => {
-      const texture = new Two.Texture(source);
-      set(texture);
-      return () => {
-        set(null);
-      };
-    }, [source]);
-
-    useEffect(() => {
-      if (ref) {
-        const texture = ref;
-
-        // Update other properties
-        for (const key in props) {
-          if (key in texture) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (texture as any)[key] = (props as any)[key];
-          }
+      // Update other properties
+      for (const key in props) {
+        if (key in texture) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (texture as any)[key] = (props as any)[key];
         }
       }
-    }, [props, ref]);
+    }, [props, texture]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => texture, [texture]);
 
     return null; // No visual representation
   }

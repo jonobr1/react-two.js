@@ -1,15 +1,9 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Path as Instance } from 'two.js/src/path';
 import { ShapeProps, type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
 
 export type PathProps =
   | ShapeProps
@@ -64,8 +58,10 @@ export const Path = React.forwardRef<Instance, ComponentProps>(
     },
     forwardedRef
   ) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+
+    // Create the instance synchronously so it's available for refs immediately
+    const path = useMemo(() => new Two.Path(), []);
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -100,57 +96,45 @@ export const Path = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
-      const path = new Two.Path();
-      set(path);
-
-      return () => {
-        set(null);
-      };
-    }, [two]);
-
-    useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      if (parent) {
+        parent.add(path);
 
         return () => {
-          parent.remove(ref);
+          parent.remove(path);
         };
       }
-    }, [parent, ref]);
+    }, [parent, path]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(path, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(path);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [path, registerEventShape, unregisterEventShape, parent, eventHandlers]);
 
     useEffect(() => {
-      if (ref) {
-        const path = ref;
-        // Update position
-        if (typeof x === 'number') path.translation.x = x;
-        if (typeof y === 'number') path.translation.y = y;
+      // Update position
+      if (typeof x === 'number') path.translation.x = x;
+      if (typeof y === 'number') path.translation.y = y;
 
-        if (typeof manual !== 'undefined') {
-          path.automatic = !manual;
-        }
+      if (typeof manual !== 'undefined') {
+        path.automatic = !manual;
+      }
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in path) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (path as any)[key] = (shapeProps as any)[key];
-          }
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in path) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (path as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [shapeProps, ref, x, y, manual]);
+    }, [shapeProps, path, x, y, manual]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => path, [path]);
 
     return <></>;
   }

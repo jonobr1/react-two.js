@@ -1,16 +1,10 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { ArcSegment as Instance } from 'two.js/src/shapes/arc-segment';
 import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
 
 type ArcSegmentProps =
   | PathProps
@@ -54,8 +48,10 @@ export const ArcSegment = React.forwardRef<Instance, ComponentProps>(
     },
     forwardedRef
   ) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+
+    // Create the instance synchronously so it's available for refs immediately
+    const arcSegment = useMemo(() => new Two.ArcSegment(0, 0, 0, 0, 0, 0, resolution), [resolution]);
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -90,52 +86,40 @@ export const ArcSegment = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
-      const arcSegment = new Two.ArcSegment(0, 0, 0, 0, 0, 0, resolution);
-      set(arcSegment);
-
-      return () => {
-        set(null);
-      };
-    }, [resolution, two]);
-
-    useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      if (parent) {
+        parent.add(arcSegment);
         return () => {
-          parent.remove(ref);
+          parent.remove(arcSegment);
         };
       }
-    }, [parent, ref]);
+    }, [parent, arcSegment]);
 
     useEffect(() => {
-      if (ref) {
-        const arcSegment = ref;
-        // Update position
-        if (typeof x === 'number') arcSegment.translation.x = x;
-        if (typeof y === 'number') arcSegment.translation.y = y;
+      // Update position
+      if (typeof x === 'number') arcSegment.translation.x = x;
+      if (typeof y === 'number') arcSegment.translation.y = y;
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in arcSegment) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (arcSegment as any)[key] = (shapeProps as any)[key];
-          }
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in arcSegment) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (arcSegment as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [shapeProps, ref, x, y]);
+    }, [shapeProps, arcSegment, x, y]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(arcSegment, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(arcSegment);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [arcSegment, registerEventShape, unregisterEventShape, parent, eventHandlers]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => arcSegment, [arcSegment]);
 
     return <></>;
   }

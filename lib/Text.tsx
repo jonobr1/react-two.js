@@ -1,15 +1,9 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Text as Instance } from 'two.js/src/text';
 import { ShapeProps, type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
 
 type TextProps =
   | ShapeProps
@@ -63,8 +57,10 @@ export const Text = React.forwardRef<Instance, ComponentProps>(
     },
     forwardedRef
   ) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+
+    // Create the instance synchronously so it's available for refs immediately
+    const text = useMemo(() => new Two.Text(), []);
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -99,53 +95,41 @@ export const Text = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
-      const text = new Two.Text();
-      set(text);
-
-      return () => {
-        set(null);
-      };
-    }, [two]);
-
-    useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      if (parent) {
+        parent.add(text);
 
         return () => {
-          parent.remove(ref);
+          parent.remove(text);
         };
       }
-    }, [parent, ref]);
+    }, [parent, text]);
 
     useEffect(() => {
-      if (ref) {
-        const text = ref;
-        // Update position
-        if (typeof x === 'number') text.translation.x = x;
-        if (typeof y === 'number') text.translation.y = y;
+      // Update position
+      if (typeof x === 'number') text.translation.x = x;
+      if (typeof y === 'number') text.translation.y = y;
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in text) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (text as any)[key] = (shapeProps as any)[key];
-          }
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in text) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (text as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [shapeProps, ref, x, y]);
+    }, [shapeProps, text, x, y]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(text, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(text);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [text, registerEventShape, unregisterEventShape, parent, eventHandlers]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => text, [text]);
 
     return <></>;
   }
