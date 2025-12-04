@@ -1,4 +1,4 @@
-import React, { useImperativeHandle, useEffect, useMemo } from 'react';
+import React, { useImperativeHandle, useEffect, useMemo, useRef } from 'react';
 import Two from 'two.js';
 
 import type { RadialGradient as Instance } from 'two.js/src/effects/radial-gradient';
@@ -22,6 +22,7 @@ export type RefRadialGradient = Instance;
 export const RadialGradient = React.forwardRef<Instance | null, ComponentProps>(
   ({ x, y, focalX, focalY, ...props }, forwardedRef) => {
     const ref = useMemo(() => new Two.RadialGradient(), []);
+    const applied = useRef<Record<string, unknown>>({});
 
     useEffect(() => {
       return () => {
@@ -38,11 +39,23 @@ export const RadialGradient = React.forwardRef<Instance | null, ComponentProps>(
         if (typeof focalX === 'number') ref.focal.x = focalX;
         if (typeof focalY === 'number') ref.focal.y = focalY;
 
-        // Update other properties
+        // Update other properties (excluding event handlers)
         for (const key in props) {
           if (key in gradient) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (gradient as any)[key] = (props as any)[key];
+            const nextVal = (props as any)[key];
+            if (applied.current[key] !== nextVal) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (gradient as any)[key] = nextVal;
+              applied.current[key] = nextVal;
+            }
+          }
+        }
+
+        // Drop any previously applied keys that are no longer present
+        for (const key in applied.current) {
+          if (!(key in props)) {
+            delete applied.current[key];
           }
         }
       }

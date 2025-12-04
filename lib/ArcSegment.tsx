@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useMemo } from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -49,6 +49,7 @@ export const ArcSegment = React.forwardRef<Instance, ComponentProps>(
     forwardedRef
   ) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
+    const applied = useRef<Record<string, unknown>>({});
 
     // Create the instance synchronously so it's available for refs immediately
     const arcSegment = useMemo(
@@ -112,7 +113,19 @@ export const ArcSegment = React.forwardRef<Instance, ComponentProps>(
       for (const key in shapeProps) {
         if (key in arcSegment) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (arcSegment as any)[key] = (shapeProps as any)[key];
+          const nextVal = (shapeProps as any)[key];
+          if (applied.current[key] !== nextVal) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (arcSegment as any)[key] = nextVal;
+            applied.current[key] = nextVal;
+          }
+        }
+      }
+
+      // Drop any previously applied keys that are no longer present
+      for (const key in applied) {
+        if (!(key in shapeProps)) {
+          delete applied.current[key];
         }
       }
     }, [shapeProps, arcSegment, x, y]);
