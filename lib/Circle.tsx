@@ -1,16 +1,10 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Circle as Instance } from 'two.js/src/shapes/circle';
 import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
 
 type CircleProps = PathProps | 'radius';
 type ComponentProps = React.PropsWithChildren<
@@ -49,8 +43,14 @@ export const Circle = React.forwardRef<Instance, ComponentProps>(
     },
     forwardedRef
   ) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+    const applied = useRef<Record<string, unknown>>({});
+
+    // Create the instance synchronously so it's available for refs immediately
+    const circle = useMemo(
+      () => new Two.Circle(0, 0, 0, resolution),
+      [resolution]
+    );
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -85,52 +85,64 @@ export const Circle = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
-      const circle = new Two.Circle(0, 0, 0, resolution);
-      set(circle);
-
       return () => {
-        set(null);
+        circle.dispose();
       };
-    }, [resolution, two]);
+    }, [circle]);
 
     useEffect(() => {
-      if (ref) {
-        const circle = ref;
-        // Update position
-        if (typeof x === 'number') circle.translation.x = x;
-        if (typeof y === 'number') circle.translation.y = y;
+      // Update position
+      if (typeof x === 'number') circle.translation.x = x;
+      if (typeof y === 'number') circle.translation.y = y;
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in circle) {
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in circle) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const nextVal = (shapeProps as any)[key];
+          if (applied.current[key] !== nextVal) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (circle as any)[key] = (shapeProps as any)[key];
+            (circle as any)[key] = nextVal;
+            applied.current[key] = nextVal;
           }
         }
       }
-    }, [ref, shapeProps, x, y]);
+
+      // Drop any previously applied keys that are no longer present
+      for (const key in applied.current) {
+        if (!(key in shapeProps)) {
+          delete applied.current[key];
+        }
+      }
+    }, [circle, shapeProps, x, y]);
 
     useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      if (parent) {
+        parent.add(circle);
         return () => {
-          parent.remove(ref);
+          parent.remove(circle);
         };
       }
-    }, [parent, ref]);
+    }, [parent, circle]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(circle, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(circle);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      circle,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => circle, [circle]);
 
     return <></>;
   }

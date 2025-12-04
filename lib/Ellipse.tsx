@@ -1,9 +1,4 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -27,8 +22,14 @@ export type RefEllipse = Instance;
 
 export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
   ({ x, y, resolution, ...props }, forwardedRef) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+    const applied = useRef<Record<string, unknown>>({});
+
+    // Create the instance synchronously so it's available for refs immediately
+    const ellipse = useMemo(
+      () => new Two.Ellipse(0, 0, 0, 0, resolution),
+      [resolution]
+    );
 
     // Extract event handlers from props
     const { eventHandlers, shapeProps } = useMemo(() => {
@@ -39,8 +40,10 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
         if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
           eventHandlers[key as keyof EventHandlers] = props[
             key as keyof EventHandlers
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ] as any;
         } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           shapeProps[key] = (props as any)[key];
         }
       }
@@ -49,53 +52,65 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
     }, [props]);
 
     useEffect(() => {
-      const ellipse = new Two.Ellipse(0, 0, 0, 0, resolution);
-      set(ellipse);
-
       return () => {
-        set(null);
+        ellipse.dispose();
       };
-    }, [resolution, two]);
+    }, [ellipse]);
 
     useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      if (parent) {
+        parent.add(ellipse);
 
         return () => {
-          parent.remove(ref);
+          parent.remove(ellipse);
         };
       }
-    }, [parent, ref]);
+    }, [parent, ellipse]);
 
     useEffect(() => {
-      if (ref) {
-        const ellipse = ref;
-        // Update position
-        if (typeof x === 'number') ellipse.translation.x = x;
-        if (typeof y === 'number') ellipse.translation.y = y;
+      // Update position
+      if (typeof x === 'number') ellipse.translation.x = x;
+      if (typeof y === 'number') ellipse.translation.y = y;
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in ellipse) {
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in ellipse) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const nextVal = (shapeProps as any)[key];
+          if (applied.current[key] !== nextVal) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (ellipse as any)[key] = (shapeProps as any)[key];
+            (ellipse as any)[key] = nextVal;
+            applied.current[key] = nextVal;
           }
         }
       }
-    }, [ref, x, y, shapeProps]);
+
+      // Drop any previously applied keys that are no longer present
+      for (const key in applied.current) {
+        if (!(key in shapeProps)) {
+          delete applied.current[key];
+        }
+      }
+    }, [ellipse, x, y, shapeProps]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(ellipse, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(ellipse);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      ellipse,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => ellipse, [ellipse]);
 
     return <></>;
   }

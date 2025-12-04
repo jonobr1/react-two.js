@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -27,7 +21,7 @@ type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<ImageSequenceProps, keyof Instance>]?: Instance[K];
   } & {
-    paths?: string | string[] | Texture | Texture[];
+    src?: string | string[] | Texture | Texture[];
     x?: number;
     y?: number;
     autoPlay?: boolean;
@@ -37,9 +31,12 @@ type ComponentProps = React.PropsWithChildren<
 export type RefImageSequence = Instance;
 
 export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
-  ({ paths, x, y, autoPlay, ...props }, forwardedRef) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+  ({ src, x, y, autoPlay, ...props }, forwardedRef) => {
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+    const applied = useRef<Record<string, unknown>>({});
+
+    // Create the instance synchronously so it's available for refs immediately
+    const imageSequence = useMemo(() => new Two.ImageSequence(src), [src]);
 
     // Extract event handlers from props
     const { eventHandlers, shapeProps } = useMemo(() => {
@@ -50,8 +47,10 @@ export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
         if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
           eventHandlers[key as keyof EventHandlers] = props[
             key as keyof EventHandlers
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ] as any;
         } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           shapeProps[key] = (props as any)[key];
         }
       }
@@ -59,60 +58,72 @@ export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
       return { eventHandlers, shapeProps };
     }, [props]);
 
-    useLayoutEffect(() => {
-      const imageSequence = new Two.ImageSequence(paths);
-      set(imageSequence);
-
+    useEffect(() => {
       return () => {
-        set(null);
+        imageSequence.dispose();
       };
-    }, [two, paths]);
+    }, [imageSequence]);
 
     useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      if (parent) {
+        parent.add(imageSequence);
 
         return () => {
-          parent.remove(ref);
+          parent.remove(imageSequence);
         };
       }
-    }, [parent, ref]);
+    }, [parent, imageSequence]);
 
     useEffect(() => {
-      if (ref) {
-        const imageSequence = ref;
-        if (autoPlay) {
-          imageSequence.play();
-        } else {
-          imageSequence.pause();
-        }
+      if (autoPlay) {
+        imageSequence.play();
+      } else {
+        imageSequence.pause();
+      }
 
-        // Update position
-        if (typeof x === 'number') imageSequence.translation.x = x;
-        if (typeof y === 'number') imageSequence.translation.y = y;
+      // Update position
+      if (typeof x === 'number') imageSequence.translation.x = x;
+      if (typeof y === 'number') imageSequence.translation.y = y;
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in imageSequence) {
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in imageSequence) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const nextVal = (shapeProps as any)[key];
+          if (applied.current[key] !== nextVal) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (imageSequence as any)[key] = (shapeProps as any)[key];
+            (imageSequence as any)[key] = nextVal;
+            applied.current[key] = nextVal;
           }
         }
       }
-    }, [shapeProps, ref, paths, x, y, autoPlay]);
+
+      // Drop any previously applied keys that are no longer present
+      for (const key in applied.current) {
+        if (!(key in shapeProps)) {
+          delete applied.current[key];
+        }
+      }
+    }, [shapeProps, imageSequence, x, y, autoPlay]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(imageSequence, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(imageSequence);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      imageSequence,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => imageSequence, [imageSequence]);
 
     return <></>;
   }

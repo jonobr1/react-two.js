@@ -1,16 +1,10 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { RoundedRectangle as Instance } from 'two.js/src/shapes/rounded-rectangle';
 import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
 
 type RoundedRectangleProps = PathProps | 'width' | 'height' | 'radius';
 type ComponentProps = React.PropsWithChildren<
@@ -47,8 +41,11 @@ export const RoundedRectangle = React.forwardRef<Instance, ComponentProps>(
     },
     forwardedRef
   ) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+    const applied = useRef<Record<string, unknown>>({});
+
+    // Create the instance synchronously so it's available for refs immediately
+    const roundedRectangle = useMemo(() => new Two.RoundedRectangle(), []);
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -83,53 +80,71 @@ export const RoundedRectangle = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
-      const roundedRectangle = new Two.RoundedRectangle();
-      set(roundedRectangle);
-
       return () => {
-        set(null);
+        roundedRectangle.dispose();
       };
-    }, [two]);
+    }, [roundedRectangle]);
 
     useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      if (parent) {
+        parent.add(roundedRectangle);
 
         return () => {
-          parent.remove(ref);
+          parent.remove(roundedRectangle);
         };
       }
-    }, [parent, ref]);
+    }, [parent, roundedRectangle]);
 
     useEffect(() => {
-      if (ref) {
-        const roundedRectangle = ref;
-        // Update position
-        if (typeof x === 'number') roundedRectangle.translation.x = x;
-        if (typeof y === 'number') roundedRectangle.translation.y = y;
+      // Update position
+      if (typeof x === 'number') roundedRectangle.translation.x = x;
+      if (typeof y === 'number') roundedRectangle.translation.y = y;
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in roundedRectangle) {
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in roundedRectangle) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const nextVal = (shapeProps as any)[key];
+          if (applied.current[key] !== nextVal) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (roundedRectangle as any)[key] = (shapeProps as any)[key];
+            (roundedRectangle as any)[key] = nextVal;
+            applied.current[key] = nextVal;
           }
         }
       }
-    }, [shapeProps, ref, x, y]);
+
+      // Drop any previously applied keys that are no longer present
+      for (const key in applied.current) {
+        if (!(key in shapeProps)) {
+          delete applied.current[key];
+        }
+      }
+    }, [shapeProps, roundedRectangle, x, y]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(
+          roundedRectangle,
+          eventHandlers,
+          parent ?? undefined
+        );
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(roundedRectangle);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      roundedRectangle,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => roundedRectangle, [
+      roundedRectangle,
+    ]);
 
     return <></>;
   }

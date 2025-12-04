@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -12,7 +6,6 @@ import type { Image as Instance } from 'two.js/src/effects/image';
 import { RectangleProps } from './Rectangle';
 import type { Texture } from 'two.js/src/effects/texture';
 import { type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
 
 type ImageProps = RectangleProps | 'mode' | 'texture';
 
@@ -23,6 +16,7 @@ type ComponentProps = React.PropsWithChildren<
     x?: number;
     y?: number;
     mode?: string;
+    src?: string | Texture;
     texture?: Texture;
   } & Partial<EventHandlers>
 >;
@@ -33,6 +27,7 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
   (
     {
       mode,
+      src,
       texture,
       x,
       y,
@@ -54,8 +49,11 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
     },
     forwardedRef
   ) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+    const applied = useRef<Record<string, unknown>>({});
+
+    // Create the instance synchronously so it's available for refs immediately
+    const image = useMemo(() => new Two.Image(src), [src]);
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -89,57 +87,69 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
       ]
     );
 
-    useLayoutEffect(() => {
-      const image = new Two.Image();
-      set(image);
-
+    useEffect(() => {
       return () => {
-        set(null);
+        image.dispose();
       };
-    }, [two]);
+    }, [image]);
 
     useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      if (parent) {
+        parent.add(image);
 
         return () => {
-          parent.remove(ref);
+          parent.remove(image);
         };
       }
-    }, [parent, ref]);
+    }, [parent, image]);
 
     useEffect(() => {
-      if (ref) {
-        const image = ref;
-        if (typeof mode !== 'undefined') image.mode = mode;
-        if (typeof texture !== 'undefined') image.texture = texture;
+      if (typeof mode !== 'undefined') image.mode = mode;
+      if (typeof texture !== 'undefined') image.texture = texture;
 
-        // Update position
-        if (typeof x === 'number') image.translation.x = x;
-        if (typeof y === 'number') image.translation.y = y;
+      // Update position
+      if (typeof x === 'number') image.translation.x = x;
+      if (typeof y === 'number') image.translation.y = y;
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in image) {
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in image) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const nextVal = (shapeProps as any)[key];
+          if (applied.current[key] !== nextVal) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (image as any)[key] = (shapeProps as any)[key];
+            (image as any)[key] = nextVal;
+            applied.current[key] = nextVal;
           }
         }
       }
-    }, [ref, shapeProps, mode, texture, x, y]);
+
+      // Drop any previously applied keys that are no longer present
+      for (const key in applied.current) {
+        if (!(key in shapeProps)) {
+          delete applied.current[key];
+        }
+      }
+    }, [image, shapeProps, mode, texture, x, y]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(image, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(image);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      image,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => image, [image]);
 
     return <></>;
   }

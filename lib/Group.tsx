@@ -1,9 +1,4 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import Two from 'two.js';
 import { Context, useTwo } from './Context';
 
@@ -43,7 +38,10 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
       registerEventShape,
       unregisterEventShape,
     } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const applied = useRef<Record<string, unknown>>({});
+
+    // Create the instance synchronously so it's available for refs immediately
+    const group = useMemo(() => new Two.Group(), []);
 
     // Extract event handlers from props
     const { eventHandlers, shapeProps } = useMemo(() => {
@@ -54,8 +52,10 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
         if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
           eventHandlers[key as keyof EventHandlers] = props[
             key as keyof EventHandlers
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ] as any;
         } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           shapeProps[key] = (props as any)[key];
         }
       }
@@ -64,66 +64,74 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
     }, [props]);
 
     useEffect(() => {
-      if (two) {
-        const group = new Two.Group();
-
-        set(group);
-
-        return () => {
-          set(null);
-        };
-      }
-    }, [two]);
+      return () => {
+        group.dispose();
+      };
+    }, [group]);
 
     useEffect(() => {
-      const group = ref;
-      if (parent && group) {
+      if (parent) {
         parent.add(group);
 
         return () => {
           parent.remove(group);
         };
       }
-    }, [ref, parent]);
+    }, [parent, group]);
 
     useEffect(() => {
-      if (ref) {
-        const group = ref;
-        // Update position
-        if (typeof x === 'number') group.translation.x = x;
-        if (typeof y === 'number') group.translation.y = y;
+      // Update position
+      if (typeof x === 'number') group.translation.x = x;
+      if (typeof y === 'number') group.translation.y = y;
 
-        const args = { ...shapeProps };
-        delete args.children; // Allow react to handle children
+      const args = { ...shapeProps };
+      delete args.children; // Allow react to handle children
 
-        // Update other properties (excluding event handlers)
-        for (const key in args) {
-          if (key in group) {
+      // Update other properties (excluding event handlers)
+      for (const key in args) {
+        if (key in group) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const nextVal = (args as any)[key];
+          if (applied.current[key] !== nextVal) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (group as any)[key] = (args as any)[key];
+            (group as any)[key] = nextVal;
+            applied.current[key] = nextVal;
           }
         }
       }
-    }, [ref, x, y, shapeProps]);
+
+      // Drop any previously applied keys that are no longer present
+      for (const key in applied.current) {
+        if (!(key in args)) {
+          delete applied.current[key];
+        }
+      }
+    }, [group, x, y, shapeProps]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(group, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(group);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      group,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => group, [group]);
 
     return (
       <Context.Provider
         value={{
           two,
-          parent: ref,
+          parent: group,
           width,
           height,
           registerEventShape,

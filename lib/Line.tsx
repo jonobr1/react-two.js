@@ -1,16 +1,10 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Line as Instance } from 'two.js/src/shapes/line';
 import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
 
 type LineProps = PathProps | 'left' | 'right';
 type ComponentProps = React.PropsWithChildren<
@@ -51,8 +45,11 @@ export const Line = React.forwardRef<Instance, ComponentProps>(
     },
     forwardedRef
   ) => {
-    const { two, parent, registerEventShape, unregisterEventShape } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+    const applied = useRef<Record<string, unknown>>({});
+
+    // Create the instance synchronously so it's available for refs immediately
+    const line = useMemo(() => new Two.Line(), []);
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -87,57 +84,62 @@ export const Line = React.forwardRef<Instance, ComponentProps>(
     );
 
     useEffect(() => {
-      const line = new Two.Line();
-      set(line);
-
       return () => {
-        set(null);
+        line.dispose();
       };
-    }, [two]);
+    }, [line]);
 
     useEffect(() => {
-      const line = ref;
-      if (parent && line) {
+      if (parent) {
         parent.add(line);
 
         return () => {
           parent.remove(line);
         };
       }
-    }, [parent, ref]);
+    }, [parent, line]);
 
     useEffect(() => {
-      if (ref) {
-        const line = ref;
-        // Update vertices
-        if (typeof x1 === 'number') line.left.x = x1;
-        if (typeof y1 === 'number') line.left.y = y1;
+      // Update vertices
+      if (typeof x1 === 'number') line.left.x = x1;
+      if (typeof y1 === 'number') line.left.y = y1;
 
-        if (typeof x2 === 'number') line.right.x = x2;
-        if (typeof y2 === 'number') line.right.y = y2;
+      if (typeof x2 === 'number') line.right.x = x2;
+      if (typeof y2 === 'number') line.right.y = y2;
 
-        // Update other properties (excluding event handlers)
-        for (const key in shapeProps) {
-          if (key in line) {
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in line) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const nextVal = (shapeProps as any)[key];
+          if (applied.current[key] !== nextVal) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (line as any)[key] = (shapeProps as any)[key];
+            (line as any)[key] = nextVal;
+            applied.current[key] = nextVal;
           }
         }
       }
-    }, [shapeProps, ref, x1, y1, x2, y2]);
+
+      // Drop any previously applied keys that are no longer present
+      for (const key in applied.current) {
+        if (!(key in shapeProps)) {
+          delete applied.current[key];
+        }
+      }
+    }, [shapeProps, line, x1, y1, x2, y2]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(line, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(line);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [line, registerEventShape, unregisterEventShape, parent, eventHandlers]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => line, [line]);
 
     return <></>;
   }
