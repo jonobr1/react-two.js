@@ -34,6 +34,8 @@ import {
   Texture,
   RefTexture,
   Text,
+  SVG,
+  RefSVG,
 } from '../lib/main';
 import { useRef, useState } from 'react';
 import { useFrame } from '../lib/Context';
@@ -54,6 +56,7 @@ function Scene() {
   const arcSegment = useRef<RefArcSegment | null>(null);
   const sprite = useRef<RefSprite | null>(null);
   const imageSequence = useRef<RefImageSequence | null>(null);
+  const svg = useRef<RefSVG | null>(null);
 
   // Gradient refs
   const [linearGradient, setLinearGradient] = useState<
@@ -108,6 +111,10 @@ function Scene() {
     }
     if (imageSequence.current) {
       imageSequence.current.scale = Math.cos(elapsed * 1.2) * 0.15 + 1;
+    }
+    if (svg.current) {
+      svg.current.rotation = elapsed * 0.2;
+      svg.current.scale = Math.sin(elapsed * 0.8) * 0.2 + 1;
     }
   }, []);
 
@@ -174,9 +181,23 @@ function Scene() {
         />
       </Group>
 
-      {/* Text */}
+      {/* SVG Example - Inline content */}
       <Group x={cellWidth * 3.5} y={cellHeight * 0.5}>
-        <Text value="React" fill="#ccc" size={20} baseline="middle" />
+        <SVG
+          ref={svg}
+          content={`
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="40" fill="#FF6B6B" />
+              <circle cx="35" cy="40" r="8" fill="white" />
+              <circle cx="65" cy="40" r="8" fill="white" />
+              <path d="M 30 60 Q 50 75 70 60" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" />
+            </svg>
+          `}
+          scale={0.6}
+          onLoad={(svg) => {
+            svg.center();
+          }}
+        />
       </Group>
 
       {/* Rounded Rectangle */}

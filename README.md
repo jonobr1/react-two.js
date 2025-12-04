@@ -189,6 +189,7 @@ function Component() {
 - **`<Text>`** — Text rendering
 
 #### Advanced
+- **`<SVG>`** — Load and interpret SVG files or inline SVG markup
 - **`<Image>`** - Basic image class inspired by Figma
 - **`<Sprite>`** — Animated sprite sheets
 - **`<ImageSequence>`** — Animated image sequence
@@ -306,6 +307,75 @@ function () {
   );
 }
 ```
+
+### Loading SVG Files
+
+Load external SVG files or use inline SVG markup with the `<SVG>` component:
+
+```jsx
+import { SVG } from 'react-two.js'
+
+// Load from external URL
+function Logo() {
+  return (
+    <SVG
+      src="/assets/logo.svg"
+      x={100}
+      y={100}
+      onLoad={(group, svg) => {
+        console.log('SVG loaded with', group.children.length, 'objects')
+      }}
+      onError={(error) => {
+        console.error('Failed to load SVG:', error)
+      }}
+    />
+  )
+}
+
+// Use inline SVG markup
+function Icon() {
+  return (
+    <SVG
+      content={`
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="#FF6B6B" />
+          <circle cx="35" cy="40" r="8" fill="white" />
+          <circle cx="65" cy="40" r="8" fill="white" />
+        </svg>
+      `}
+      x={200}
+      y={200}
+      scale={0.5}
+    />
+  )
+}
+
+// Animate loaded SVG
+function AnimatedIcon() {
+  const svgRef = useRef()
+
+  useFrame((elapsed) => {
+    if (svgRef.current) {
+      svgRef.current.rotation = Math.sin(elapsed) * 0.5
+      svgRef.current.scale = 1 + Math.sin(elapsed * 2) * 0.1
+    }
+  })
+
+  return <SVG ref={svgRef} src="/icon.svg" x={400} y={300} />
+}
+```
+
+**SVG Props:**
+- `src` — URL to external .svg file
+- `content` — Inline SVG markup string
+- `x`, `y` — Position
+- `scale`, `rotation` — Transform properties
+- `onLoad(group, svg)` — Callback when SVG loads successfully
+- `onError(error)` — Callback when loading fails
+- All Two.js Group properties (fill, stroke, opacity, etc.)
+
+> [!NOTE]
+> The SVG component uses Two.js's `load()` method which supports a subset of SVG 1.1 features. Complex SVG features like filters, animations (SMIL), and some advanced elements may not be fully supported. Refer to [Two.js SVG documentation](https://two.js.org/docs/two/#two-interpret) for details on supported features.
 
 ## Learn More
 
