@@ -41,9 +41,9 @@ function validateChildren(children: React.ReactNode): void {
     if (typeof childType === 'string') {
       console.warn(
         `[react-two.js] <${childType}> is not compatible with Canvas.\n` +
-        `Only react-two.js components (Circle, Rectangle, Group, etc.) can be used inside <Canvas>.\n` +
-        `Place DOM elements outside of the Canvas component.\n` +
-        `See: https://github.com/jonobr1/react-two.js#usage`
+          `Only react-two.js components (Circle, Rectangle, Group, etc.) can be used inside <Canvas>.\n` +
+          `Place DOM elements outside of the Canvas component.\n` +
+          `See: https://github.com/jonobr1/react-two.js#usage`
       );
       return;
     }
@@ -217,7 +217,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     // Click handler
     const handleClick = (e: MouseEvent) => {
       const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
+      const shapes = getShapesAtPoint(
+        eventShapes.current,
+        worldPoint.x,
+        worldPoint.y
+      );
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onClick', e);
@@ -227,7 +231,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     // Context menu handler
     const handleContextMenu = (e: MouseEvent) => {
       const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
+      const shapes = getShapesAtPoint(
+        eventShapes.current,
+        worldPoint.x,
+        worldPoint.y
+      );
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onContextMenu', e);
@@ -237,7 +245,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     // Double click handler
     const handleDoubleClick = (e: MouseEvent) => {
       const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
+      const shapes = getShapesAtPoint(
+        eventShapes.current,
+        worldPoint.x,
+        worldPoint.y
+      );
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onDoubleClick', e);
@@ -247,7 +259,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     // Wheel handler
     const handleWheel = (e: WheelEvent) => {
       const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
+      const shapes = getShapesAtPoint(
+        eventShapes.current,
+        worldPoint.x,
+        worldPoint.y
+      );
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onWheel', e);
@@ -257,13 +273,18 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     // Pointer down handler
     const handlePointerDown = (e: PointerEvent) => {
       const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
+      const shapes = getShapesAtPoint(
+        eventShapes.current,
+        worldPoint.x,
+        worldPoint.y
+      );
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onPointerDown', e);
 
         // Support pointer capture
         if (e.target instanceof Element) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const hasCapture = (e.target as any).hasPointerCapture?.(e.pointerId);
           if (hasCapture) {
             capturedShape.current = shapes[0];
@@ -292,7 +313,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       }
 
       const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
+      const shapes = getShapesAtPoint(
+        eventShapes.current,
+        worldPoint.x,
+        worldPoint.y
+      );
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onPointerUp', e);
@@ -304,7 +329,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     // Pointer move handler
     const handlePointerMove = (e: PointerEvent) => {
       const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
+      const shapes = getShapesAtPoint(
+        eventShapes.current,
+        worldPoint.x,
+        worldPoint.y
+      );
       const currentHovered = new Set(shapes);
 
       // Dispatch pointer move to hovered shapes
@@ -337,7 +366,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     // Pointer cancel handler
     const handlePointerCancel = (e: PointerEvent) => {
       const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(eventShapes.current, worldPoint.x, worldPoint.y);
+      const shapes = getShapesAtPoint(
+        eventShapes.current,
+        worldPoint.x,
+        worldPoint.y
+      );
 
       if (shapes.length > 0) {
         dispatchEvent(shapes, 'onPointerCancel', e);
@@ -366,7 +399,12 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointercancel', handlePointerCancel);
     };
-  }, [state.two, props.onPointerMissed, registerEventShape, unregisterEventShape]);
+  }, [
+    state.two,
+    props.onPointerMissed,
+    registerEventShape,
+    unregisterEventShape,
+  ]);
 
   return (
     <Context.Provider value={state}>
