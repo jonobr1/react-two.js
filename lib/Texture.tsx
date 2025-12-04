@@ -16,16 +16,16 @@ type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<TextureProps, keyof Instance>]?: Instance[K];
   } & {
-    source?: string | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
+    src?: string | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
   }
 >;
 
 export type RefTexture = Instance;
 
 export const Texture = React.forwardRef<Instance, ComponentProps>(
-  ({ source, ...props }, forwardedRef) => {
+  ({ src, ...props }, forwardedRef) => {
     // Create the instance synchronously so it's available for refs immediately
-    const texture = useMemo(() => new Two.Texture(source), [source]);
+    const texture = useMemo(() => new Two.Texture(src), [src]);
 
     useEffect(() => {
       // Update other properties

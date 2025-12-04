@@ -16,6 +16,7 @@ type ComponentProps = React.PropsWithChildren<
     x?: number;
     y?: number;
     mode?: string;
+    src?: string | Texture;
     texture?: Texture;
   } & Partial<EventHandlers>
 >;
@@ -26,6 +27,7 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
   (
     {
       mode,
+      src,
       texture,
       x,
       y,
@@ -50,7 +52,7 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
-    const image = useMemo(() => new Two.Image(), []);
+    const image = useMemo(() => new Two.Image(src), [src]);
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -120,7 +122,13 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
           unregisterEventShape(image);
         };
       }
-    }, [image, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      image,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => image, [image]);
 

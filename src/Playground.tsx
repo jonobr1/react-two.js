@@ -109,7 +109,7 @@ function Scene() {
     if (imageSequence.current) {
       imageSequence.current.scale = Math.cos(elapsed * 1.2) * 0.15 + 1;
     }
-  });
+  }, []);
 
   // Calculate grid positions
   const gridSize = 4;
@@ -266,14 +266,14 @@ function Scene() {
 
       {/* Sprite */}
       <Group x={cellWidth * 3.5} y={cellHeight * 2.5}>
-        <Sprite ref={sprite} path="https://placehold.co/60x60" />
+        <Sprite ref={sprite} src="https://placehold.co/60x60" />
       </Group>
 
       {/* Extra components in the 4th row */}
       <Group x={cellWidth * 0.5} y={cellHeight * 3.5}>
         <ImageSequence
           ref={imageSequence}
-          paths={[
+          src={[
             'https://placehold.co/60x60/FF6B6B/FFFFFF?text=1',
             'https://placehold.co/60x60/4ECDC4/FFFFFF?text=2',
             'https://placehold.co/60x60/45B7D1/FFFFFF?text=3',
@@ -327,7 +327,7 @@ function Scene() {
       <Group x={cellWidth * 3.5} y={cellHeight * 3.5}>
         <Texture
           ref={(ref) => ref && setTexture(ref)}
-          source="https://placehold.co/60x60/9B59B6/FFFFFF?text=TEX"
+          src="https://placehold.co/60x60/9B59B6/FFFFFF?text=TEX"
         />
         <Rectangle
           width={60}

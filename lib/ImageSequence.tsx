@@ -21,7 +21,7 @@ type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<ImageSequenceProps, keyof Instance>]?: Instance[K];
   } & {
-    paths?: string | string[] | Texture | Texture[];
+    src?: string | string[] | Texture | Texture[];
     x?: number;
     y?: number;
     autoPlay?: boolean;
@@ -31,11 +31,11 @@ type ComponentProps = React.PropsWithChildren<
 export type RefImageSequence = Instance;
 
 export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
-  ({ paths, x, y, autoPlay, ...props }, forwardedRef) => {
+  ({ src, x, y, autoPlay, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
-    const imageSequence = useMemo(() => new Two.ImageSequence(paths), [paths]);
+    const imageSequence = useMemo(() => new Two.ImageSequence(src), [src]);
 
     // Extract event handlers from props
     const { eventHandlers, shapeProps } = useMemo(() => {
@@ -96,7 +96,13 @@ export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
           unregisterEventShape(imageSequence);
         };
       }
-    }, [imageSequence, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      imageSequence,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => imageSequence, [imageSequence]);
 

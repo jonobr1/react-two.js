@@ -23,7 +23,7 @@ type ComponentProps = React.PropsWithChildren<
       ? Instance[K]
       : never;
   } & {
-    path?: string;
+    src?: string;
     x?: number;
     y?: number;
     autoPlay?: boolean;
@@ -35,7 +35,7 @@ export type RefSprite = Instance;
 export const Sprite = React.forwardRef<Instance, ComponentProps>(
   (
     {
-      path,
+      src,
       x,
       y,
       autoPlay,
@@ -60,7 +60,7 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
-    const sprite = useMemo(() => new Two.Sprite(path), [path]);
+    const sprite = useMemo(() => new Two.Sprite(src), [src]);
 
     // Build event handlers object with explicit dependencies
     const eventHandlers = useMemo(
@@ -133,7 +133,13 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
           unregisterEventShape(sprite);
         };
       }
-    }, [sprite, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      sprite,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => sprite, [sprite]);
 
