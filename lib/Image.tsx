@@ -1,15 +1,11 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Image as Instance } from 'two.js/src/effects/image';
 import { RectangleProps } from './Rectangle';
 import type { Texture } from 'two.js/src/effects/texture';
+import { type EventHandlers } from './Properties';
 
 type ImageProps = RectangleProps | 'mode' | 'texture';
 
@@ -20,57 +16,140 @@ type ComponentProps = React.PropsWithChildren<
     x?: number;
     y?: number;
     mode?: string;
+    src?: string | Texture;
     texture?: Texture;
-  }
+  } & Partial<EventHandlers>
 >;
 
 export type RefImage = Instance;
 
 export const Image = React.forwardRef<Instance, ComponentProps>(
-  ({ mode, texture, x, y, ...props }, forwardedRef) => {
-    const { two, parent } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+  (
+    {
+      mode,
+      src,
+      texture,
+      x,
+      y,
+      // Event handlers
+      onClick,
+      onContextMenu,
+      onDoubleClick,
+      onWheel,
+      onPointerDown,
+      onPointerUp,
+      onPointerOver,
+      onPointerOut,
+      onPointerEnter,
+      onPointerLeave,
+      onPointerMove,
+      onPointerCancel,
+      // All other props are shape props
+      ...shapeProps
+    },
+    forwardedRef
+  ) => {
+    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+    const applied = useRef<Record<string, unknown>>({});
 
-    useLayoutEffect(() => {
-      const image = new Two.Image();
-      set(image);
+    // Create the instance synchronously so it's available for refs immediately
+    const image = useMemo(() => new Two.Image(src), [src]);
 
-      return () => {
-        set(null);
-      };
-    }, [two]);
+    // Build event handlers object with explicit dependencies
+    const eventHandlers = useMemo(
+      () => ({
+        ...(onClick && { onClick }),
+        ...(onContextMenu && { onContextMenu }),
+        ...(onDoubleClick && { onDoubleClick }),
+        ...(onWheel && { onWheel }),
+        ...(onPointerDown && { onPointerDown }),
+        ...(onPointerUp && { onPointerUp }),
+        ...(onPointerOver && { onPointerOver }),
+        ...(onPointerOut && { onPointerOut }),
+        ...(onPointerEnter && { onPointerEnter }),
+        ...(onPointerLeave && { onPointerLeave }),
+        ...(onPointerMove && { onPointerMove }),
+        ...(onPointerCancel && { onPointerCancel }),
+      }),
+      [
+        onClick,
+        onContextMenu,
+        onDoubleClick,
+        onWheel,
+        onPointerDown,
+        onPointerUp,
+        onPointerOver,
+        onPointerOut,
+        onPointerEnter,
+        onPointerLeave,
+        onPointerMove,
+        onPointerCancel,
+      ]
+    );
 
     useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
+      return () => {
+        image.dispose();
+      };
+    }, [image]);
+
+    useEffect(() => {
+      if (parent) {
+        parent.add(image);
 
         return () => {
-          parent.remove(ref);
+          parent.remove(image);
         };
       }
-    }, [parent, ref]);
+    }, [parent, image]);
 
     useEffect(() => {
-      if (ref) {
-        const image = ref;
-        if (typeof mode !== 'undefined') image.mode = mode;
-        if (typeof texture !== 'undefined') image.texture = texture;
+      if (typeof mode !== 'undefined') image.mode = mode;
+      if (typeof texture !== 'undefined') image.texture = texture;
 
-        // Update position
-        if (typeof x === 'number') image.translation.x = x;
-        if (typeof y === 'number') image.translation.y = y;
+      // Update position
+      if (typeof x === 'number') image.translation.x = x;
+      if (typeof y === 'number') image.translation.y = y;
 
-        // Update other properties
-        for (const key in props) {
-          if (key in image) {
+      // Update other properties (excluding event handlers)
+      for (const key in shapeProps) {
+        if (key in image) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const nextVal = (shapeProps as any)[key];
+          if (applied.current[key] !== nextVal) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (image as any)[key] = (props as any)[key];
+            (image as any)[key] = nextVal;
+            applied.current[key] = nextVal;
           }
         }
       }
-    }, [ref, props, mode, texture, x, y]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+      // Drop any previously applied keys that are no longer present
+      for (const key in applied.current) {
+        if (!(key in shapeProps)) {
+          delete applied.current[key];
+        }
+      }
+    }, [image, shapeProps, mode, texture, x, y]);
+
+    // Register event handlers
+    useEffect(() => {
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(image, eventHandlers, parent ?? undefined);
+
+        return () => {
+          unregisterEventShape(image);
+        };
+      }
+    }, [
+      image,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
+
+    useImperativeHandle(forwardedRef, () => image, [image]);
 
     return <></>;
   }

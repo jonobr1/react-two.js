@@ -34,6 +34,8 @@ import {
   Texture,
   RefTexture,
   Text,
+  SVG,
+  RefSVG,
 } from '../lib/main';
 import { useRef, useState } from 'react';
 import { useFrame } from '../lib/Context';
@@ -54,6 +56,7 @@ function Scene() {
   const arcSegment = useRef<RefArcSegment | null>(null);
   const sprite = useRef<RefSprite | null>(null);
   const imageSequence = useRef<RefImageSequence | null>(null);
+  const svg = useRef<RefSVG | null>(null);
 
   // Gradient refs
   const [linearGradient, setLinearGradient] = useState<
@@ -63,6 +66,11 @@ function Scene() {
 
   // Texture ref
   const [texture, setTexture] = useState<string | RefTexture>('#E8E8E8');
+
+  // Interactive state
+  const [circleHovered, setCircleHovered] = useState(false);
+  const [rectangleClicked, setRectangleClicked] = useState(false);
+  const [starHovered, setStarHovered] = useState(false);
 
   useFrame((elapsed) => {
     // Animate all the components
@@ -104,7 +112,11 @@ function Scene() {
     if (imageSequence.current) {
       imageSequence.current.scale = Math.cos(elapsed * 1.2) * 0.15 + 1;
     }
-  });
+    if (svg.current) {
+      svg.current.rotation = elapsed * 0.2;
+      svg.current.scale = Math.sin(elapsed * 0.8) * 0.2 + 1;
+    }
+  }, []);
 
   // Calculate grid positions
   const gridSize = 4;
@@ -143,32 +155,49 @@ function Scene() {
         />
       </Group>
 
-      {/* Circle */}
+      {/* Circle - Interactive with hover */}
       <Group x={cellWidth * 1.5} y={cellHeight * 0.5}>
         <Circle
           ref={circle}
           radius={30}
-          fill="#F1C40F"
-          stroke="#E67E22"
-          linewidth={3}
+          fill={circleHovered ? '#FFD700' : '#F1C40F'}
+          stroke={circleHovered ? '#FF8C00' : '#E67E22'}
+          linewidth={circleHovered ? 5 : 3}
+          onPointerOver={() => setCircleHovered(true)}
+          onPointerOut={() => setCircleHovered(false)}
         />
       </Group>
 
-      {/* Rectangle */}
+      {/* Rectangle - Interactive with click */}
       <Group x={cellWidth * 2.5} y={cellHeight * 0.5}>
         <Rectangle
           ref={rectangle}
           width={60}
           height={40}
-          fill="#2ECC71"
-          stroke="#27AE60"
-          linewidth={2}
+          fill={rectangleClicked ? '#E74C3C' : '#2ECC71'}
+          stroke={rectangleClicked ? '#C0392B' : '#27AE60'}
+          linewidth={rectangleClicked ? 4 : 2}
+          onClick={() => setRectangleClicked(!rectangleClicked)}
         />
       </Group>
 
-      {/* Text */}
+      {/* SVG Example - Inline content */}
       <Group x={cellWidth * 3.5} y={cellHeight * 0.5}>
-        <Text value="React" fill="#ccc" size={20} baseline="middle" />
+        <SVG
+          ref={svg}
+          content={`
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="40" fill="#FF6B6B" />
+              <circle cx="35" cy="40" r="8" fill="white" />
+              <circle cx="65" cy="40" r="8" fill="white" />
+              <path d="M 30 60 Q 50 75 70 60" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" />
+            </svg>
+          `}
+          scale={0.6}
+          onLoad={(svg) => {
+            svg.center();
+          }}
+        />
       </Group>
 
       {/* Rounded Rectangle */}
@@ -227,16 +256,18 @@ function Scene() {
         />
       </Group>
 
-      {/* Star */}
+      {/* Star - Interactive with hover and pointer events */}
       <Group x={cellWidth * 1.5} y={cellHeight * 2.5}>
         <Star
           ref={star}
           innerRadius={20}
-          outerRadius={40}
+          outerRadius={starHovered ? 45 : 40}
           sides={5}
-          fill="#F39C12"
-          stroke="#D35400"
-          linewidth={2}
+          fill={starHovered ? '#F1C40F' : '#F39C12'}
+          stroke={starHovered ? '#E67E22' : '#D35400'}
+          linewidth={starHovered ? 3 : 2}
+          onPointerEnter={() => setStarHovered(true)}
+          onPointerLeave={() => setStarHovered(false)}
         />
       </Group>
 
@@ -256,14 +287,14 @@ function Scene() {
 
       {/* Sprite */}
       <Group x={cellWidth * 3.5} y={cellHeight * 2.5}>
-        <Sprite ref={sprite} path="https://placehold.co/60x60" />
+        <Sprite ref={sprite} src="https://placehold.co/60x60" />
       </Group>
 
       {/* Extra components in the 4th row */}
       <Group x={cellWidth * 0.5} y={cellHeight * 3.5}>
         <ImageSequence
           ref={imageSequence}
-          paths={[
+          src={[
             'https://placehold.co/60x60/FF6B6B/FFFFFF?text=1',
             'https://placehold.co/60x60/4ECDC4/FFFFFF?text=2',
             'https://placehold.co/60x60/45B7D1/FFFFFF?text=3',
@@ -317,7 +348,7 @@ function Scene() {
       <Group x={cellWidth * 3.5} y={cellHeight * 3.5}>
         <Texture
           ref={(ref) => ref && setTexture(ref)}
-          source="https://placehold.co/60x60/9B59B6/FFFFFF?text=TEX"
+          src="https://placehold.co/60x60/9B59B6/FFFFFF?text=TEX"
         />
         <Rectangle
           width={60}
