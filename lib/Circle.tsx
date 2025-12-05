@@ -5,6 +5,7 @@ import { useTwo } from './Context';
 import type { Circle as Instance } from 'two.js/src/shapes/circle';
 import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
+import { EVENT_HANDLER_NAMES } from './Events';
 
 type CircleProps = PathProps | 'radius';
 type ComponentProps = React.PropsWithChildren<
@@ -20,29 +21,7 @@ type ComponentProps = React.PropsWithChildren<
 export type RefCircle = Instance;
 
 export const Circle = React.forwardRef<Instance, ComponentProps>(
-  (
-    {
-      x,
-      y,
-      resolution,
-      // Event handlers
-      onClick,
-      onContextMenu,
-      onDoubleClick,
-      onWheel,
-      onPointerDown,
-      onPointerUp,
-      onPointerOver,
-      onPointerOut,
-      onPointerEnter,
-      onPointerLeave,
-      onPointerMove,
-      onPointerCancel,
-      // All other props are shape props
-      ...shapeProps
-    },
-    forwardedRef
-  ) => {
+  ({ x, y, resolution, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
@@ -51,37 +30,25 @@ export const Circle = React.forwardRef<Instance, ComponentProps>(
       [resolution]
     );
 
-    // Build event handlers object with explicit dependencies
-    const eventHandlers = useMemo(
-      () => ({
-        ...(onClick && { onClick }),
-        ...(onContextMenu && { onContextMenu }),
-        ...(onDoubleClick && { onDoubleClick }),
-        ...(onWheel && { onWheel }),
-        ...(onPointerDown && { onPointerDown }),
-        ...(onPointerUp && { onPointerUp }),
-        ...(onPointerOver && { onPointerOver }),
-        ...(onPointerOut && { onPointerOut }),
-        ...(onPointerEnter && { onPointerEnter }),
-        ...(onPointerLeave && { onPointerLeave }),
-        ...(onPointerMove && { onPointerMove }),
-        ...(onPointerCancel && { onPointerCancel }),
-      }),
-      [
-        onClick,
-        onContextMenu,
-        onDoubleClick,
-        onWheel,
-        onPointerDown,
-        onPointerUp,
-        onPointerOver,
-        onPointerOut,
-        onPointerEnter,
-        onPointerLeave,
-        onPointerMove,
-        onPointerCancel,
-      ]
-    );
+    // Extract event handlers from props
+    const { eventHandlers, shapeProps } = useMemo(() => {
+      const eventHandlers: Partial<EventHandlers> = {};
+      const shapeProps: Record<string, unknown> = {};
+
+      for (const key in props) {
+        if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
+          eventHandlers[key as keyof EventHandlers] = props[
+            key as keyof EventHandlers
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ] as any;
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          shapeProps[key] = (props as any)[key];
+        }
+      }
+
+      return { eventHandlers, shapeProps };
+    }, [props]);
 
     useEffect(() => {
       // Update position
