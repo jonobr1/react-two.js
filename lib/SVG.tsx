@@ -1,9 +1,5 @@
-import React, {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import Two from 'two.js';
 import { Context, useTwo } from './Context';
 
 import type { Group as Instance } from 'two.js/src/group';
@@ -23,30 +19,31 @@ type GroupProps =
   | 'curved'
   | 'automatic';
 
-export interface SVGProps
-  extends React.PropsWithChildren<{
-      [K in Extract<GroupProps, keyof Instance>]?: Instance[K];
-    }>,
-    Partial<EventHandlers> {
-  // Source (one required)
-  src?: string; // URL to .svg file
-  content?: string; // Inline SVG markup string
-
-  // Positioning & Transform
-  x?: number;
-  y?: number;
-
-  // Callbacks
-  onLoad?: (group: RefSVG, svg: SVGElement | SVGElement[]) => void;
-  onError?: (error: Error) => void;
-
-  // Loading behavior
-  shallow?: boolean; // Flatten groups when interpreting
-}
+type ComponentProps = React.PropsWithChildren<
+  {
+    [K in Extract<GroupProps, keyof Instance>]?: Instance[K];
+  } & (
+    | {
+        src: string; // URL to .svg file
+        content: never; // Inline SVG markup string
+      }
+    | {
+        // Source (one required)
+        src: never; // URL to .svg file
+        content: string; // Inline SVG markup string
+      }
+  ) & {
+      x?: number;
+      y?: number;
+      onLoad?: (group: Instance, svg: SVGElement | SVGElement[]) => void;
+      onError?: (error: Error) => void;
+      shallow?: boolean; // Flatten groups when interpreting
+    } & Partial<EventHandlers>
+>;
 
 export type RefSVG = Instance;
 
-export const SVG = React.forwardRef<RefSVG, SVGProps>(
+export const SVG = React.forwardRef<Instance, ComponentProps>(
   ({ x, y, src, content, onLoad, onError, ...props }, forwardedRef) => {
     const {
       two,
@@ -56,7 +53,8 @@ export const SVG = React.forwardRef<RefSVG, SVGProps>(
       registerEventShape,
       unregisterEventShape,
     } = useTwo();
-    const [ref, set] = useState<Instance | null>(null);
+    const svg = useMemo(() => new Two.Group(), []);
+    const ref = useRef<Instance | null>(null);
 
     // Extract event handlers from props
     const { eventHandlers, shapeProps } = useMemo(() => {
@@ -78,6 +76,22 @@ export const SVG = React.forwardRef<RefSVG, SVGProps>(
       return { eventHandlers, shapeProps };
     }, [props]);
 
+    // Hoist instance for async access
+    useEffect(() => {
+      ref.current = svg;
+    }, [svg]);
+
+    // Add group to parent
+    useEffect(() => {
+      if (parent && svg) {
+        parent.add(svg);
+
+        return () => {
+          parent.remove(svg);
+        };
+      }
+    }, [svg, parent]);
+
     // Validate props
     useEffect(() => {
       if (!src && !content) {
@@ -92,7 +106,7 @@ export const SVG = React.forwardRef<RefSVG, SVGProps>(
       }
     }, [src, content]);
 
-    // Load SVG using two.load()
+    // Load <svg /> using two.load()
     useEffect(() => {
       if (!two) return;
 
@@ -104,12 +118,12 @@ export const SVG = React.forwardRef<RefSVG, SVGProps>(
       try {
         // two.load() returns a Group immediately (empty initially)
         // and populates it asynchronously via callback
-        const group = two.load(
+        two.load(
           source,
           (loadedGroup: Instance, svg: SVGElement | SVGElement[]) => {
             if (!mounted) return;
 
-            set(loadedGroup);
+            ref.current?.add(loadedGroup.children);
 
             // Invoke user callback if provided
             if (onLoad) {
@@ -124,9 +138,6 @@ export const SVG = React.forwardRef<RefSVG, SVGProps>(
             }
           }
         );
-
-        // Store the group immediately (even though it's empty)
-        set(group);
       } catch (err) {
         if (!mounted) return;
 
@@ -154,56 +165,42 @@ export const SVG = React.forwardRef<RefSVG, SVGProps>(
       };
     }, [two, src, content, onLoad, onError]);
 
-    // Add group to parent
-    useEffect(() => {
-      if (parent && ref) {
-        parent.add(ref);
-
-        return () => {
-          parent.remove(ref);
-        };
-      }
-    }, [ref, parent]);
-
     // Update position and properties
     useEffect(() => {
-      if (ref) {
-        const group = ref;
-        // Update position
-        if (typeof x === 'number') group.translation.x = x;
-        if (typeof y === 'number') group.translation.y = y;
+      // Update position
+      if (typeof x === 'number') svg.translation.x = x;
+      if (typeof y === 'number') svg.translation.y = y;
 
-        const args = { ...shapeProps };
-        delete args.children; // Allow react to handle children
+      const args = { ...shapeProps };
+      delete args.children; // Allow react to handle children
 
-        // Update other properties (excluding event handlers)
-        for (const key in args) {
-          if (key in group) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (group as any)[key] = (args as any)[key];
-          }
+      // Update other properties (excluding event handlers)
+      for (const key in args) {
+        if (key in svg) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (svg as any)[key] = (args as any)[key];
         }
       }
-    }, [ref, x, y, shapeProps]);
+    }, [svg, x, y, shapeProps]);
 
     // Register event handlers
     useEffect(() => {
-      if (ref && Object.keys(eventHandlers).length > 0) {
-        registerEventShape(ref, eventHandlers, parent ?? undefined);
+      if (Object.keys(eventHandlers).length > 0) {
+        registerEventShape(svg, eventHandlers, parent ?? undefined);
 
         return () => {
-          unregisterEventShape(ref);
+          unregisterEventShape(svg);
         };
       }
-    }, [ref, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [svg, registerEventShape, unregisterEventShape, parent, eventHandlers]);
 
-    useImperativeHandle(forwardedRef, () => ref as Instance, [ref]);
+    useImperativeHandle(forwardedRef, () => svg, [svg]);
 
     return (
       <Context.Provider
         value={{
           two,
-          parent: ref,
+          parent: svg,
           width,
           height,
           registerEventShape,
