@@ -122,13 +122,14 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
           source,
           (loadedGroup: Instance, svg: SVGElement | SVGElement[]) => {
             if (!mounted) return;
-
             ref.current?.add(loadedGroup.children);
 
             // Invoke user callback if provided
             if (onLoad) {
               try {
-                onLoad(loadedGroup, svg);
+                // Wait until next frame once Two.js has computed
+                // all necessary rendering / bounding box updates
+                requestAnimationFrame(() => onLoad(ref.current!, svg));
               } catch (err) {
                 console.error(
                   '[react-two.js] Error in SVG onLoad callback:',
@@ -159,9 +160,11 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
       }
 
       return () => {
-        mounted = false;
         // Note: Two.js XHR requests cannot be cancelled
         // We track mounted state to prevent setState on unmounted component
+        mounted = false;
+        // Remove previously added children
+        ref.current?.remove(ref.current.children);
       };
     }, [two, src, content, onLoad, onError]);
 
