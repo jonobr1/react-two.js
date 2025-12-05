@@ -24,12 +24,12 @@ type ComponentProps = React.PropsWithChildren<
     [K in Extract<GroupProps, keyof Instance>]?: Instance[K];
   } & (
     | {
+        // Source (one required)
         src: string; // URL to .svg file
-        content: never; // Inline SVG markup string
+        content?: never; // Inline SVG markup string
       }
     | {
-        // Source (one required)
-        src: never; // URL to .svg file
+        src?: never; // URL to .svg file
         content: string; // Inline SVG markup string
       }
   ) & {
