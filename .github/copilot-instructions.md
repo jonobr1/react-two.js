@@ -5,7 +5,7 @@ react-two.js is a React wrapper library for Two.js, providing declarative React 
 
 ## Tech Stack
 - **TypeScript** - Primary language with strict typing enabled
-- **React 19+** - Peer dependency for component system
+- **React 18.3+** - Peer dependency for component system
 - **Vite** - Development server and build tool
 - **Two.js** - Core graphics library (peer dependency from @jonobr1/two.js#dev)
 - **ESLint** - Code linting with React-specific rules
@@ -53,7 +53,7 @@ export const Shape = forwardRef<RefShape, ShapeProps>((props, ref) => {
 ### React Patterns
 - Use `forwardRef` for all shape components to enable ref forwarding
 - Use hooks (`useTwo`, `useFrame`) for context access and animations
-- Follow React 19 best practices
+- Follow modern React best practices
 - Avoid using state for animations - prefer `useFrame` hook with refs
 
 ### Canvas Component Rules
@@ -161,7 +161,7 @@ Frame-based animation system for smooth 60fps animations.
 Only react-two.js components can be children of `<Canvas>`. DOM elements will trigger warnings.
 
 ### Peer Dependencies
-- Ensure React 19+ is installed
+- Ensure React 18.3+ is installed
 - Two.js must be from @jonobr1/two.js#dev branch
 - Check peer dependency warnings during install
 
