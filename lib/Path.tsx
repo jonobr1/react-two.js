@@ -96,11 +96,11 @@ export const Path = React.forwardRef<Instance, ComponentProps>(
       ]
     );
 
-    useEffect(() => {
-      return () => {
-        path.dispose();
-      };
-    }, [path]);
+    // useEffect(() => {
+    //   return () => {
+    //     path.dispose();
+    //   };
+    // }, [path]);
 
     useEffect(() => {
       if (parent) {

@@ -89,11 +89,11 @@ export const ArcSegment = React.forwardRef<Instance, ComponentProps>(
       ]
     );
 
-    useEffect(() => {
-      return () => {
-        arcSegment.dispose();
-      };
-    }, [arcSegment]);
+    // useEffect(() => {
+    //   return () => {
+    //     arcSegment.dispose();
+    //   };
+    // }, [arcSegment]);
 
     useEffect(() => {
       if (parent) {

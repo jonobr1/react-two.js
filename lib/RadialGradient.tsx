@@ -24,11 +24,11 @@ export const RadialGradient = React.forwardRef<Instance | null, ComponentProps>(
     const ref = useMemo(() => new Two.RadialGradient(), []);
     const applied = useRef<Record<string, unknown>>({});
 
-    useEffect(() => {
-      return () => {
-        ref.dispose();
-      };
-    }, [ref]);
+    // useEffect(() => {
+    //   return () => {
+    //     ref.dispose();
+    //   };
+    // }, [ref]);
 
     useEffect(() => {
       if (ref) {

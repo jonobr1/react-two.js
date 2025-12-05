@@ -79,11 +79,11 @@ export const Star = React.forwardRef<Instance, ComponentProps>(
       ]
     );
 
-    useEffect(() => {
-      return () => {
-        star.dispose();
-      };
-    }, [star]);
+    // useEffect(() => {
+    //   return () => {
+    //     star.dispose();
+    //   };
+    // }, [star]);
 
     useEffect(() => {
       if (parent) {

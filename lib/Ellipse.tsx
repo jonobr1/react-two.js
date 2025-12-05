@@ -51,11 +51,11 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
       return { eventHandlers, shapeProps };
     }, [props]);
 
-    useEffect(() => {
-      return () => {
-        ellipse.dispose();
-      };
-    }, [ellipse]);
+    // useEffect(() => {
+    //   return () => {
+    //     ellipse.dispose();
+    //   };
+    // }, [ellipse]);
 
     useEffect(() => {
       if (parent) {

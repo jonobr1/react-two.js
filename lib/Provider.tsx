@@ -50,13 +50,20 @@ function validateChildren(children: React.ReactNode): void {
 
     // Allow React.Fragment and other built-in React elements
     if (childType === React.Fragment) {
-      validateChildren(child.props.children);
+      validateChildren(
+        (child.props as { children?: React.ReactNode }).children
+      );
       return;
     }
 
     // Check for function/class components - validate their children recursively
-    if (typeof childType === 'function' && child.props.children) {
-      validateChildren(child.props.children);
+    if (
+      typeof childType === 'function' &&
+      (child.props as { children?: React.ReactNode }).children
+    ) {
+      validateChildren(
+        (child.props as { children?: React.ReactNode }).children
+      );
     }
   });
 }

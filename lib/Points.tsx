@@ -58,11 +58,11 @@ export const Points = React.forwardRef<Instance, ComponentProps>(
       return { eventHandlers, shapeProps };
     }, [props]);
 
-    useEffect(() => {
-      return () => {
-        points.dispose();
-      };
-    }, [points]);
+    // useEffect(() => {
+    //   return () => {
+    //     points.dispose();
+    //   };
+    // }, [points]);
 
     useEffect(() => {
       if (parent) {

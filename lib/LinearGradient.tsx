@@ -24,11 +24,11 @@ export const LinearGradient = React.forwardRef<Instance, ComponentProps>(
     const ref = useMemo(() => new Two.LinearGradient(), []);
     const applied = useRef<Record<string, unknown>>({});
 
-    useEffect(() => {
-      return () => {
-        ref.dispose();
-      };
-    }, [ref]);
+    // useEffect(() => {
+    //   return () => {
+    //     ref.dispose();
+    //   };
+    // }, [ref]);
 
     useEffect(() => {
       if (ref) {

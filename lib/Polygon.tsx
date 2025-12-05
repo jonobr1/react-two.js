@@ -48,11 +48,11 @@ export const Polygon = React.forwardRef<Instance, ComponentProps>(
       return { eventHandlers, shapeProps };
     }, [props]);
 
-    useEffect(() => {
-      return () => {
-        polygon.dispose();
-      };
-    }, [polygon]);
+    // useEffect(() => {
+    //   return () => {
+    //     polygon.dispose();
+    //   };
+    // }, [polygon]);
 
     useEffect(() => {
       if (parent) {

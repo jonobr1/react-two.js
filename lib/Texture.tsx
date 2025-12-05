@@ -28,11 +28,11 @@ export const Texture = React.forwardRef<Instance, ComponentProps>(
     const texture = useMemo(() => new Two.Texture(src), [src]);
     const applied = useRef<Record<string, unknown>>({});
 
-    useEffect(() => {
-      return () => {
-        texture.dispose();
-      };
-    }, [texture]);
+    // useEffect(() => {
+    //   return () => {
+    //     texture.dispose();
+    //   };
+    // }, [texture]);
 
     useEffect(() => {
       // Update other properties (excluding event handlers)
