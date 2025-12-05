@@ -79,12 +79,6 @@ export const RoundedRectangle = React.forwardRef<Instance, ComponentProps>(
       ]
     );
 
-    // useEffect(() => {
-    //   return () => {
-    //     roundedRectangle.dispose();
-    //   };
-    // }, [roundedRectangle]);
-
     useEffect(() => {
       if (parent) {
         parent.add(roundedRectangle);

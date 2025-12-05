@@ -116,7 +116,10 @@ export const SVG = React.forwardRef<RefSVG, SVGProps>(
               try {
                 onLoad(loadedGroup, svg);
               } catch (err) {
-                console.error('[react-two.js] Error in SVG onLoad callback:', err);
+                console.error(
+                  '[react-two.js] Error in SVG onLoad callback:',
+                  err
+                );
               }
             }
           }

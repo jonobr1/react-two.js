@@ -63,12 +63,6 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
       return { eventHandlers, shapeProps };
     }, [props]);
 
-    // useEffect(() => {
-    //   return () => {
-    //     group.dispose();
-    //   };
-    // }, [group]);
-
     useEffect(() => {
       if (parent) {
         parent.add(group);

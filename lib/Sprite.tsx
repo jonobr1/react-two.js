@@ -95,12 +95,6 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
       ]
     );
 
-    // useEffect(() => {
-    //   return () => {
-    //     sprite.dispose();
-    //   };
-    // }, [sprite]);
-
     useEffect(() => {
       if (parent) {
         parent.add(sprite);

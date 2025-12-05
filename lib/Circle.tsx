@@ -84,12 +84,6 @@ export const Circle = React.forwardRef<Instance, ComponentProps>(
       ]
     );
 
-    // useEffect(() => {
-    //   return () => {
-    //     circle.dispose();
-    //   };
-    // }, [circle]);
-
     useEffect(() => {
       // Update position
       if (typeof x === 'number') circle.translation.x = x;

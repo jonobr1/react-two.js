@@ -58,12 +58,6 @@ export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
       return { eventHandlers, shapeProps };
     }, [props]);
 
-    // useEffect(() => {
-    //   return () => {
-    //     imageSequence.dispose();
-    //   };
-    // }, [imageSequence]);
-
     useEffect(() => {
       if (parent) {
         parent.add(imageSequence);

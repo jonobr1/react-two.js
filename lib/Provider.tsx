@@ -148,9 +148,11 @@ export const Provider: React.FC<ComponentProps> = (props) => {
           two.renderer.domElement
         );
         two.unbind('update', update);
+        // two.release();
         const index = Two.Instances.indexOf(two);
         Two.Instances.splice(index, 1);
         two.pause();
+        // two.clear();
       };
 
       function update() {

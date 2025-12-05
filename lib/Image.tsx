@@ -87,12 +87,6 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
       ]
     );
 
-    // useEffect(() => {
-    //   return () => {
-    //     image.dispose();
-    //   };
-    // }, [image]);
-
     useEffect(() => {
       if (parent) {
         parent.add(image);
