@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useMemo } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -23,7 +23,6 @@ export type RefPolygon = Instance;
 export const Polygon = React.forwardRef<Instance, ComponentProps>(
   ({ x, y, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
-    const applied = useRef<Record<string, unknown>>({});
 
     // Create the instance synchronously so it's available for refs immediately
     const polygon = useMemo(() => new Two.Polygon(), []);
@@ -67,19 +66,7 @@ export const Polygon = React.forwardRef<Instance, ComponentProps>(
       for (const key in shapeProps) {
         if (key in polygon) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const nextVal = (shapeProps as any)[key];
-          if (applied.current[key] !== nextVal) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (polygon as any)[key] = nextVal;
-            applied.current[key] = nextVal;
-          }
-        }
-      }
-
-      // Drop any previously applied keys that are no longer present
-      for (const key in applied.current) {
-        if (!(key in shapeProps)) {
-          delete applied.current[key];
+          (polygon as any)[key] = (shapeProps as any)[key];
         }
       }
     }, [shapeProps, polygon, x, y]);
