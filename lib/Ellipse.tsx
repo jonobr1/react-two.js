@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useMemo } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
@@ -23,7 +23,6 @@ export type RefEllipse = Instance;
 export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
   ({ x, y, resolution, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
-    const applied = useRef<Record<string, unknown>>({});
 
     // Create the instance synchronously so it's available for refs immediately
     const ellipse = useMemo(
@@ -52,12 +51,6 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
     }, [props]);
 
     useEffect(() => {
-      return () => {
-        ellipse.dispose();
-      };
-    }, [ellipse]);
-
-    useEffect(() => {
       if (parent) {
         parent.add(ellipse);
 
@@ -76,19 +69,7 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
       for (const key in shapeProps) {
         if (key in ellipse) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const nextVal = (shapeProps as any)[key];
-          if (applied.current[key] !== nextVal) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (ellipse as any)[key] = nextVal;
-            applied.current[key] = nextVal;
-          }
-        }
-      }
-
-      // Drop any previously applied keys that are no longer present
-      for (const key in applied.current) {
-        if (!(key in shapeProps)) {
-          delete applied.current[key];
+          (ellipse as any)[key] = (shapeProps as any)[key];
         }
       }
     }, [ellipse, x, y, shapeProps]);

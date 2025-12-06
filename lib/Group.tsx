@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useMemo } from 'react';
 import Two from 'two.js';
 import { Context, useTwo } from './Context';
 
@@ -38,7 +38,6 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
       registerEventShape,
       unregisterEventShape,
     } = useTwo();
-    const applied = useRef<Record<string, unknown>>({});
 
     // Create the instance synchronously so it's available for refs immediately
     const group = useMemo(() => new Two.Group(), []);
@@ -64,12 +63,6 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
     }, [props]);
 
     useEffect(() => {
-      return () => {
-        group.dispose();
-      };
-    }, [group]);
-
-    useEffect(() => {
       if (parent) {
         parent.add(group);
 
@@ -91,19 +84,7 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
       for (const key in args) {
         if (key in group) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const nextVal = (args as any)[key];
-          if (applied.current[key] !== nextVal) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (group as any)[key] = nextVal;
-            applied.current[key] = nextVal;
-          }
-        }
-      }
-
-      // Drop any previously applied keys that are no longer present
-      for (const key in applied.current) {
-        if (!(key in args)) {
-          delete applied.current[key];
+          (group as any)[key] = (args as any)[key];
         }
       }
     }, [group, x, y, shapeProps]);

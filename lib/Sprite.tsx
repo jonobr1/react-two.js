@@ -1,10 +1,11 @@
-import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useMemo } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Sprite as Instance } from 'two.js/src/effects/sprite';
 import { RectangleProps } from './Rectangle';
 import { type EventHandlers } from './Properties';
+import { EVENT_HANDLER_NAMES } from './Events';
 
 type SpriteProps =
   | RectangleProps
@@ -33,73 +34,31 @@ type ComponentProps = React.PropsWithChildren<
 export type RefSprite = Instance;
 
 export const Sprite = React.forwardRef<Instance, ComponentProps>(
-  (
-    {
-      src,
-      x,
-      y,
-      autoPlay,
-      // Event handlers
-      onClick,
-      onContextMenu,
-      onDoubleClick,
-      onWheel,
-      onPointerDown,
-      onPointerUp,
-      onPointerOver,
-      onPointerOut,
-      onPointerEnter,
-      onPointerLeave,
-      onPointerMove,
-      onPointerCancel,
-      // All other props are shape props
-      ...shapeProps
-    },
-    forwardedRef
-  ) => {
+  ({ src, x, y, autoPlay, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
-    const applied = useRef<Record<string, unknown>>({});
 
     // Create the instance synchronously so it's available for refs immediately
     const sprite = useMemo(() => new Two.Sprite(src), [src]);
 
-    // Build event handlers object with explicit dependencies
-    const eventHandlers = useMemo(
-      () => ({
-        ...(onClick && { onClick }),
-        ...(onContextMenu && { onContextMenu }),
-        ...(onDoubleClick && { onDoubleClick }),
-        ...(onWheel && { onWheel }),
-        ...(onPointerDown && { onPointerDown }),
-        ...(onPointerUp && { onPointerUp }),
-        ...(onPointerOver && { onPointerOver }),
-        ...(onPointerOut && { onPointerOut }),
-        ...(onPointerEnter && { onPointerEnter }),
-        ...(onPointerLeave && { onPointerLeave }),
-        ...(onPointerMove && { onPointerMove }),
-        ...(onPointerCancel && { onPointerCancel }),
-      }),
-      [
-        onClick,
-        onContextMenu,
-        onDoubleClick,
-        onWheel,
-        onPointerDown,
-        onPointerUp,
-        onPointerOver,
-        onPointerOut,
-        onPointerEnter,
-        onPointerLeave,
-        onPointerMove,
-        onPointerCancel,
-      ]
-    );
+    // Extract event handlers from props
+    const { eventHandlers, shapeProps } = useMemo(() => {
+      const eventHandlers: Partial<EventHandlers> = {};
+      const shapeProps: Record<string, unknown> = {};
 
-    useEffect(() => {
-      return () => {
-        sprite.dispose();
-      };
-    }, [sprite]);
+      for (const key in props) {
+        if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
+          eventHandlers[key as keyof EventHandlers] = props[
+            key as keyof EventHandlers
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ] as any;
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          shapeProps[key] = (props as any)[key];
+        }
+      }
+
+      return { eventHandlers, shapeProps };
+    }, [props]);
 
     useEffect(() => {
       if (parent) {
@@ -126,19 +85,7 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
       for (const key in shapeProps) {
         if (key in sprite) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const nextVal = (shapeProps as any)[key];
-          if (applied.current[key] !== nextVal) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (sprite as any)[key] = nextVal;
-            applied.current[key] = nextVal;
-          }
-        }
-      }
-
-      // Drop any previously applied keys that are no longer present
-      for (const key in applied.current) {
-        if (!(key in shapeProps)) {
-          delete applied.current[key];
+          (sprite as any)[key] = (shapeProps as any)[key];
         }
       }
     }, [shapeProps, sprite, x, y, autoPlay]);

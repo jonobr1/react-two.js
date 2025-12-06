@@ -67,8 +67,8 @@ npm install react-two.js react react-dom two.js
 ```
 
 **Requirements** as peer dependencies:
-- React 18.3+
-- Two.js v0.8.21+
+- React 19+
+- Two.js v0.8.22+
 
 > [!IMPORTANT]
 > react-two.js is a React renderer, it must pair with a major version of React, like react-dom.
@@ -158,10 +158,11 @@ function Component() {
   const { two, width, height } = useTwo()
 
   useEffect(() => {
+    if (!two) return;
     two.play();
     console.log('Canvas size:', width, height)
     console.log('Two.js instance:', instance)
-  }, [])
+  }, [two])
 }
 ```
 

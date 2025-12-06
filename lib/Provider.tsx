@@ -50,13 +50,20 @@ function validateChildren(children: React.ReactNode): void {
 
     // Allow React.Fragment and other built-in React elements
     if (childType === React.Fragment) {
-      validateChildren((child as React.ReactElement<{ children?: React.ReactNode }>).props.children);
+      validateChildren(
+        (child.props as { children?: React.ReactNode }).children
+      );
       return;
     }
 
     // Check for function/class components - validate their children recursively
-    if (typeof childType === 'function' && (child as React.ReactElement<{ children?: React.ReactNode }>).props.children) {
-      validateChildren((child as React.ReactElement<{ children?: React.ReactNode }>).props.children);
+    if (
+      typeof childType === 'function' &&
+      (child.props as { children?: React.ReactNode }).children
+    ) {
+      validateChildren(
+        (child.props as { children?: React.ReactNode }).children
+      );
     }
   });
 }
@@ -109,61 +116,103 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     }
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(mount, [props]);
-
-  function mount() {
-    let unmount = () => {};
+  // Initialize root Two.js instance
+  useEffect(() => {
     const isRoot = !two;
 
     if (isRoot) {
       const args = { ...props };
       delete args.children;
-      delete args.onPointerMissed;
-
+      // Only update root instance
       const two = new Two(args).appendTo(container.current!);
-      let width = two.width;
-      let height = two.height;
 
       set((prev) => ({
         ...prev,
         two,
         parent: two.scene,
-        width,
-        height,
+        width: two.width,
+        height: two.height,
         registerEventShape,
         unregisterEventShape,
       }));
-      two.bind('update', update);
 
-      unmount = () => {
+      return () => {
         two.renderer.domElement.parentElement?.removeChild(
           two.renderer.domElement
         );
-        two.unbind('update', update);
-        const index = Two.Instances.indexOf(two);
-        Two.Instances.splice(index, 1);
         two.pause();
+        two.unbind();
+        two.release();
+        const index = Two.Instances.indexOf(two);
+        if (index >= 0) {
+          Two.Instances.splice(index, 1);
+        }
+        two.clear();
       };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-      function update() {
-        const widthFlagged = two.width !== width;
-        const heightFlagged = false;
+  // Update dimensions from props
+  useEffect(() => {
+    const isRoot = !two;
 
-        if (widthFlagged) {
-          width = two.width;
-        }
-        if (heightFlagged) {
-          height = two.height;
-        }
-        if (widthFlagged || heightFlagged) {
-          set((state) => ({ ...state, width, height }));
-        }
+    if (isRoot) {
+      // Only update root instance
+      const result: Record<string, unknown> = {};
+      let changed = false;
+      if (typeof props.width === 'number') {
+        result.width = props.width;
+        if (state.two) state.two.width = props.width;
+        changed = true;
+      }
+      if (typeof props.height === 'number') {
+        result.height = props.height;
+        if (state.two) state.two.height = props.height;
+        changed = true;
+      }
+      if (changed) {
+        set((state) => ({ ...state, ...result }));
       }
     }
+  }, [two, state.two, props.width, props.height]);
 
-    return unmount;
-  }
+  // Auto-update dimensions if fullscreen / fitted
+  useEffect(() => {
+    const isRoot = !two;
+
+    if (isRoot) {
+      // Only update root instance
+      if (state.two) {
+        const instance = state.two;
+        let width = instance.width;
+        let height = instance.height;
+
+        if (props.fullscreen || props.fitted) {
+          instance.bind('update', update);
+        }
+
+        function update() {
+          const widthFlagged = instance.width !== width;
+          const heightFlagged = instance.height !== height;
+
+          if (widthFlagged) {
+            width = instance.width;
+          }
+          if (heightFlagged) {
+            height = instance.height;
+          }
+          if (widthFlagged || heightFlagged) {
+            set((state) => ({ ...state, width, height }));
+          }
+        }
+
+        return () => {
+          instance.unbind('update', update);
+        };
+      }
+    }
+  }, [two, state.two, props.fullscreen, props.fitted]);
 
   // Validate children in development mode
   useEffect(() => {

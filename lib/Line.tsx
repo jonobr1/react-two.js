@@ -1,10 +1,11 @@
-import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useMemo } from 'react';
 import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Line as Instance } from 'two.js/src/shapes/line';
 import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
+import { EVENT_HANDLER_NAMES } from './Events';
 
 type LineProps = PathProps | 'left' | 'right';
 type ComponentProps = React.PropsWithChildren<
@@ -21,73 +22,31 @@ type ComponentProps = React.PropsWithChildren<
 export type RefLine = Instance;
 
 export const Line = React.forwardRef<Instance, ComponentProps>(
-  (
-    {
-      x1,
-      y1,
-      x2,
-      y2,
-      // Event handlers
-      onClick,
-      onContextMenu,
-      onDoubleClick,
-      onWheel,
-      onPointerDown,
-      onPointerUp,
-      onPointerOver,
-      onPointerOut,
-      onPointerEnter,
-      onPointerLeave,
-      onPointerMove,
-      onPointerCancel,
-      // All other props are shape props
-      ...shapeProps
-    },
-    forwardedRef
-  ) => {
+  ({ x1, y1, x2, y2, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
-    const applied = useRef<Record<string, unknown>>({});
 
     // Create the instance synchronously so it's available for refs immediately
     const line = useMemo(() => new Two.Line(), []);
 
-    // Build event handlers object with explicit dependencies
-    const eventHandlers = useMemo(
-      () => ({
-        ...(onClick && { onClick }),
-        ...(onContextMenu && { onContextMenu }),
-        ...(onDoubleClick && { onDoubleClick }),
-        ...(onWheel && { onWheel }),
-        ...(onPointerDown && { onPointerDown }),
-        ...(onPointerUp && { onPointerUp }),
-        ...(onPointerOver && { onPointerOver }),
-        ...(onPointerOut && { onPointerOut }),
-        ...(onPointerEnter && { onPointerEnter }),
-        ...(onPointerLeave && { onPointerLeave }),
-        ...(onPointerMove && { onPointerMove }),
-        ...(onPointerCancel && { onPointerCancel }),
-      }),
-      [
-        onClick,
-        onContextMenu,
-        onDoubleClick,
-        onWheel,
-        onPointerDown,
-        onPointerUp,
-        onPointerOver,
-        onPointerOut,
-        onPointerEnter,
-        onPointerLeave,
-        onPointerMove,
-        onPointerCancel,
-      ]
-    );
+    // Extract event handlers from props
+    const { eventHandlers, shapeProps } = useMemo(() => {
+      const eventHandlers: Partial<EventHandlers> = {};
+      const shapeProps: Record<string, unknown> = {};
 
-    useEffect(() => {
-      return () => {
-        line.dispose();
-      };
-    }, [line]);
+      for (const key in props) {
+        if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
+          eventHandlers[key as keyof EventHandlers] = props[
+            key as keyof EventHandlers
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ] as any;
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          shapeProps[key] = (props as any)[key];
+        }
+      }
+
+      return { eventHandlers, shapeProps };
+    }, [props]);
 
     useEffect(() => {
       if (parent) {
@@ -111,19 +70,7 @@ export const Line = React.forwardRef<Instance, ComponentProps>(
       for (const key in shapeProps) {
         if (key in line) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const nextVal = (shapeProps as any)[key];
-          if (applied.current[key] !== nextVal) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (line as any)[key] = nextVal;
-            applied.current[key] = nextVal;
-          }
-        }
-      }
-
-      // Drop any previously applied keys that are no longer present
-      for (const key in applied.current) {
-        if (!(key in shapeProps)) {
-          delete applied.current[key];
+          (line as any)[key] = (shapeProps as any)[key];
         }
       }
     }, [shapeProps, line, x1, y1, x2, y2]);
