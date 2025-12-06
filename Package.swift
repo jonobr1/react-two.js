@@ -24,9 +24,11 @@ let package = Package(
             path: "ios",
             exclude: [],
             sources: [
-                "TwoViewManager.swift", 
+                "TwoViewManager.swift",
+                "TwoViewManager.m", 
                 "TwoMetalView.swift", 
-                "TwoRenderer.swift"
+                "TwoRenderer.swift",
+                "Shaders.metal" // Also add the shaders!
             ]
         )
     ]
