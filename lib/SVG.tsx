@@ -1,6 +1,6 @@
 import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import Two from 'two.js';
-import { Context, useTwo } from './Context';
+import { Context, TwoParentContext, TwoSizeContext, useTwo } from './Context';
 
 import type { Group as Instance } from 'two.js/src/group';
 import { ShapeProps, type EventHandlers } from './Properties';
@@ -199,18 +199,37 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
 
     useImperativeHandle(forwardedRef, () => svg, [svg]);
 
+    const coreValue = useMemo(
+      () => ({
+        two,
+        registerEventShape,
+        unregisterEventShape,
+      }),
+      [two, registerEventShape, unregisterEventShape]
+    );
+
+    const parentValue = useMemo(
+      () => ({
+        parent: svg,
+      }),
+      [svg]
+    );
+
+    const sizeValue = useMemo(
+      () => ({
+        width,
+        height,
+      }),
+      [width, height]
+    );
+
     return (
-      <Context.Provider
-        value={{
-          two,
-          parent: svg,
-          width,
-          height,
-          registerEventShape,
-          unregisterEventShape,
-        }}
-      >
-        {props.children}
+      <Context.Provider value={coreValue}>
+        <TwoParentContext.Provider value={parentValue}>
+          <TwoSizeContext.Provider value={sizeValue}>
+            {props.children}
+          </TwoSizeContext.Provider>
+        </TwoParentContext.Provider>
       </Context.Provider>
     );
   }

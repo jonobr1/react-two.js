@@ -1,8 +1,19 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import Two from 'two.js';
 import type { Shape } from 'two.js/src/shape';
 import type { Group } from 'two.js/src/group';
-import { Context, useTwo } from './Context';
+import {
+  TwoCoreContext,
+  TwoParentContext,
+  TwoSizeContext,
+  useTwo,
+} from './Context';
 import type { EventHandlers } from './Events';
 import {
   createTwoEvent,
@@ -75,25 +86,10 @@ export const Provider: React.FC<ComponentProps> = (props) => {
   const hoveredShapes = useRef<Set<Shape | Group>>(new Set());
   const capturedShape = useRef<Shape | Group | null>(null);
 
-  const [state, set] = useState<{
-    two: typeof two;
-    parent: typeof parent;
-    width: number;
-    height: number;
-    registerEventShape: (
-      shape: Shape | Group,
-      handlers: Partial<EventHandlers>,
-      parent?: Group
-    ) => void;
-    unregisterEventShape: (shape: Shape | Group) => void;
-  }>({
-    two,
-    parent,
-    width: 0,
-    height: 0,
-    registerEventShape: () => {},
-    unregisterEventShape: () => {},
-  });
+  const [twoState, setTwoState] = useState<typeof two>(two);
+  const [parentState, setParentState] = useState<typeof parent>(parent);
+  const [width, setWidth] = useState<number>(0);
+  const [height, setHeight] = useState<number>(0);
 
   // Register a shape with event handlers
   const registerEventShape = useCallback(
@@ -126,15 +122,10 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       // Only update root instance
       const two = new Two(args).appendTo(container.current!);
 
-      set((prev) => ({
-        ...prev,
-        two,
-        parent: two.scene,
-        width: two.width,
-        height: two.height,
-        registerEventShape,
-        unregisterEventShape,
-      }));
+      setTwoState(two);
+      setParentState(two.scene);
+      setWidth(two.width);
+      setHeight(two.height);
 
       return () => {
         two.renderer.domElement.parentElement?.removeChild(
@@ -159,23 +150,16 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
     if (isRoot) {
       // Only update root instance
-      const result: Record<string, unknown> = {};
-      let changed = false;
       if (typeof props.width === 'number') {
-        result.width = props.width;
-        if (state.two) state.two.width = props.width;
-        changed = true;
+        if (twoState) twoState.width = props.width;
+        setWidth(props.width);
       }
       if (typeof props.height === 'number') {
-        result.height = props.height;
-        if (state.two) state.two.height = props.height;
-        changed = true;
-      }
-      if (changed) {
-        set((state) => ({ ...state, ...result }));
+        if (twoState) twoState.height = props.height;
+        setHeight(props.height);
       }
     }
-  }, [two, state.two, props.width, props.height]);
+  }, [two, twoState, props.width, props.height]);
 
   // Auto-update dimensions if fullscreen / fitted
   useEffect(() => {
@@ -183,8 +167,8 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
     if (isRoot) {
       // Only update root instance
-      if (state.two) {
-        const instance = state.two;
+      if (twoState) {
+        const instance = twoState;
         let width = instance.width;
         let height = instance.height;
 
@@ -203,7 +187,8 @@ export const Provider: React.FC<ComponentProps> = (props) => {
             height = instance.height;
           }
           if (widthFlagged || heightFlagged) {
-            set((state) => ({ ...state, width, height }));
+            setWidth(width);
+            setHeight(height);
           }
         }
 
@@ -212,7 +197,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
         };
       }
     }
-  }, [two, state.two, props.fullscreen, props.fitted]);
+  }, [two, twoState, props.fullscreen, props.fitted]);
 
   // Validate children in development mode
   useEffect(() => {
@@ -223,9 +208,9 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
   // Setup event listeners on canvas
   useEffect(() => {
-    if (!state.two) return;
+    if (!twoState) return;
 
-    const canvas = state.two.renderer.domElement;
+    const canvas = twoState.renderer.domElement;
 
     // Helper to dispatch events with bubbling
     const dispatchEvent = (
@@ -237,7 +222,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
       // Get the hit shape (first in array)
       const hitShape = shapes[0];
-      const point = getCanvasCoordinates(nativeEvent, canvas, state.two!);
+      const point = getCanvasCoordinates(nativeEvent, canvas, twoState!);
 
       // Get parent hierarchy for bubbling
       const hierarchy = getParentHierarchy(hitShape, eventShapes.current);
@@ -348,7 +333,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       if (capturedShape.current) {
         const entry = eventShapes.current.get(capturedShape.current);
         if (entry?.handlers.onPointerUp) {
-          const point = getCanvasCoordinates(e, canvas, state.two!);
+          const point = getCanvasCoordinates(e, canvas, twoState!);
           const event = createTwoEvent(
             e,
             capturedShape.current,
@@ -448,16 +433,49 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointercancel', handlePointerCancel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    state.two,
+    twoState,
     props.onPointerMissed,
     registerEventShape,
     unregisterEventShape,
   ]);
 
+  const coreValue = useMemo(
+    () => ({
+      two: twoState,
+      registerEventShape,
+      unregisterEventShape,
+    }),
+    [
+      twoState,
+      registerEventShape,
+      unregisterEventShape,
+    ]
+  );
+
+  const parentValue = useMemo(
+    () => ({
+      parent: parentState,
+    }),
+    [parentState]
+  );
+
+  const sizeValue = useMemo(
+    () => ({
+      width,
+      height,
+    }),
+    [width, height]
+  );
+
   return (
-    <Context.Provider value={state}>
-      <div ref={container}>{props.children}</div>
-    </Context.Provider>
+    <TwoCoreContext.Provider value={coreValue}>
+      <TwoParentContext.Provider value={parentValue}>
+        <TwoSizeContext.Provider value={sizeValue}>
+          <div ref={container}>{props.children}</div>
+        </TwoSizeContext.Provider>
+      </TwoParentContext.Provider>
+    </TwoCoreContext.Provider>
   );
 };
