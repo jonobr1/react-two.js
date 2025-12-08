@@ -36,6 +36,7 @@ import {
   Text,
   SVG,
   RefSVG,
+  RefGroup,
 } from '../lib/main';
 import { useRef, useState } from 'react';
 import { useFrame } from '../lib/Context';
@@ -194,7 +195,7 @@ function Scene() {
             </svg>
           `}
           scale={0.6}
-          onLoad={(svg) => {
+          onLoad={(svg: RefGroup) => {
             svg.center();
           }}
         />

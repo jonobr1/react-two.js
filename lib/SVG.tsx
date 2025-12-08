@@ -55,6 +55,20 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
     } = useTwo();
     const svg = useMemo(() => new Two.Group(), []);
     const ref = useRef<Instance | null>(null);
+    const onLoadRef = useRef(onLoad);
+    const onErrorRef = useRef(onError);
+    const lastLoadedSource = useRef<{
+      two: Two | null;
+      key: string | null;
+    }>({ two: null, key: null });
+
+    useEffect(() => {
+      onLoadRef.current = onLoad;
+    }, [onLoad]);
+
+    useEffect(() => {
+      onErrorRef.current = onError;
+    }, [onError]);
 
     // Extract event handlers from props
     const { eventHandlers, shapeProps } = useMemo(() => {
@@ -113,7 +127,16 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
       const source = src || content;
       if (!source) return;
 
+      const currentKey = source;
+      const last = lastLoadedSource.current;
+
+      // Skip reload if the source and Two instance are unchanged
+      if (last.two === two && last.key === currentKey) {
+        return;
+      }
+
       let mounted = true;
+      lastLoadedSource.current = { two, key: currentKey };
 
       try {
         // two.load() returns a Group immediately (empty initially)
@@ -125,11 +148,12 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
             ref.current?.add(loadedGroup.children);
 
             // Invoke user callback if provided
-            if (onLoad) {
+            const handleLoad = onLoadRef.current;
+            if (handleLoad) {
               try {
                 // Wait until next frame once Two.js has computed
                 // all necessary rendering / bounding box updates
-                requestAnimationFrame(() => onLoad(ref.current!, svg));
+                requestAnimationFrame(() => handleLoad(ref.current!, svg));
               } catch (err) {
                 console.error(
                   '[react-two.js] Error in SVG onLoad callback:',
@@ -145,9 +169,10 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
         const error =
           err instanceof Error ? err : new Error('Failed to load SVG');
 
-        if (onError) {
+        const handleError = onErrorRef.current;
+        if (handleError) {
           try {
-            onError(error);
+            handleError(error);
           } catch (callbackErr) {
             console.error(
               '[react-two.js] Error in SVG onError callback:',
@@ -163,10 +188,12 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
         // Note: Two.js XHR requests cannot be cancelled
         // We track mounted state to prevent setState on unmounted component
         mounted = false;
+        // Reset last loaded key so the same source can be reloaded after cleanup
+        lastLoadedSource.current = { two: null, key: null };
         // Remove previously added children
         ref.current?.remove(ref.current.children);
       };
-    }, [two, src, content, onLoad, onError]);
+    }, [two, src, content]);
 
     // Update position and properties
     useEffect(() => {
