@@ -29,6 +29,8 @@ type TwoConstructorPropsKeys = NonNullable<TwoConstructorProps>;
 type ComponentProps = React.PropsWithChildren<
   TwoConstructorPropsKeys & {
     onPointerMissed?: (event: PointerEvent) => void;
+  } & {
+    container: React.ComponentProps<'div'>;
   }
 >;
 
@@ -447,11 +449,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       registerEventShape,
       unregisterEventShape,
     }),
-    [
-      twoState,
-      registerEventShape,
-      unregisterEventShape,
-    ]
+    [twoState, registerEventShape, unregisterEventShape]
   );
 
   const parentValue = useMemo(
@@ -473,7 +471,9 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     <TwoCoreContext.Provider value={coreValue}>
       <TwoParentContext.Provider value={parentValue}>
         <TwoSizeContext.Provider value={sizeValue}>
-          <div ref={container}>{props.children}</div>
+          <div ref={container} {...props.container}>
+            {props.children}
+          </div>
         </TwoSizeContext.Provider>
       </TwoParentContext.Provider>
     </TwoCoreContext.Provider>
