@@ -30,7 +30,7 @@ type ComponentProps = React.PropsWithChildren<
   TwoConstructorPropsKeys & {
     onPointerMissed?: (event: PointerEvent) => void;
   } & {
-    container: React.ComponentProps<'div'>;
+    container?: React.ComponentProps<'div'>;
   }
 >;
 
