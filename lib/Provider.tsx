@@ -163,43 +163,51 @@ export const Provider: React.FC<ComponentProps> = (props) => {
     }
   }, [two, twoState, props.width, props.height]);
 
-  // Auto-update dimensions if fullscreen / fitted
+  // Auto-update dimensions when Two.js instance resizes
   useEffect(() => {
     const isRoot = !two;
 
-    if (isRoot) {
-      // Only update root instance
-      if (twoState) {
-        const instance = twoState;
-        let width = instance.width;
-        let height = instance.height;
+    if (isRoot && twoState) {
+      const instance = twoState;
 
-        if (props.fullscreen || props.fitted) {
-          instance.bind('update', update);
-        }
+      // Handler for Two.js resize events
+      function handleResize() {
+        setWidth(instance.width);
+        setHeight(instance.height);
+      }
 
-        function update() {
-          const widthFlagged = instance.width !== width;
-          const heightFlagged = instance.height !== height;
-
-          if (widthFlagged) {
-            width = instance.width;
-          }
-          if (heightFlagged) {
-            height = instance.height;
-          }
-          if (widthFlagged || heightFlagged) {
+      // Handler for resizing Two.js canvas based on fitted
+      function handleUpdate() {
+        const parent = instance.renderer.domElement.parentElement;
+        if (parent) {
+          const width = parent.offsetWidth;
+          const height = parent.offsetHeight;
+          if (instance.width !== width) {
             setWidth(width);
+          }
+          if (instance.height !== height) {
             setHeight(height);
           }
         }
+      }
+
+      if (props.fitted) {
+        // Catch renderer size change on fitted
+        instance.bind('update', handleUpdate);
 
         return () => {
-          instance.unbind('update', update);
+          instance.unbind('update', handleUpdate);
+        };
+      } else {
+        // Bind to renderer's resize event (fired by setSize(), etc.)
+        instance.renderer.bind('resize', handleResize);
+
+        return () => {
+          instance.renderer.unbind('resize', handleResize);
         };
       }
     }
-  }, [two, twoState, props.fullscreen, props.fitted]);
+  }, [two, twoState, props.fitted]);
 
   // Validate children in development mode
   useEffect(() => {
