@@ -485,7 +485,14 @@ export const Provider = React.forwardRef<
 
     // Skip if in fullscreen mode - Two.js manages styles
     if (props.fullscreen) {
-      return;
+      const resize = () => {
+        setWidth(twoState.width);
+        setHeight(twoState.height);
+      };
+      twoState.bind('resize', resize);
+      return () => {
+        twoState.unbind('resize', resize);
+      };
     }
 
     const element = twoState.renderer.domElement;
