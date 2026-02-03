@@ -4,11 +4,8 @@ import type { Group } from 'two.js/src/group';
 import type { Shape } from 'two.js/src/shape';
 import type { EventHandlers } from './Events';
 
-export interface TwoContext {
+export interface TwoCoreContextValue {
   two: Two | null;
-  parent: Group | null;
-  width: number;
-  height: number;
   registerEventShape: (
     shape: Shape | Group,
     handlers: Partial<EventHandlers>,
@@ -17,16 +14,43 @@ export interface TwoContext {
   unregisterEventShape: (shape: Shape | Group) => void;
 }
 
-export const Context = createContext<TwoContext>({
+export interface TwoParentContextValue {
+  parent: Group | null;
+}
+
+export interface TwoSizeContextValue {
+  width: number;
+  height: number;
+}
+
+export const TwoCoreContext = createContext<TwoCoreContextValue>({
   two: null,
-  parent: null,
-  width: 0,
-  height: 0,
   registerEventShape: () => {},
   unregisterEventShape: () => {},
 });
 
-export const useTwo = () => useContext(Context);
+export const TwoParentContext = createContext<TwoParentContextValue>({
+  parent: null,
+});
+
+export const TwoSizeContext = createContext<TwoSizeContextValue>({
+  width: 0,
+  height: 0,
+});
+
+// Keep the existing name for backwards compatibility with imports
+export const Context = TwoCoreContext;
+
+export const useTwo = (): TwoCoreContextValue &
+  TwoParentContextValue &
+  TwoSizeContextValue => {
+  const core = useContext(TwoCoreContext);
+  const parent = useContext(TwoParentContext);
+  const size = useContext(TwoSizeContext);
+
+  return { ...core, ...parent, ...size };
+};
+
 export const useFrame = (
   callback: (elapsed: number, frameDelta: number) => void,
   deps: unknown[] = []

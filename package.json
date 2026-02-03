@@ -1,6 +1,6 @@
 {
   "name": "react-two.js",
-  "version": "0.8.22-r.2",
+  "version": "0.8.23-r.1",
   "type": "module",
   "description": "A React virtual DOM for Two.js — a renderer agnostic two-dimensional drawing API for the web",
   "main": "./dist/react-two-main.es.js",
@@ -67,6 +67,7 @@
     "@types/react-dom": ">=18.3.25",
     "@vitejs/plugin-react": "^4.3.3",
     "@vitest/ui": "^3.2.4",
+    "baseline-browser-mapping": "^2.9.14",
     "clsx": "^2.1.1",
     "eslint": "^9.13.0",
     "eslint-plugin-react-hooks": "^5.0.0",
@@ -86,6 +87,6 @@
     "react": ">=19",
     "react-dom": ">=19",
     "react-native": ">=0.78",
-    "two.js": ">=v0.8.22"
+    "two.js": ">=v0.8.23"
   }
 }

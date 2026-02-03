@@ -36,8 +36,9 @@ import {
   Text,
   SVG,
   RefSVG,
+  RefGroup,
 } from '../lib/main';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFrame } from '../lib/Context';
 
 function Scene() {
@@ -194,7 +195,7 @@ function Scene() {
             </svg>
           `}
           scale={0.6}
-          onLoad={(svg) => {
+          onLoad={(svg: RefGroup) => {
             svg.center();
           }}
         />
@@ -373,12 +374,31 @@ export default function Playground({
   width?: number;
   height?: number;
 }) {
+  // Demonstrate ref forwarding to access the actual canvas element
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Example: You can now access the canvas element directly
+  useEffect(() => {
+    if (canvasRef.current) {
+      console.log('Canvas element:', canvasRef.current);
+      // You could get the 2D context: canvasRef.current.getContext('2d')
+    }
+  }, []);
+
   return (
     <Canvas
+      ref={canvasRef}
       type={Two.Types.canvas}
       width={width}
       height={height}
       autostart={true}
+      // DOM props are now applied directly to the canvas element
+      // unless fullscreen exists because it manipulates that for you
+      className="react-two-canvas"
+      style={{
+        userSelect: 'none',
+      }}
+      aria-label="Interactive Two.js canvas demonstration"
     >
       <Scene />
     </Canvas>

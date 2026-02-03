@@ -1,8 +1,21 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import Two from 'two.js';
 import type { Shape } from 'two.js/src/shape';
 import type { Group } from 'two.js/src/group';
-import { Context, useTwo } from './Context';
+import {
+  TwoCoreContext,
+  TwoParentContext,
+  TwoSizeContext,
+  useTwo,
+} from './Context';
 import type { EventHandlers } from './Events';
 import {
   createTwoEvent,
@@ -14,11 +27,51 @@ import {
 } from './Events';
 
 type TwoConstructorProps = ConstructorParameters<typeof Two>[0];
-type TwoConstructorPropsKeys = NonNullable<TwoConstructorProps>;
+
+// List of Two.js constructor prop keys
+const TWO_CONSTRUCTOR_KEYS = [
+  'fullscreen',
+  'autostart',
+  'width',
+  'height',
+  'type',
+  'overdraw',
+  'smoothing',
+  'ratio',
+] as const;
+
+// Separate Two.js constructor-only props from DOM props
+type TwoConstructorOnlyProps = {
+  fullscreen?: boolean;
+  autostart?: boolean;
+  width?: number;
+  height?: number;
+  type?: (typeof Two.Types)[keyof typeof Two.Types];
+  overdraw?: boolean;
+  smoothing?: boolean;
+  ratio?: number;
+};
+
+// Canvas element props
+type CanvasElementProps = React.ComponentPropsWithoutRef<'canvas'>;
+
+// SVG element props
+type SVGElementProps = React.ComponentPropsWithoutRef<'svg'>;
+
+// Discriminated union based on renderer type
+type CanvasSpecificProps = {
+  type?: 'canvas' | 'CanvasRenderer' | 'webgl' | 'WebGLRenderer';
+} & CanvasElementProps;
+
+type SVGSpecificProps = {
+  type?: 'svg' | 'SVGRenderer' | never;
+} & SVGElementProps;
+
+// Final component props
 type ComponentProps = React.PropsWithChildren<
-  TwoConstructorPropsKeys & {
+  TwoConstructorOnlyProps & {
     onPointerMissed?: (event: PointerEvent) => void;
-  }
+  } & (CanvasSpecificProps | SVGSpecificProps)
 >;
 
 /**
@@ -43,7 +96,7 @@ function validateChildren(children: React.ReactNode): void {
         `[react-two.js] <${childType}> is not compatible with Canvas.\n` +
           `Only react-two.js components (Circle, Rectangle, Group, etc.) can be used inside <Canvas>.\n` +
           `Place DOM elements outside of the Canvas component.\n` +
-          `See: https://github.com/jonobr1/react-two.js#usage`
+          `See: https://github.com/jonobr1/react-two.js#usage`,
       );
       return;
     }
@@ -51,7 +104,7 @@ function validateChildren(children: React.ReactNode): void {
     // Allow React.Fragment and other built-in React elements
     if (childType === React.Fragment) {
       validateChildren(
-        (child.props as { children?: React.ReactNode }).children
+        (child.props as { children?: React.ReactNode }).children,
       );
       return;
     }
@@ -62,49 +115,68 @@ function validateChildren(children: React.ReactNode): void {
       (child.props as { children?: React.ReactNode }).children
     ) {
       validateChildren(
-        (child.props as { children?: React.ReactNode }).children
+        (child.props as { children?: React.ReactNode }).children,
       );
     }
   });
 }
 
-export const Provider: React.FC<ComponentProps> = (props) => {
+export const Provider = React.forwardRef<
+  HTMLCanvasElement | SVGElement,
+  ComponentProps
+>((props, forwardedRef) => {
   const { two, parent } = useTwo();
   const container = useRef<HTMLDivElement | null>(null);
   const eventShapes = useRef<Map<Shape | Group, EventShape>>(new Map());
   const hoveredShapes = useRef<Set<Shape | Group>>(new Set());
   const capturedShape = useRef<Shape | Group | null>(null);
 
-  const [state, set] = useState<{
-    two: typeof two;
-    parent: typeof parent;
-    width: number;
-    height: number;
-    registerEventShape: (
-      shape: Shape | Group,
-      handlers: Partial<EventHandlers>,
-      parent?: Group
-    ) => void;
-    unregisterEventShape: (shape: Shape | Group) => void;
-  }>({
-    two,
-    parent,
-    width: 0,
-    height: 0,
-    registerEventShape: () => {},
-    unregisterEventShape: () => {},
-  });
+  const [twoState, setTwoState] = useState<typeof two>(two);
+  const [parentState, setParentState] = useState<typeof parent>(parent);
+  const [width, setWidth] = useState<number>(0);
+  const [height, setHeight] = useState<number>(0);
+
+  // Separate Two.js constructor props from DOM element props
+  const { twoProps, domProps } = useMemo(() => {
+    const twoProps: Record<string, unknown> = {};
+    const domProps: Record<string, unknown> = {};
+
+    Object.keys(props).forEach((key) => {
+      if (key === 'children' || key === 'onPointerMissed') {
+        return; // Skip these
+      }
+
+      if (
+        TWO_CONSTRUCTOR_KEYS.includes(
+          key as (typeof TWO_CONSTRUCTOR_KEYS)[number],
+        )
+      ) {
+        twoProps[key] = props[key as keyof typeof props];
+      } else {
+        domProps[key] = props[key as keyof typeof props];
+      }
+    });
+
+    return { twoProps, domProps };
+  }, [props]);
+
+  // Forward ref to Two.js's actual DOM element
+  useImperativeHandle(
+    forwardedRef,
+    () => twoState?.renderer.domElement as HTMLCanvasElement | SVGElement,
+    [twoState],
+  );
 
   // Register a shape with event handlers
   const registerEventShape = useCallback(
     (
       shape: Shape | Group,
       handlers: Partial<EventHandlers>,
-      parentGroup?: Group
+      parentGroup?: Group,
     ) => {
       eventShapes.current.set(shape, { shape, handlers, parent: parentGroup });
     },
-    []
+    [],
   );
 
   // Unregister a shape
@@ -120,25 +192,20 @@ export const Provider: React.FC<ComponentProps> = (props) => {
   useEffect(() => {
     const isRoot = !two;
 
-    if (isRoot) {
-      const args = { ...props };
-      delete args.children;
+    if (isRoot && container.current && container.current.parentElement) {
       // Only update root instance
-      const two = new Two(args).appendTo(container.current!);
+      const two = new Two(twoProps as TwoConstructorProps).appendTo(
+        container.current.parentElement,
+      );
 
-      set((prev) => ({
-        ...prev,
-        two,
-        parent: two.scene,
-        width: two.width,
-        height: two.height,
-        registerEventShape,
-        unregisterEventShape,
-      }));
+      setTwoState(two);
+      setParentState(two.scene);
+      setWidth(two.width);
+      setHeight(two.height);
 
       return () => {
         two.renderer.domElement.parentElement?.removeChild(
-          two.renderer.domElement
+          two.renderer.domElement,
         );
         two.pause();
         two.unbind();
@@ -159,60 +226,16 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
     if (isRoot) {
       // Only update root instance
-      const result: Record<string, unknown> = {};
-      let changed = false;
       if (typeof props.width === 'number') {
-        result.width = props.width;
-        if (state.two) state.two.width = props.width;
-        changed = true;
+        if (twoState) twoState.width = props.width;
+        setWidth(props.width);
       }
       if (typeof props.height === 'number') {
-        result.height = props.height;
-        if (state.two) state.two.height = props.height;
-        changed = true;
-      }
-      if (changed) {
-        set((state) => ({ ...state, ...result }));
+        if (twoState) twoState.height = props.height;
+        setHeight(props.height);
       }
     }
-  }, [two, state.two, props.width, props.height]);
-
-  // Auto-update dimensions if fullscreen / fitted
-  useEffect(() => {
-    const isRoot = !two;
-
-    if (isRoot) {
-      // Only update root instance
-      if (state.two) {
-        const instance = state.two;
-        let width = instance.width;
-        let height = instance.height;
-
-        if (props.fullscreen || props.fitted) {
-          instance.bind('update', update);
-        }
-
-        function update() {
-          const widthFlagged = instance.width !== width;
-          const heightFlagged = instance.height !== height;
-
-          if (widthFlagged) {
-            width = instance.width;
-          }
-          if (heightFlagged) {
-            height = instance.height;
-          }
-          if (widthFlagged || heightFlagged) {
-            set((state) => ({ ...state, width, height }));
-          }
-        }
-
-        return () => {
-          instance.unbind('update', update);
-        };
-      }
-    }
-  }, [two, state.two, props.fullscreen, props.fitted]);
+  }, [two, twoState, props.width, props.height]);
 
   // Validate children in development mode
   useEffect(() => {
@@ -223,21 +246,21 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 
   // Setup event listeners on canvas
   useEffect(() => {
-    if (!state.two) return;
+    if (!twoState) return;
 
-    const canvas = state.two.renderer.domElement;
+    const canvas = twoState.renderer.domElement;
 
     // Helper to dispatch events with bubbling
     const dispatchEvent = (
       shapes: Array<Shape | Group>,
       handlerName: keyof EventHandlers,
-      nativeEvent: PointerEvent | MouseEvent | WheelEvent
+      nativeEvent: PointerEvent | MouseEvent | WheelEvent,
     ) => {
       if (shapes.length === 0) return;
 
       // Get the hit shape (first in array)
       const hitShape = shapes[0];
-      const point = getCanvasCoordinates(nativeEvent, canvas, state.two!);
+      const point = getCanvasCoordinates(nativeEvent, canvas, twoState!);
 
       // Get parent hierarchy for bubbling
       const hierarchy = getParentHierarchy(hitShape, eventShapes.current);
@@ -252,7 +275,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
             nativeEvent,
             hitShape,
             currentTarget,
-            point
+            point,
           );
           handler(event);
 
@@ -269,7 +292,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       const shapes = getShapesAtPoint(
         eventShapes.current,
         worldPoint.x,
-        worldPoint.y
+        worldPoint.y,
       );
 
       if (shapes.length > 0) {
@@ -283,7 +306,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       const shapes = getShapesAtPoint(
         eventShapes.current,
         worldPoint.x,
-        worldPoint.y
+        worldPoint.y,
       );
 
       if (shapes.length > 0) {
@@ -297,7 +320,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       const shapes = getShapesAtPoint(
         eventShapes.current,
         worldPoint.x,
-        worldPoint.y
+        worldPoint.y,
       );
 
       if (shapes.length > 0) {
@@ -311,7 +334,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       const shapes = getShapesAtPoint(
         eventShapes.current,
         worldPoint.x,
-        worldPoint.y
+        worldPoint.y,
       );
 
       if (shapes.length > 0) {
@@ -325,7 +348,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       const shapes = getShapesAtPoint(
         eventShapes.current,
         worldPoint.x,
-        worldPoint.y
+        worldPoint.y,
       );
 
       if (shapes.length > 0) {
@@ -348,12 +371,12 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       if (capturedShape.current) {
         const entry = eventShapes.current.get(capturedShape.current);
         if (entry?.handlers.onPointerUp) {
-          const point = getCanvasCoordinates(e, canvas, state.two!);
+          const point = getCanvasCoordinates(e, canvas, twoState!);
           const event = createTwoEvent(
             e,
             capturedShape.current,
             capturedShape.current,
-            point
+            point,
           );
           entry.handlers.onPointerUp(event);
         }
@@ -365,7 +388,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       const shapes = getShapesAtPoint(
         eventShapes.current,
         worldPoint.x,
-        worldPoint.y
+        worldPoint.y,
       );
 
       if (shapes.length > 0) {
@@ -381,7 +404,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       const shapes = getShapesAtPoint(
         eventShapes.current,
         worldPoint.x,
-        worldPoint.y
+        worldPoint.y,
       );
       const currentHovered = new Set(shapes);
 
@@ -418,7 +441,7 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       const shapes = getShapesAtPoint(
         eventShapes.current,
         worldPoint.x,
-        worldPoint.y
+        worldPoint.y,
       );
 
       if (shapes.length > 0) {
@@ -448,16 +471,104 @@ export const Provider: React.FC<ComponentProps> = (props) => {
       canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointercancel', handlePointerCancel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    state.two,
+    twoState,
     props.onPointerMissed,
     registerEventShape,
     unregisterEventShape,
   ]);
 
-  return (
-    <Context.Provider value={state}>
-      <div ref={container}>{props.children}</div>
-    </Context.Provider>
+  // Apply DOM props to Two.js's actual canvas/SVG element
+  useLayoutEffect(() => {
+    if (!twoState) return;
+
+    // Skip if in fullscreen mode - Two.js manages styles
+    if (props.fullscreen) {
+      const resize = () => {
+        setWidth(twoState.width);
+        setHeight(twoState.height);
+      };
+      twoState.bind('resize', resize);
+      return () => {
+        twoState.unbind('resize', resize);
+      };
+    }
+
+    const element = twoState.renderer.domElement;
+
+    // Apply each DOM prop to the element
+    Object.entries(domProps).forEach(([key, value]) => {
+      if (value === undefined) return;
+
+      if (key === 'style' && typeof value === 'object') {
+        // Merge style object
+        Object.assign(element.style, value);
+      } else if (key === 'className') {
+        element.className = value as string;
+      } else if (key.startsWith('on') && typeof value === 'function') {
+        // Handle React event props (onClick, onMouseMove, etc.)
+        const eventName = key.slice(2).toLowerCase();
+        element.addEventListener(eventName, value as EventListener);
+      } else if (key.startsWith('aria-') || key.startsWith('data-')) {
+        // Set as attribute for aria-* and data-* props
+        element.setAttribute(key, String(value));
+      } else if (key in element) {
+        // Set as property if it exists on the element
+        const elementWithKey = element as Record<string, unknown>;
+        elementWithKey[key] = value;
+      } else {
+        // Fallback to setAttribute
+        element.setAttribute(key, String(value));
+      }
+    });
+
+    // Cleanup event listeners
+    return () => {
+      Object.entries(domProps).forEach(([key, value]) => {
+        if (key.startsWith('on') && typeof value === 'function') {
+          const eventName = key.slice(2).toLowerCase();
+          element.removeEventListener(eventName, value as EventListener);
+        }
+      });
+    };
+  }, [twoState, domProps, props.fullscreen]);
+
+  const coreValue = useMemo(
+    () => ({
+      two: twoState,
+      registerEventShape,
+      unregisterEventShape,
+    }),
+    [twoState, registerEventShape, unregisterEventShape],
   );
-};
+
+  const parentValue = useMemo(
+    () => ({
+      parent: parentState,
+    }),
+    [parentState],
+  );
+
+  const sizeValue = useMemo(
+    () => ({
+      width,
+      height,
+    }),
+    [width, height],
+  );
+
+  return (
+    <TwoCoreContext.Provider value={coreValue}>
+      <TwoParentContext.Provider value={parentValue}>
+        <TwoSizeContext.Provider value={sizeValue}>
+          <div ref={container} style={{ display: 'none' }}>
+            {props.children}
+          </div>
+        </TwoSizeContext.Provider>
+      </TwoParentContext.Provider>
+    </TwoCoreContext.Provider>
+  );
+});
+
+Provider.displayName = 'Canvas';
