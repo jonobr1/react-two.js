@@ -5,6 +5,12 @@ struct Vertex {
     var color: SIMD4<Float>
 }
 
+struct DrawCall {
+    var type: MTLPrimitiveType
+    var vertexStart: Int
+    var vertexCount: Int
+}
+
 class TwoRenderer: NSObject, MTKViewDelegate {
     
     let device: MTLDevice
@@ -14,6 +20,7 @@ class TwoRenderer: NSObject, MTKViewDelegate {
     
     // Data to render
     var vertices: [Vertex] = []
+    var drawCalls: [DrawCall] = []
     
     init(device: MTLDevice, view: MTKView) {
         self.device = device
@@ -52,31 +59,32 @@ class TwoRenderer: NSObject, MTKViewDelegate {
     }
     
     func updateDrawCommands(_ commands: [String: Any]) {
-        // Parse commands and generate vertices
         var newVertices: [Vertex] = []
+        var newDrawCalls: [DrawCall] = []
         
         // Start with identity matrix
         let identity = matrix_float3x3(diagonal: SIMD3<Float>(1, 1, 1))
         
         if let children = commands["children"] as? [[String: Any]] {
             for child in children {
-                parseShape(child, transform: identity, into: &newVertices)
+                parseNode(child, transform: identity, vertices: &newVertices, drawCalls: &newDrawCalls)
             }
         }
         
         self.vertices = newVertices
+        self.drawCalls = newDrawCalls
     }
     
-    private func parseShape(_ shape: [String: Any], transform: matrix_float3x3, into vertices: inout [Vertex]) {
+    private func parseNode(_ node: [String: Any], transform: matrix_float3x3, vertices: inout [Vertex], drawCalls: inout [DrawCall]) {
         // Calculate local transform
         // We expect translation, rotation, scale in the JSON
         // Default to identity values if missing
         
-        let tx = Float((shape["translation"] as? [String: Double])?["x"] ?? 0)
-        let ty = Float((shape["translation"] as? [String: Double])?["y"] ?? 0)
-        let rotation = Float(shape["rotation"] as? Double ?? 0)
-        let sx = Float((shape["scale"] as? [String: Double])?["x"] ?? 1)
-        let sy = Float((shape["scale"] as? [String: Double])?["y"] ?? 1)
+        let tx = Float((node["translation"] as? [String: Any])?["x"] as? Double ?? 0)
+        let ty = Float((node["translation"] as? [String: Any])?["y"] as? Double ?? 0)
+        let rotation = Float(node["rotation"] as? Double ?? 0)
+        let sx = Float((node["scale"] as? [String: Any])?["x"] as? Double ?? 1)
+        let sy = Float((node["scale"] as? [String: Any])?["y"] as? Double ?? 1)
         
         // Construct local matrix
         // 2D Affine Transform in 3x3 matrices:
@@ -85,8 +93,6 @@ class TwoRenderer: NSObject, MTKViewDelegate {
         // [ 0    0   1  ]
         // But SIMD matches column-major usually.
         // Let's build T * R * S
-        
-        var matrix = matrix_identity_float3x3
         
         // Translation
         let T = matrix_float3x3(columns: (
@@ -115,53 +121,89 @@ class TwoRenderer: NSObject, MTKViewDelegate {
         // Note: matrix_float3x3 multiplication order depends on vector convention.
         // If we use v * M, then M = S * R * T * Parent?
         // Let's assume M * v, so M = Parent * T * R * S
-        matrix = matrix_multiply(T, matrix_multiply(R, S))
-        let globalTransform = matrix_multiply(transform, matrix)
+        let localTransform = matrix_multiply(T, matrix_multiply(R, S))
+        let globalTransform = matrix_multiply(transform, localTransform)
 
         // Check if it's a group
-        if let children = shape["children"] as? [[String: Any]] {
+        if let children = node["children"] as? [[String: Any]] {
             for child in children {
-                parseShape(child, transform: globalTransform, into: &vertices)
+                parseNode(child, transform: globalTransform, vertices: &vertices, drawCalls: &drawCalls)
             }
             return
         }
         
-        // It's a shape
-        guard let shapeVertices = shape["vertices"] as? [[String: Any]] else {
+        // Handle Shape
+        guard let rawVertices = node["vertices"] as? [[String: Any]], !rawVertices.isEmpty else {
             return
         }
         
-        // Parse color
-        var color = SIMD4<Float>(0, 0, 0, 1) // Default black
-        
-        if let fill = shape["fill"] as? String {
-            color = parseHexColor(fill)
+        let worldPoints = rawVertices.compactMap { v -> SIMD2<Float>? in
+            guard let x = v["x"] as? Double, let y = v["y"] as? Double else { return nil }
+            let localPos = SIMD3<Float>(Float(x), Float(y), 1)
+            let worldPos = matrix_multiply(globalTransform, localPos)
+            return SIMD2<Float>(worldPos.x, worldPos.y)
         }
         
-        // Convert shape vertices to Metal vertices
-        for v in shapeVertices {
-            if let x = v["x"] as? Double, let y = v["y"] as? Double {
-                let localPos = SIMD3<Float>(Float(x), Float(y), 1)
-                // Apply transform
-                let worldPos = matrix_multiply(globalTransform, localPos)
-                
-                vertices.append(Vertex(
-                    position: SIMD2<Float>(worldPos.x, worldPos.y),
-                    color: color
-                ))
+        guard worldPoints.count >= 2 else { return }
+        
+        // 1. Fill
+        if let fill = node["fill"] as? String, fill != "none" {
+            let fillColor = parseHexColor(fill, opacity: Float(node["opacity"] as? Double ?? 1.0))
+            let startIdx = vertices.count
+            
+            // Simple Fan Triangulation (assumes convex)
+            for i in 1..<worldPoints.count - 1 {
+                vertices.append(Vertex(position: worldPoints[0], color: fillColor))
+                vertices.append(Vertex(position: worldPoints[i], color: fillColor))
+                vertices.append(Vertex(position: worldPoints[i+1], color: fillColor))
+            }
+            
+            let count = vertices.count - startIdx
+            if count > 0 {
+                drawCalls.append(DrawCall(type: .triangle, vertexStart: startIdx, vertexCount: count))
+            }
+        }
+        
+        // 2. Stroke
+        if let stroke = node["stroke"] as? String, stroke != "none" {
+            let strokeColor = parseHexColor(stroke, opacity: Float(node["opacity"] as? Double ?? 1.0))
+            let startIdx = vertices.count
+            
+            for p in worldPoints {
+                vertices.append(Vertex(position: p, color: strokeColor))
+            }
+            
+            if let closed = node["closed"] as? Bool, closed {
+                vertices.append(Vertex(position: worldPoints[0], color: strokeColor))
+            }
+            
+            let count = vertices.count - startIdx
+            if count > 0 {
+                // Use lineStrip for now. 
+                // For proper thickness, we'd need to generate triangles based on linewidth.
+                drawCalls.append(DrawCall(type: .lineStrip, vertexStart: startIdx, vertexCount: count))
             }
         }
     }
     
-    private func parseHexColor(_ hex: String) -> SIMD4<Float> {
+    private func parseHexColor(_ hex: String, opacity: Float = 1.0) -> SIMD4<Float> {
         var cString = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         
         if cString.hasPrefix("#") {
             cString.remove(at: cString.startIndex)
         }
         
+        if cString.count == 3 {
+            var expanded = ""
+            for char in cString {
+                expanded.append(char)
+                expanded.append(char)
+            }
+            cString = expanded
+        }
+        
         if cString.count != 6 {
-            return SIMD4<Float>(0.5, 0.5, 0.5, 1) // Gray fallback
+            return SIMD4<Float>(0.5, 0.5, 0.5, opacity) // Gray fallback
         }
         
         var rgbValue: UInt64 = 0
@@ -171,7 +213,7 @@ class TwoRenderer: NSObject, MTKViewDelegate {
             Float((rgbValue & 0xFF0000) >> 16) / 255.0,
             Float((rgbValue & 0x00FF00) >> 8) / 255.0,
             Float(rgbValue & 0x0000FF) / 255.0,
-            1.0
+            opacity
         )
     }
     
@@ -200,10 +242,10 @@ class TwoRenderer: NSObject, MTKViewDelegate {
         // In a real app, use a MTLBuffer for better performance
         renderEncoder.setVertexBytes(vertices, length: vertices.count * MemoryLayout<Vertex>.stride, index: 0)
         
-        // Draw primitives
-        // Assuming TRIANGLE_STRIP or TRIANGLES based on data
-        // For this demo, we use POINTS or LINE_STRIP to see something
-        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: vertices.count)
+        // Execute draw calls
+        for call in drawCalls {
+            renderEncoder.drawPrimitives(type: call.type, vertexStart: call.vertexStart, vertexCount: call.vertexCount)
+        }
         
         renderEncoder.endEncoding()
         commandBuffer.present(drawable)

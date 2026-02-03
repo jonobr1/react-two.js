@@ -156,48 +156,63 @@ export const Provider: React.FC<ComponentProps> = (props) => {
 // Helper to serialize the scene graph
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function serializeScene(scene: Group): any {
-  // This is a simplified serializer. 
-  // In a real app, you'd want to optimize this to only send diffs or use a binary format.
-  return {
-    id: scene.id,
-    children: scene.children.map((childNode) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const child = childNode as any;
-      const base = {
-        id: child.id,
-        type: child.constructor.name,
-        translation: { x: child.translation.x, y: child.translation.y },
-        rotation: child.rotation,
-        scale: typeof child.scale === 'number' ? { x: child.scale, y: child.scale } : { x: child.scale.x, y: child.scale.y },
-        opacity: child.opacity,
-        visible: child.visible,
-      };
+  return serializeNode(scene);
+}
 
-      if (child instanceof Two.Group) {
-        return {
-          ...base,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          children: (child as any).children.map((c: any) => serializeScene(c)), // Recursive for groups
-        };
-      } else {
-        // Shape specific properties
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const shape = child as any;
-        return {
-          ...base,
-          fill: shape.fill,
-          stroke: shape.stroke,
-          linewidth: shape.linewidth,
-          // Add other shape-specific props here (radius, width, height, vertices, etc.)
-          // For the demo, we assume basic shapes
-          ...(shape.radius && { radius: shape.radius }),
-          ...(shape.width && { width: shape.width }),
-          ...(shape.height && { height: shape.height }),
-          ...(shape.vertices && { 
-            vertices: shape.vertices.map((v: any) => ({ x: v.x, y: v.y, command: v.command })) 
-          }),
-        };
-      }
-    }),
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function serializeNode(node: any): any {
+  if (!node) return null;
+
+  const base: any = {
+    id: node.id,
+    type: node.constructor.name,
+    translation: { x: node.translation.x, y: node.translation.y },
+    rotation: node.rotation,
+    scale: typeof node.scale === 'number' ? { x: node.scale, y: node.scale } : { x: node.scale.x, y: node.scale.y },
+    opacity: node.opacity,
+    visible: node.visible,
   };
+
+  if (node instanceof Two.Group) {
+    return {
+      ...base,
+      children: node.children.map((child: any) => serializeNode(child)),
+    };
+  } else {
+    // Shape specific properties
+    const shape = node as any;
+    const serialized: any = {
+      ...base,
+      fill: typeof shape.fill === 'string' ? shape.fill : undefined,
+      stroke: typeof shape.stroke === 'string' ? shape.stroke : undefined,
+      linewidth: shape.linewidth,
+      cap: shape.cap,
+      join: shape.join,
+      miter: shape.miter,
+      closed: shape.closed,
+      curved: shape.curved,
+      automatic: shape.automatic,
+      beginning: shape.beginning,
+      ending: shape.ending,
+    };
+
+    if (shape.vertices && Array.isArray(shape.vertices)) {
+      serialized.vertices = shape.vertices.map((v: any) => ({
+        x: v.x,
+        y: v.y,
+        command: v.command,
+        controls: v.controls ? {
+          left: v.controls.left ? { x: v.controls.left.x, y: v.controls.left.y } : undefined,
+          right: v.controls.right ? { x: v.controls.right.x, y: v.controls.right.y } : undefined,
+        } : undefined
+      }));
+    }
+
+    // Handle specific shape types if they have extra properties
+    if (shape.radius) serialized.radius = shape.radius;
+    if (shape.width) serialized.width = shape.width;
+    if (shape.height) serialized.height = shape.height;
+
+    return serialized;
+  }
 }
