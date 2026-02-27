@@ -16,7 +16,9 @@ type GroupProps =
   | 'miter'
   | 'closed'
   | 'curved'
-  | 'automatic';
+  | 'automatic'
+  | 'opacity'
+  | 'visible';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<GroupProps, keyof Instance>]?: Instance[K];
