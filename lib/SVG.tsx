@@ -47,6 +47,7 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
   ({ x, y, src, content, onLoad, onError, ...props }, forwardedRef) => {
     const {
       two,
+      domElement,
       parent,
       width,
       height,
@@ -229,10 +230,11 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
     const coreValue = useMemo(
       () => ({
         two,
+        domElement,
         registerEventShape,
         unregisterEventShape,
       }),
-      [two, registerEventShape, unregisterEventShape]
+      [two, domElement, registerEventShape, unregisterEventShape]
     );
 
     const parentValue = useMemo(

@@ -537,6 +537,7 @@ export const Provider = React.forwardRef<
   const coreValue = useMemo(
     () => ({
       two: twoState,
+      domElement: twoState?.renderer.domElement ?? null,
       registerEventShape,
       unregisterEventShape,
     }),

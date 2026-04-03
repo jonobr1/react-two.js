@@ -6,6 +6,7 @@ import type { EventHandlers } from './Events';
 
 export interface TwoCoreContextValue {
   two: Two | null;
+  domElement: HTMLElement | null;
   registerEventShape: (
     shape: Shape | Group,
     handlers: Partial<EventHandlers>,
@@ -25,6 +26,7 @@ export interface TwoSizeContextValue {
 
 export const TwoCoreContext = createContext<TwoCoreContextValue>({
   two: null,
+  domElement: null,
   registerEventShape: () => {},
   unregisterEventShape: () => {},
 });

@@ -37,6 +37,7 @@ import {
   SVG,
   RefSVG,
   RefGroup,
+  useZUI,
 } from '../lib/main';
 import { useEffect, useRef, useState } from 'react';
 import { useFrame } from '../lib/Context';
@@ -401,6 +402,82 @@ export default function Playground({
       aria-label="Interactive Two.js canvas demonstration"
     >
       <Scene />
+    </Canvas>
+  );
+}
+
+/**
+ * ZoomableScene demonstrates useZUI hook for pan and zoom interactions.
+ * Scroll to zoom, drag to pan the scene.
+ */
+function ZoomableScene() {
+  const { width, height } = useTwo();
+  const groupRef = useRef<RefGroup | null>(null);
+
+  const { zoom, scale, reset } = useZUI(groupRef, {
+    minZoom: -2,
+    maxZoom: 2,
+    zoomDelta: 0.05,
+  });
+
+  return (
+    <>
+      <Group ref={groupRef} x={width / 2} y={height / 2}>
+        {/* Grid of circles for visual reference */}
+        {[-120, -60, 0, 60, 120].map((x) =>
+          [-60, 0, 60].map((y) => (
+            <Circle
+              key={`${x}-${y}`}
+              x={x}
+              y={y}
+              radius={18}
+              fill="#61DAFB"
+              stroke="#2196F3"
+              linewidth={2}
+            />
+          ))
+        )}
+        <Rectangle
+          width={300}
+          height={160}
+          fill="transparent"
+          stroke="#888"
+          linewidth={1}
+        />
+      </Group>
+      {/* HUD: show zoom/scale info */}
+      <Text
+        value={`zoom: ${zoom.toFixed(2)} | scale: ${scale.toFixed(2)} | scroll to zoom, drag to pan | double-click to reset`}
+        x={width / 2}
+        y={height - 20}
+        fill="#333"
+        size={12}
+        alignment="center"
+        baseline="bottom"
+        onDoubleClick={reset}
+      />
+    </>
+  );
+}
+
+export function ZUIPlayground({
+  width,
+  height,
+}: {
+  width?: number;
+  height?: number;
+}) {
+  return (
+    <Canvas
+      type={Two.Types.canvas}
+      width={width}
+      height={height}
+      autostart={true}
+      className="react-two-canvas"
+      style={{ userSelect: 'none', cursor: 'grab' }}
+      aria-label="ZUI zoom and pan demonstration"
+    >
+      <ZoomableScene />
     </Canvas>
   );
 }

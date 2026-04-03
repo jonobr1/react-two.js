@@ -25,3 +25,6 @@ export { RadialGradient, type RefRadialGradient } from './RadialGradient';
 
 // Texture exports
 export { Texture, type RefTexture } from './Texture';
+
+// ZUI (Zoom/Pan) hook
+export { useZUI, type UseZUIOptions, type ZUIControls } from './ZUI';
