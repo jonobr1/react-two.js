@@ -12,20 +12,17 @@ import { Text } from '@/components/catalyst/Text';
 import { Badge } from '@/components/catalyst/Badge';
 import { Marquee } from '@/components/common/Marquee';
 import {
+  CursorArrowRaysIcon,
   CodeBracketIcon,
   CommandLineIcon,
   CurrencyDollarIcon,
   SparklesIcon,
 } from '@heroicons/react/20/solid';
 import cn from 'clsx';
-import Playground from './Playground';
-import { useEffect, useState } from 'react';
+import InteractiveCanvas from '@/components/Canvas';
 import { version } from '../package.json';
 
 export default function App() {
-  const [domElement, setDomElement] = useState<HTMLDivElement | null>(null);
-  const [width, setWidth] = useState(400);
-  const [height, setHeight] = useState(300);
   const sidebar = (
     <Sidebar>
       <SidebarBody>
@@ -77,31 +74,27 @@ export default function App() {
 
         <SidebarDivider />
 
-        <SidebarSection></SidebarSection>
+        <SidebarSection>
+          <SidebarHeading>Example</SidebarHeading>
+          <SidebarLabel>
+            <Text className={cn('px-2')}>
+              An infinite canvas example built on the local `lib/` renderer.
+            </Text>
+          </SidebarLabel>
+          <SidebarItem href="#canvas-example">
+            <CursorArrowRaysIcon />
+            <SidebarLabel>Interactive Canvas</SidebarLabel>
+          </SidebarItem>
+        </SidebarSection>
       </SidebarBody>
     </Sidebar>
   );
 
-  useEffect(() => {
-    if (!domElement) return;
-
-    const updateSize = () => {
-      const rect = domElement.getBoundingClientRect();
-      setWidth(rect.width);
-      setHeight(rect.height);
-    };
-
-    updateSize();
-    window.addEventListener('resize', updateSize);
-
-    return () => {
-      window.removeEventListener('resize', updateSize);
-    };
-  }, [domElement]);
-
   return (
-    <SidebarLayout ref={setDomElement} navbar={null} sidebar={sidebar}>
-      <Playground width={width} height={height} />
+    <SidebarLayout navbar={null} sidebar={sidebar}>
+      <section id="canvas-example" className={cn('h-full', 'min-h-[calc(100vh-2rem)]')}>
+        <InteractiveCanvas />
+      </section>
     </SidebarLayout>
   );
 }
