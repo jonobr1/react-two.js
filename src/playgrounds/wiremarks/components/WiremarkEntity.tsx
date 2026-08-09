@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Group, RoundedRectangle, Text, TwoEvent } from 'react-two.js';
+import { Group, RoundedRectangle, Text, type TwoEvent } from 'react-two.js';
 import { WiremarkNode } from '../types';
 import { unit } from '../constants';
 
@@ -37,7 +37,6 @@ export function WiremarkEntity({
 
       const handlePointerUp = () => {
         onDragEnd?.(node.id);
-        setIsHovered(false);
         window.removeEventListener('mousemove', handlePointerMove);
         window.removeEventListener('mouseup', handlePointerUp);
       };
@@ -45,23 +44,30 @@ export function WiremarkEntity({
       window.addEventListener('mousemove', handlePointerMove);
       window.addEventListener('mouseup', handlePointerUp);
     },
-    [node.id, onDragStart, onDrag, onDragEnd]
+    [node.id, onDragStart, onDrag, onDragEnd],
   );
 
   return (
-    <Group x={node.x} y={node.y}>
+    <Group
+      x={node.x}
+      y={node.y}
+      onPointerDown={handlePointerDown}
+      onPointerOver={() => setIsHovered(true)}
+      onPointerOut={() => setIsHovered(false)}
+    >
       <RoundedRectangle
         width={node.width}
         height={node.height}
         radius={8}
         fill={node.colors.fill}
         stroke={isHovered || isDragging ? '#3b82f6' : node.colors.stroke}
-        linewidth={isDragging ? borderWidth * 2.5 : isHovered ? borderWidth * 1.8 : borderWidth}
-        onPointerDown={handlePointerDown}
-        onPointerOver={() => setIsHovered(true)}
-        onPointerEnter={() => setIsHovered(true)}
-        onPointerOut={() => setIsHovered(false)}
-        onPointerLeave={() => setIsHovered(false)}
+        linewidth={
+          isDragging
+            ? borderWidth * 2.5
+            : isHovered
+              ? borderWidth * 1.8
+              : borderWidth
+        }
       />
       <Text
         value={node.name}

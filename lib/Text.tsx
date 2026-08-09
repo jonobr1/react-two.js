@@ -86,16 +86,19 @@ export const Text = React.forwardRef<Instance, ComponentProps>(
       }
     }, [shapeProps, text, x, y]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(text);
+      };
+    }, [text, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(text, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(text);
-        };
       }
-    }, [text, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [text, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => text, [text]);
 

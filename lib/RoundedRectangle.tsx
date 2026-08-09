@@ -70,7 +70,14 @@ export const RoundedRectangle = React.forwardRef<Instance, ComponentProps>(
       }
     }, [shapeProps, roundedRectangle, x, y]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(roundedRectangle);
+      };
+    }, [roundedRectangle, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(
@@ -78,18 +85,8 @@ export const RoundedRectangle = React.forwardRef<Instance, ComponentProps>(
           eventHandlers,
           parent ?? undefined
         );
-
-        return () => {
-          unregisterEventShape(roundedRectangle);
-        };
       }
-    }, [
-      roundedRectangle,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
+    }, [roundedRectangle, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => roundedRectangle, [
       roundedRectangle,

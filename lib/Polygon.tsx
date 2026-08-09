@@ -71,22 +71,19 @@ export const Polygon = React.forwardRef<Instance, ComponentProps>(
       }
     }, [shapeProps, polygon, x, y]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(polygon);
+      };
+    }, [polygon, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(polygon, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(polygon);
-        };
       }
-    }, [
-      polygon,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
+    }, [polygon, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => polygon, [polygon]);
 

@@ -87,22 +87,19 @@ export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
       }
     }, [shapeProps, imageSequence, x, y, autoPlay]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(imageSequence);
+      };
+    }, [imageSequence, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(imageSequence, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(imageSequence);
-        };
       }
-    }, [
-      imageSequence,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
+    }, [imageSequence, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => imageSequence, [imageSequence]);
 

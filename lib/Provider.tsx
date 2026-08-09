@@ -79,7 +79,10 @@ type ComponentProps = React.PropsWithChildren<
  * Warns in development mode if DOM elements or incompatible components are found.
  */
 function validateChildren(children: React.ReactNode): void {
-  if (process.env.NODE_ENV === 'production') {
+  if (
+    (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env
+      ?.NODE_ENV === 'production'
+  ) {
     return;
   }
 
@@ -239,7 +242,10 @@ export const Provider = React.forwardRef<
 
   // Validate children in development mode
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') {
+    if (
+      (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env
+        ?.NODE_ENV === 'production'
+    ) {
       validateChildren(props.children);
     }
   }, [props.children]);
@@ -293,6 +299,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -307,6 +314,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -321,6 +329,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -335,6 +344,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -349,6 +359,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -389,6 +400,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -405,6 +417,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
       const currentHovered = new Set(shapes);
 
@@ -424,6 +437,7 @@ export const Provider = React.forwardRef<
         }
       }
 
+
       // Leave: shapes previously hovered but aren't now
       for (const shape of previousHovered) {
         if (!currentHovered.has(shape)) {
@@ -442,6 +456,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {

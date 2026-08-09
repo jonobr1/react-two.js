@@ -91,22 +91,19 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
       }
     }, [group, x, y, shapeProps]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(group);
+      };
+    }, [group, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(group, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(group);
-        };
       }
-    }, [
-      group,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
+    }, [group, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => group, [group]);
 

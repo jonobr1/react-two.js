@@ -70,16 +70,19 @@ export const Star = React.forwardRef<Instance, ComponentProps>(
       }
     }, [shapeProps, star, x, y]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(star);
+      };
+    }, [star, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(star, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(star);
-        };
       }
-    }, [star, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [star, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => star, [star]);
 

@@ -78,22 +78,19 @@ export const ArcSegment = React.forwardRef<Instance, ComponentProps>(
       }
     }, [shapeProps, arcSegment, x, y]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(arcSegment);
+      };
+    }, [arcSegment, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(arcSegment, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(arcSegment);
-        };
       }
-    }, [
-      arcSegment,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
+    }, [arcSegment, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => arcSegment, [arcSegment]);
 

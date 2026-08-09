@@ -72,16 +72,19 @@ export const Path = React.forwardRef<Instance, ComponentProps>(
       }
     }, [parent, path]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(path);
+      };
+    }, [path, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(path, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(path);
-        };
       }
-    }, [path, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [path, registerEventShape, parent, eventHandlers]);
 
     useEffect(() => {
       // Update position

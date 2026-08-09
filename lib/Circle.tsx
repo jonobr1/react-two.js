@@ -73,22 +73,19 @@ export const Circle = React.forwardRef<Instance, ComponentProps>(
       }
     }, [parent, circle]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(circle);
+      };
+    }, [circle, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(circle, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(circle);
-        };
       }
-    }, [
-      circle,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
+    }, [circle, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => circle, [circle]);
 

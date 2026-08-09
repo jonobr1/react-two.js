@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Group, TwoEvent } from 'react-two.js';
+import { Group, type TwoEvent } from 'react-two.js';
 import { WiremarkNode, WiremarkEdge } from '../types';
 import { WiremarkEntity } from './WiremarkEntity';
 import { WiremarkConnection } from './WiremarkConnection';

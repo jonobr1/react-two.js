@@ -25,3 +25,7 @@ export { RadialGradient, type RefRadialGradient } from './RadialGradient';
 
 // Texture exports
 export { Texture, type RefTexture } from './Texture';
+
+// Event exports
+export type { TwoEvent, EventHandler, EventHandlers } from './Events';
+

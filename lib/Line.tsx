@@ -75,16 +75,19 @@ export const Line = React.forwardRef<Instance, ComponentProps>(
       }
     }, [shapeProps, line, x1, y1, x2, y2]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(line);
+      };
+    }, [line, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(line, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(line);
-        };
       }
-    }, [line, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [line, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => line, [line]);
 

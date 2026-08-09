@@ -74,22 +74,19 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
       }
     }, [ellipse, x, y, shapeProps]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(ellipse);
+      };
+    }, [ellipse, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(ellipse, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(ellipse);
-        };
       }
-    }, [
-      ellipse,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
+    }, [ellipse, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => ellipse, [ellipse]);
 

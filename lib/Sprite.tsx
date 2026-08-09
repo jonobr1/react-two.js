@@ -90,22 +90,19 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
       }
     }, [shapeProps, sprite, x, y, autoPlay]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(sprite);
+      };
+    }, [sprite, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(sprite, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(sprite);
-        };
       }
-    }, [
-      sprite,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
+    }, [sprite, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => sprite, [sprite]);
 

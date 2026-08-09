@@ -213,16 +213,19 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
       }
     }, [svg, x, y, shapeProps]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(svg);
+      };
+    }, [svg, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(svg, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(svg);
-        };
       }
-    }, [svg, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [svg, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => svg, [svg]);
 

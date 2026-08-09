@@ -78,22 +78,19 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
       }
     }, [image, shapeProps, mode, texture, x, y]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(image);
+      };
+    }, [image, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(image, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(image);
-        };
       }
-    }, [
-      image,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
+    }, [image, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => image, [image]);
 

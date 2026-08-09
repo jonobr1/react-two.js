@@ -81,22 +81,19 @@ export const Points = React.forwardRef<Instance, ComponentProps>(
       }
     }, [shapeProps, points, x, y]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(points);
+      };
+    }, [points, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(points, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(points);
-        };
       }
-    }, [
-      points,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
+    }, [points, registerEventShape, parent, eventHandlers]);
 
     useImperativeHandle(forwardedRef, () => points, [points]);
 

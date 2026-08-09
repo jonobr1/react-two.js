@@ -139,18 +139,51 @@ export function createTwoEvent<T extends Shape | Group>(
 /**
  * Check if a shape contains a point using Two.js hit testing
  */
-export function hitTest(shape: Shape | Group, x: number, y: number): boolean {
+export function hitTest(shape: Shape | Group, x: number, y: number, two?: Two | null): boolean {
   // Check if shape is visible
   if ('visible' in shape && !shape.visible) {
     return false;
   }
 
-  // Use Two.js hit testing API
-  if (typeof shape.contains === 'function') {
-    return shape.contains(x, y);
+  // Use shape.contains if custom contains function exists
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (typeof (shape as any).contains === 'function') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (shape as any).contains(x, y);
   }
 
-  // Fallback for shapes without hit testing
+  // Use Two.js getBoundingClientRect API
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (typeof (shape as any).getBoundingClientRect === 'function') {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rect = (shape as any).getBoundingClientRect(false);
+      if (rect && typeof rect.left === 'number' && typeof rect.right === 'number') {
+        const offsetX = two ? two.width / 2 : 0;
+        const offsetY = two ? two.height / 2 : 0;
+        const left = rect.left + offsetX;
+        const right = rect.right + offsetX;
+        const top = rect.top + offsetY;
+        const bottom = rect.bottom + offsetY;
+
+        if (x >= left && x <= right && y >= top && y <= bottom) {
+          return true;
+        }
+      }
+    } catch {
+      // Fallback to checking children if getBoundingClientRect fails
+    }
+  }
+
+  // For Groups without bounds, recursively check children
+  if ('children' in shape && Array.isArray((shape as Group).children)) {
+    for (const child of (shape as Group).children) {
+      if (hitTest(child, x, y, two)) {
+        return true;
+      }
+    }
+  }
+
   return false;
 }
 
@@ -161,12 +194,13 @@ export function hitTest(shape: Shape | Group, x: number, y: number): boolean {
 export function getShapesAtPoint(
   shapes: Map<Shape | Group, EventShape>,
   x: number,
-  y: number
+  y: number,
+  two?: Two | null
 ): Array<Shape | Group> {
   const hits: Array<Shape | Group> = [];
 
   for (const [shape] of shapes) {
-    if (hitTest(shape, x, y)) {
+    if (hitTest(shape, x, y, two)) {
       hits.push(shape);
     }
   }
