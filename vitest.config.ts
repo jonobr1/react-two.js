@@ -9,9 +9,8 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     globals: true,
     css: true,
-    // Include simple tests for now
-    include: ['src/**/*.test.{ts,tsx}'],
-    exclude: ['lib/**/*.test.{ts,tsx}'],
+    // Include tests
+    include: ['tests/**/*.test.{ts,tsx}', 'src/**/*.test.{ts,tsx}', 'lib/**/*.test.{ts,tsx}'],
     // Pass when no tests are found
     passWithNoTests: true,
   },
