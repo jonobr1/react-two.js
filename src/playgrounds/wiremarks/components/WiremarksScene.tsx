@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Group } from 'react-two.js';
+import { Group, TwoEvent } from 'react-two.js';
 import { WiremarkNode, WiremarkEdge } from '../types';
 import { WiremarkEntity } from './WiremarkEntity';
 import { WiremarkConnection } from './WiremarkConnection';
@@ -10,6 +10,9 @@ interface WiremarksSceneProps {
   nodesMap: Map<string, WiremarkNode>;
   dashOffset?: number;
   draggingNodeId?: string | null;
+  onDragStart?: (nodeId: string, event: TwoEvent) => void;
+  onDrag?: (nodeId: string, dx: number, dy: number) => void;
+  onDragEnd?: (nodeId: string) => void;
 }
 
 export function WiremarksScene({
@@ -18,6 +21,9 @@ export function WiremarksScene({
   nodesMap,
   dashOffset = 0,
   draggingNodeId,
+  onDragStart,
+  onDrag,
+  onDragEnd,
 }: WiremarksSceneProps) {
   // Compute total connections per source node and track offset indices
   const connectionCounts = useMemo(() => {
@@ -75,6 +81,9 @@ export function WiremarksScene({
             key={node.id}
             node={node}
             isDragging={draggingNodeId === node.id}
+            onDragStart={onDragStart}
+            onDrag={onDrag}
+            onDragEnd={onDragEnd}
           />
         ))}
       </Group>
