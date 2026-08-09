@@ -188,8 +188,44 @@ export function hitTest(shape: Shape | Group, x: number, y: number, two?: Two | 
 }
 
 /**
+ * Sort shapes front-to-back (topmost visible shape first).
+ * In 2D rendering, shapes drawn later (or with higher parent.children index) sit on top of shapes drawn earlier.
+ */
+export function sortFrontToBack(
+  hits: Array<Shape | Group>,
+  shapes: Map<Shape | Group, EventShape>
+): Array<Shape | Group> {
+  if (hits.length <= 1) return hits;
+
+  const keys = Array.from(shapes.keys());
+
+  return [...hits].sort((a, b) => {
+    const entryA = shapes.get(a);
+    const entryB = shapes.get(b);
+
+    // If both belong to the same parent Group, compare their index in parent.children
+    if (entryA?.parent && entryB?.parent && entryA.parent === entryB.parent) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const parentChildren = (entryA.parent as any).children;
+      if (Array.isArray(parentChildren)) {
+        const indexA = parentChildren.indexOf(a);
+        const indexB = parentChildren.indexOf(b);
+        if (indexA !== -1 && indexB !== -1) {
+          return indexB - indexA; // Higher index = drawn on top = should be first
+        }
+      }
+    }
+
+    // Default: reverse registration order (shapes registered later sit on top)
+    const indexA = keys.indexOf(a);
+    const indexB = keys.indexOf(b);
+    return indexB - indexA; // Higher registration index = frontmost
+  });
+}
+
+/**
  * Get all shapes at a point, sorted by depth (front to back)
- * Uses scene graph traversal to maintain z-order
+ * Uses scene graph traversal and registration order to maintain z-order
  */
 export function getShapesAtPoint(
   shapes: Map<Shape | Group, EventShape>,
@@ -205,9 +241,7 @@ export function getShapesAtPoint(
     }
   }
 
-  // TODO: Sort by z-order/drawing order when Two.js provides this info
-  // For now, return in registration order
-  return hits;
+  return sortFrontToBack(hits, shapes);
 }
 
 /**

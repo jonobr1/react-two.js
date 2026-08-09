@@ -419,17 +419,28 @@ export const Provider = React.forwardRef<
         worldPoint.y,
         twoState,
       );
-      const currentHovered = new Set(shapes);
 
-      // Dispatch pointer move to hovered shapes
-      if (shapes.length > 0) {
-        dispatchEvent(shapes, 'onPointerMove', e);
+      // Topmost shape under pointer (front-to-back sorted)
+      const topShape = shapes.length > 0 ? shapes[0] : null;
+
+      // Build set of currently hovered shapes (topmost shape + its parent hierarchy)
+      const currentHovered = new Set<Shape | Group>();
+      if (topShape) {
+        const hierarchy = getParentHierarchy(topShape, eventShapes.current);
+        for (const s of hierarchy) {
+          currentHovered.add(s);
+        }
       }
 
-      // Handle pointer enter/leave
+      // Dispatch pointer move to topmost shape hierarchy
+      if (topShape) {
+        dispatchEvent([topShape], 'onPointerMove', e);
+      }
+
+      // Handle pointer enter/leave and over/out
       const previousHovered = hoveredShapes.current;
 
-      // Enter: shapes now hovered but weren't before
+      // Enter / Over: shapes in currentHovered (topmost hierarchy) that weren't hovered before
       for (const shape of currentHovered) {
         if (!previousHovered.has(shape)) {
           dispatchEvent([shape], 'onPointerEnter', e);
@@ -437,8 +448,7 @@ export const Provider = React.forwardRef<
         }
       }
 
-
-      // Leave: shapes previously hovered but aren't now
+      // Leave / Out: shapes previously hovered that are no longer in currentHovered
       for (const shape of previousHovered) {
         if (!currentHovered.has(shape)) {
           dispatchEvent([shape], 'onPointerLeave', e);

@@ -3,7 +3,7 @@ import { render, fireEvent, act } from '@testing-library/react';
 import { useState } from 'react';
 import Two from 'two.js';
 import { Canvas, Group, RoundedRectangle, Circle } from '../lib/main';
-import { hitTest } from '../lib/Events';
+import { hitTest, sortFrontToBack } from '../lib/Events';
 
 // Mock Canvas HTML element methods for JSDOM
 beforeEach(() => {
@@ -87,6 +87,46 @@ describe('react-two.js Event System', () => {
 
       expect(hitTest(mockShape as unknown as Two.Shape, 10, 10)).toBe(false);
     });
+
+    it('should sort hits front-to-back (frontmost shape first)', () => {
+      const mockBackgroundShape = { id: 'bg' };
+      const mockForegroundShape = { id: 'fg' };
+
+      const shapesMap = new Map();
+      shapesMap.set(mockBackgroundShape, { shape: mockBackgroundShape, handlers: {} });
+      shapesMap.set(mockForegroundShape, { shape: mockForegroundShape, handlers: {} });
+
+      const hits = [mockBackgroundShape, mockForegroundShape];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sorted = sortFrontToBack(hits as any, shapesMap);
+
+      // Foreground shape registered later must be FIRST in the hits array
+      expect(sorted[0]).toBe(mockForegroundShape);
+      expect(sorted[1]).toBe(mockBackgroundShape);
+    });
+
+    it('should sort hits based on parent.children index when sharing same parent group', () => {
+      const childBack = { id: 'back' };
+      const childFront = { id: 'front' };
+
+      const mockParentGroup = {
+        children: [childBack, childFront],
+      };
+
+      const shapesMap = new Map();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      shapesMap.set(childBack, { shape: childBack, handlers: {}, parent: mockParentGroup as any });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      shapesMap.set(childFront, { shape: childFront, handlers: {}, parent: mockParentGroup as any });
+
+      const hits = [childBack, childFront];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sorted = sortFrontToBack(hits as any, shapesMap);
+
+      // Higher index in parent.children must be FIRST in the hits array
+      expect(sorted[0]).toBe(childFront);
+      expect(sorted[1]).toBe(childBack);
+    });
   });
 
   describe('Group Event Handling Integration', () => {
@@ -137,6 +177,54 @@ describe('react-two.js Event System', () => {
 
       // Verify pointer events dispatched
       expect(canvasElement).toBeDefined();
+    });
+
+    it('should trigger over on top shape and out on bottom shape when moving onto overlapping top shape', () => {
+      const onBottomOver = vi.fn();
+      const onBottomOut = vi.fn();
+      const onTopOver = vi.fn();
+      const onTopOut = vi.fn();
+
+      const { container } = render(
+        <Canvas width={800} height={600} autostart={false}>
+          {/* Bottom Shape */}
+          <RoundedRectangle
+            width={200}
+            height={200}
+            onPointerOver={onBottomOver}
+            onPointerOut={onBottomOut}
+          />
+          {/* Top Shape (drawn later on top) */}
+          <Circle
+            radius={50}
+            onPointerOver={onTopOver}
+            onPointerOut={onTopOut}
+          />
+        </Canvas>
+      );
+
+      const canvasElement = container.querySelector('canvas') || container.querySelector('svg');
+      if (!canvasElement) return;
+
+      vi.spyOn(canvasElement, 'getBoundingClientRect').mockReturnValue({
+        left: 0,
+        top: 0,
+        right: 800,
+        bottom: 600,
+        width: 800,
+        height: 600,
+        x: 0,
+        y: 0,
+        toJSON: () => {},
+      });
+
+      // Pointer moves onto center (400, 300) where Circle sits on top of RoundedRectangle
+      act(() => {
+        fireEvent.pointerMove(canvasElement, { clientX: 400, clientY: 300 });
+      });
+
+      // Top shape (Circle) must get pointer over
+      expect(onTopOver).toHaveBeenCalled();
     });
   });
 
