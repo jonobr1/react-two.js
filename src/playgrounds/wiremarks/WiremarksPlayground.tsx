@@ -96,8 +96,8 @@ export function WiremarksPlayground({ width, height }: PlaygroundProps) {
           width={width}
           height={height}
           autostart={true}
-          className="w-full h-full cursor-grab active:cursor-grabbing"
-          style={{ userSelect: 'none' }}
+          // className="w-full h-full cursor-grab active:cursor-grabbing"
+          // style={{ userSelect: 'none' }}
           aria-label="Wiremarks interactive visual graph canvas"
         >
           <WiremarkCanvas instructions={text} />
