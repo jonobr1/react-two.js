@@ -505,7 +505,7 @@ export const Provider = React.forwardRef<
         // Merge style object
         Object.assign(element.style, value);
       } else if (key === 'className') {
-        element.className = value as string;
+        element.setAttribute('class', value as string);
       } else if (key.startsWith('on') && typeof value === 'function') {
         // Handle React event props (onClick, onMouseMove, etc.)
         const eventName = key.slice(2).toLowerCase();
