@@ -1,16 +1,13 @@
-import { useEffect, useRef } from 'react';
-import { useTwo, useFrame } from 'react-two.js';
+import { useEffect, useRef, useState } from 'react';
+import { useTwo, useFrame, Group, RefGroup } from 'react-two.js';
 import Two from 'two.js';
-import { Wiremark } from './wiremark';
 // @ts-expect-error - ZUI module path from two.js extras
 import { ZUI } from 'two.js/extras/jsm/zui.js';
-import type { Entity } from './entity';
+import { useWiremarksGraph } from './hooks/useWiremarksGraph';
+import { WiremarksScene } from './components/WiremarksScene';
+import { WiremarkNode } from './types';
 
 const eventParams = { passive: false };
-
-interface WiremarkCanvasProps {
-  instructions: string;
-}
 
 interface ZUIInstance {
   scale: number;
@@ -20,47 +17,57 @@ interface ZUIInstance {
   clientToSurface: (x: number, y: number) => { x: number; y: number; z: number };
 }
 
+interface WiremarkCanvasProps {
+  instructions: string;
+}
+
 export function WiremarkCanvas({ instructions }: WiremarkCanvasProps) {
-  const { two, parent } = useTwo();
-  const wiremarkRef = useRef<Wiremark | null>(null);
+  const { two } = useTwo();
+  const sceneGroupRef = useRef<RefGroup | null>(null);
   const zuiRef = useRef<ZUIInstance | null>(null);
-  const grabbingRef = useRef<string>('');
 
+  const [dashOffset, setDashOffset] = useState(0);
+  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
+
+  const { nodes, edges, nodesMap, updateNodePosition } = useWiremarksGraph(instructions);
+
+  // Smooth 60fps dash offset animation loop
+  useFrame((_, frameDelta) => {
+    setDashOffset((prev) => prev - frameDelta / 10);
+  });
+
+  // Initialize ZUI on scene group
   useEffect(() => {
-    if (!two || !parent) return;
-
-    const wiremark = new Wiremark();
-    parent.add(wiremark);
-    wiremarkRef.current = wiremark;
+    if (!two || !sceneGroupRef.current) return;
 
     const domElement = two.renderer.domElement;
-    // Pass domElement as viewport so ZUI correctly measures container position on page
-    const zui: ZUIInstance = new ZUI(wiremark, domElement);
+    const sceneGroup = sceneGroupRef.current;
+
+    const zui: ZUIInstance = new ZUI(sceneGroup, domElement);
     zui.addLimits(0.06, 8);
     zuiRef.current = zui;
 
     const setGrabbing = (className: string) => {
-      grabbingRef.current = className;
       const container = domElement.parentElement;
       if (container) {
         container.className = ['wireframe', className].filter(Boolean).join(' ');
       }
     };
 
-    const getEntityUnderMouse = (clientX: number, clientY: number): Entity | null => {
-      const pt = zui.clientToSurface(clientX, clientY);
-      const { registry } = wiremark.entities;
-      for (const name in registry) {
-        const child = registry[name];
-        const halfW = child.width / 2;
-        const halfH = child.height / 2;
+    const getEntityUnderMouse = (clientX: number, clientY: number): WiremarkNode | null => {
+      if (!zuiRef.current) return null;
+      const pt = zuiRef.current.clientToSurface(clientX, clientY);
+
+      for (const node of nodes) {
+        const halfW = node.width / 2;
+        const halfH = node.height / 2;
         if (
-          pt.x >= child.position.x - halfW &&
-          pt.x <= child.position.x + halfW &&
-          pt.y >= child.position.y - halfH &&
-          pt.y <= child.position.y + halfH
+          pt.x >= node.x - halfW &&
+          pt.x <= node.x + halfW &&
+          pt.y >= node.y - halfH &&
+          pt.y <= node.y + halfH
         ) {
-          return child;
+          return node;
         }
       }
       return null;
@@ -68,17 +75,20 @@ export function WiremarkCanvas({ instructions }: WiremarkCanvasProps) {
 
     const mouse = new Two.Vector();
     let touches: Touch[] = [];
-    let moving: Entity | null = null;
+    let movingNode: WiremarkNode | null = null;
     let distance = 0;
 
     function mousedown(e: MouseEvent) {
       setGrabbing('grabbing');
       mouse.x = e.clientX;
       mouse.y = e.clientY;
-      moving = getEntityUnderMouse(e.clientX, e.clientY);
-      if (moving) {
+      movingNode = getEntityUnderMouse(e.clientX, e.clientY);
+
+      if (movingNode) {
+        setDraggingNodeId(movingNode.id);
         setGrabbing('dragging');
       }
+
       window.addEventListener('mousemove', mousemove, false);
       window.addEventListener('mouseup', mouseup, false);
     }
@@ -86,27 +96,31 @@ export function WiremarkCanvas({ instructions }: WiremarkCanvasProps) {
     function mousemove(e: MouseEvent) {
       const dx = e.clientX - mouse.x;
       const dy = e.clientY - mouse.y;
-      if (moving) {
-        const newX = moving.position.x + dx / zui.scale;
-        const newY = moving.position.y + dy / zui.scale;
-        moving.position.set(newX, newY);
-      } else {
-        zui.translateSurface(dx, dy);
+
+      if (movingNode && zuiRef.current) {
+        const newX = movingNode.x + dx / zuiRef.current.scale;
+        const newY = movingNode.y + dy / zuiRef.current.scale;
+        updateNodePosition(movingNode.id, newX, newY);
+        movingNode = { ...movingNode, x: newX, y: newY };
+      } else if (zuiRef.current) {
+        zuiRef.current.translateSurface(dx, dy);
       }
       mouse.set(e.clientX, e.clientY);
     }
 
     function mouseup() {
       setGrabbing('');
-      moving = null;
+      movingNode = null;
+      setDraggingNodeId(null);
       window.removeEventListener('mousemove', mousemove, false);
       window.removeEventListener('mouseup', mouseup, false);
     }
 
     function mousewheel(e: WheelEvent) {
+      if (!zuiRef.current) return;
       const wheelE = e as WheelEvent & { wheelDeltaY?: number };
       const dy = (wheelE.wheelDeltaY ? wheelE.wheelDeltaY : -wheelE.deltaY) / 1000;
-      zui.zoomBy(dy, e.clientX, e.clientY);
+      zuiRef.current.zoomBy(dy, e.clientX, e.clientY);
     }
 
     function touchstart(e: TouchEvent) {
@@ -136,7 +150,8 @@ export function WiremarkCanvas({ instructions }: WiremarkCanvasProps) {
     function touchend(e: TouchEvent) {
       e.preventDefault();
       setGrabbing('');
-      moving = null;
+      movingNode = null;
+      setDraggingNodeId(null);
       touches = [];
       const touch = e.touches[0];
       if (touch) {
@@ -149,8 +164,9 @@ export function WiremarkCanvas({ instructions }: WiremarkCanvasProps) {
       const touch = e.touches[0];
       mouse.x = touch.clientX;
       mouse.y = touch.clientY;
-      moving = getEntityUnderMouse(touch.clientX, touch.clientY);
-      if (moving) {
+      movingNode = getEntityUnderMouse(touch.clientX, touch.clientY);
+      if (movingNode) {
+        setDraggingNodeId(movingNode.id);
         setGrabbing('dragging');
       } else {
         setGrabbing('grabbing');
@@ -161,12 +177,14 @@ export function WiremarkCanvas({ instructions }: WiremarkCanvasProps) {
       const touch = e.touches[0];
       const dx = touch.clientX - mouse.x;
       const dy = touch.clientY - mouse.y;
-      if (moving) {
-        const newX = moving.position.x + dx / zui.scale;
-        const newY = moving.position.y + dy / zui.scale;
-        moving.position.set(newX, newY);
-      } else {
-        zui.translateSurface(dx, dy);
+
+      if (movingNode && zuiRef.current) {
+        const newX = movingNode.x + dx / zuiRef.current.scale;
+        const newY = movingNode.y + dy / zuiRef.current.scale;
+        updateNodePosition(movingNode.id, newX, newY);
+        movingNode = { ...movingNode, x: newX, y: newY };
+      } else if (zuiRef.current) {
+        zuiRef.current.translateSurface(dx, dy);
       }
       mouse.set(touch.clientX, touch.clientY);
     }
@@ -194,7 +212,9 @@ export function WiremarkCanvas({ instructions }: WiremarkCanvasProps) {
       const dy = b.clientY - a.clientY;
       const d = Math.sqrt(dx * dx + dy * dy);
       const delta = d - distance;
-      zui.zoomBy(delta / 250, mouse.x, mouse.y);
+      if (zuiRef.current) {
+        zuiRef.current.zoomBy(delta / 250, mouse.x, mouse.y);
+      }
       distance = d;
     }
 
@@ -217,22 +237,18 @@ export function WiremarkCanvas({ instructions }: WiremarkCanvasProps) {
       domElement.removeEventListener('touchmove', touchmove, eventParams);
       domElement.removeEventListener('touchend', touchend, eventParams);
       domElement.removeEventListener('touchcancel', touchend, eventParams);
-      wiremark.remove().dispose();
     };
-  }, [two, parent]);
+  }, [two, nodes, updateNodePosition]);
 
-  useEffect(() => {
-    if (wiremarkRef.current && two) {
-      wiremarkRef.current.instructions = instructions;
-      two.update();
-    }
-  }, [instructions, two]);
-
-  useFrame((_, frameDelta) => {
-    if (wiremarkRef.current) {
-      wiremarkRef.current.update(frameDelta);
-    }
-  });
-
-  return null;
+  return (
+    <Group ref={sceneGroupRef}>
+      <WiremarksScene
+        nodes={nodes}
+        edges={edges}
+        nodesMap={nodesMap}
+        dashOffset={dashOffset}
+        draggingNodeId={draggingNodeId}
+      />
+    </Group>
+  );
 }
