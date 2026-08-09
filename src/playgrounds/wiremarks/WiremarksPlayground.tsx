@@ -92,7 +92,7 @@ export function WiremarksPlayground({ width, height }: PlaygroundProps) {
       {/* Two.js Canvas Stage */}
       <div className="absolute inset-0 z-0">
         <Canvas
-          type={Two.Types.svg}
+          type={Two.Types.canvas}
           width={width}
           height={height}
           autostart={true}
