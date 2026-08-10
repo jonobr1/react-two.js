@@ -39,12 +39,19 @@ export function WiremarkConnection({
   const points = useMemo(() => {
     if (!sourceNode || !targetNode) return null;
 
-    const offsetPct = (sourceOffsetIndex + 0.5) / Math.max(1, totalSourceConnections);
+    const offsetPct =
+      (sourceOffsetIndex + 0.5) / Math.max(1, totalSourceConnections);
     const offsetY = offsetPct * sourceNode.height - sourceNode.height * 0.5;
 
     const p0: Vector2D = { x: sourceNode.x, y: sourceNode.y + offsetY };
-    const p1: Vector2D = { x: sourceNode.x + sourceNode.width * 0.5, y: sourceNode.y + offsetY };
-    const p2: Vector2D = { x: targetNode.x - targetNode.width * 0.5, y: targetNode.y };
+    const p1: Vector2D = {
+      x: sourceNode.x + sourceNode.width * 0.5,
+      y: sourceNode.y + offsetY,
+    };
+    const p2: Vector2D = {
+      x: targetNode.x - targetNode.width * 0.5,
+      y: targetNode.y,
+    };
     const p3: Vector2D = { x: targetNode.x, y: targetNode.y };
 
     return { p0, p1, p2, p3 };

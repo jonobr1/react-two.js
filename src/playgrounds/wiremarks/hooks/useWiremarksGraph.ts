@@ -33,7 +33,7 @@ export function useWiremarksGraph(instructions: string, resetToken = 0) {
     return layoutGraph(
       baseGraph.nodes.map((node) => node.id),
       baseGraph.edges,
-      NODE_SIZE
+      NODE_SIZE,
     );
   }, [baseGraph]);
 
@@ -57,10 +57,12 @@ export function useWiremarksGraph(instructions: string, resetToken = 0) {
 
   // Latest values for `commitPositions`, which is invoked from a pointerup
   // handler that may still hold a closure from before the drag began.
-  const latest = useRef<{ overrides: Record<string, Vector2D>; ids: string[] }>({
-    overrides: positionOverrides,
-    ids: [],
-  });
+  const latest = useRef<{ overrides: Record<string, Vector2D>; ids: string[] }>(
+    {
+      overrides: positionOverrides,
+      ids: [],
+    },
+  );
   useEffect(() => {
     latest.current = {
       overrides: positionOverrides,
@@ -77,7 +79,7 @@ export function useWiremarksGraph(instructions: string, resetToken = 0) {
         [nodeId]: { x, y },
       }));
     },
-    []
+    [],
   );
 
   /** Persist dragged positions. Call when a drag finishes, not during it. */

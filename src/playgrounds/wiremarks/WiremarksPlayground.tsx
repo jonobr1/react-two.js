@@ -125,7 +125,7 @@ export function WiremarksPlayground({ width, height }: PlaygroundProps) {
       <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-lg p-1 shadow-lg pointer-events-auto">
         <button
           onClick={() => zuiRef.current?.reset()}
-          className="px-2 py-1 text-xs font-mono text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors"
+          className="cursor-pointer px-2 py-1 text-xs font-mono text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors"
           aria-label="Reset zoom"
           title="Reset Zoom"
         >
@@ -158,7 +158,7 @@ export function WiremarksPlayground({ width, height }: PlaygroundProps) {
               </Button>
               <button
                 onClick={handleClose}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                className="cursor-pointer p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
                 aria-label="Close instructions editor"
               >
                 <XMarkIcon className="w-6 h-6" />

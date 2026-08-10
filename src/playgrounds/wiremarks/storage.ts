@@ -78,7 +78,7 @@ export function loadPositions(): PositionMap {
  */
 export function savePositions(
   positions: PositionMap,
-  validIds: Iterable<string>
+  validIds: Iterable<string>,
 ): void {
   const allowed = new Set(validIds);
   const pruned: PositionMap = {};
