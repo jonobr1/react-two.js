@@ -33,10 +33,13 @@ export const RoundedRectangle = React.forwardRef<Instance, ComponentProps>(
 
       for (const key in props) {
         if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
-          eventHandlers[key as keyof EventHandlers] = props[
-            key as keyof EventHandlers
+          // An explicitly `undefined` handler means "not interactive", so it
+          // must not count toward the registered handler set.
+          const handler = props[key as keyof EventHandlers];
+          if (handler !== undefined) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ] as any;
+            eventHandlers[key as keyof EventHandlers] = handler as any;
+          }
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           shapeProps[key] = (props as any)[key];
@@ -85,8 +88,16 @@ export const RoundedRectangle = React.forwardRef<Instance, ComponentProps>(
           eventHandlers,
           parent ?? undefined
         );
+      } else {
+        unregisterEventShape(roundedRectangle);
       }
-    }, [roundedRectangle, registerEventShape, parent, eventHandlers]);
+    }, [
+      roundedRectangle,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => roundedRectangle, [
       roundedRectangle,

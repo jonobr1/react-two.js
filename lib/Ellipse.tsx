@@ -37,10 +37,13 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
 
       for (const key in props) {
         if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
-          eventHandlers[key as keyof EventHandlers] = props[
-            key as keyof EventHandlers
+          // An explicitly `undefined` handler means "not interactive", so it
+          // must not count toward the registered handler set.
+          const handler = props[key as keyof EventHandlers];
+          if (handler !== undefined) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ] as any;
+            eventHandlers[key as keyof EventHandlers] = handler as any;
+          }
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           shapeProps[key] = (props as any)[key];
@@ -85,8 +88,16 @@ export const Ellipse = React.forwardRef<Instance | null, ComponentProps>(
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(ellipse, eventHandlers, parent ?? undefined);
+      } else {
+        unregisterEventShape(ellipse);
       }
-    }, [ellipse, registerEventShape, parent, eventHandlers]);
+    }, [
+      ellipse,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => ellipse, [ellipse]);
 

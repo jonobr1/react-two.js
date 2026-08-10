@@ -306,4 +306,92 @@ describe('react-two.js Event System', () => {
       expect(seen.find((s) => s.label === 'outside')?.hit).toBe(false);
     });
   });
+
+  describe('Event Shape Deregistration', () => {
+    // A shape that keeps a stale registration still participates in hit
+    // testing, which means `hitTestPoint` reports a hit and useZUI refuses to
+    // pan over what is now a non-interactive shape.
+    const probe: { hitTestPoint?: (x: number, y: number) => boolean } = {};
+
+    function Probe() {
+      const { hitTestPoint } = useTwo();
+      probe.hitTestPoint = hitTestPoint;
+      return null;
+    }
+
+    it('unregisters a shape when its handler prop is removed entirely', () => {
+      function App({ interactive }: { interactive: boolean }) {
+        return (
+          <Canvas type={Two.Types.canvas} width={800} height={600}>
+            <Group>
+              <RoundedRectangle
+                x={400}
+                y={300}
+                width={100}
+                height={60}
+                {...(interactive ? { onPointerDown: () => {} } : {})}
+              />
+            </Group>
+            <Probe />
+          </Canvas>
+        );
+      }
+
+      const { rerender } = render(<App interactive={true} />);
+      expect(probe.hitTestPoint!(400, 300)).toBe(true);
+
+      rerender(<App interactive={false} />);
+      expect(probe.hitTestPoint!(400, 300)).toBe(false);
+    });
+
+    it('unregisters a shape when its handler prop becomes undefined', () => {
+      function App({ interactive }: { interactive: boolean }) {
+        return (
+          <Canvas type={Two.Types.canvas} width={800} height={600}>
+            <Group>
+              <RoundedRectangle
+                x={400}
+                y={300}
+                width={100}
+                height={60}
+                onPointerDown={interactive ? () => {} : undefined}
+              />
+            </Group>
+            <Probe />
+          </Canvas>
+        );
+      }
+
+      const { rerender } = render(<App interactive={true} />);
+      expect(probe.hitTestPoint!(400, 300)).toBe(true);
+
+      rerender(<App interactive={false} />);
+      expect(probe.hitTestPoint!(400, 300)).toBe(false);
+    });
+
+    it('re-registers a shape when handlers come back', () => {
+      function App({ interactive }: { interactive: boolean }) {
+        return (
+          <Canvas type={Two.Types.canvas} width={800} height={600}>
+            <Group>
+              <RoundedRectangle
+                x={400}
+                y={300}
+                width={100}
+                height={60}
+                onPointerDown={interactive ? () => {} : undefined}
+              />
+            </Group>
+            <Probe />
+          </Canvas>
+        );
+      }
+
+      const { rerender } = render(<App interactive={false} />);
+      expect(probe.hitTestPoint!(400, 300)).toBe(false);
+
+      rerender(<App interactive={true} />);
+      expect(probe.hitTestPoint!(400, 300)).toBe(true);
+    });
+  });
 });
