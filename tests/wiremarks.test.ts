@@ -47,6 +47,16 @@ describe('Wiremarks DSL Parser', () => {
     expect(edges).toHaveLength(1);
   });
 
+  it('should parse hyphenated entity names correctly', () => {
+    const script = `react-two.js -[wraps]-> two.js`;
+
+    const { nodes, edges } = parseWiremarksDSL(script);
+
+    expect(nodes.map((n) => n.name)).toEqual(['react-two.js', 'two.js']);
+    expect(edges[0].sourceId).toBe('react-two.js');
+    expect(edges[0].targetId).toBe('two.js');
+  });
+
   it('should handle empty or invalid inputs gracefully', () => {
     expect(parseWiremarksDSL('')).toEqual({ nodes: [], edges: [] });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

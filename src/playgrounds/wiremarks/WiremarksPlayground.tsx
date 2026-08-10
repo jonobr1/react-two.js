@@ -13,33 +13,22 @@ import {
 } from '@heroicons/react/20/solid';
 
 const defaultPrompt = `
-# Welcome to Wiremarks!
-
 # Wiremarks is a simple interface to compose
 # wireframes and organizational structures
 # through text. Connect things with an arrow
 # like so:
-# Grandmother -> Mother
+react -> react-two.js
 
 # Each line of text is a connection.
-# Mother -> Daughter
+react-dom -> react-two.js
 
 # And you can label connections by using
 # brackets like so:
-# Grid -[Electricity]-> Home
+react-two.js -[wraps]-> two.js
 
 # Lastly, starting a line with a hashtag
 # makes your text a comment and will not
 # be compiled into any connections.
-# Remove a hashtag above to see the
-# Mother / Daughter connection.
-
-# When you close the instructions, you
-# can drag each entity and move around
-# to fine tune your composition. You
-# can even save it out as an SVG!
-
-# Happy wire marking!
 `.trim();
 
 export function WiremarksPlayground({ width, height }: PlaygroundProps) {

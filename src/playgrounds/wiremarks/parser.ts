@@ -34,7 +34,11 @@ export function parseWiremarksDSL(instructions: string): GraphData {
   }
 
   const rawEntityNames: string[] = [];
-  const rawConnections: { producer: string; consumer: string; label?: string }[] = [];
+  const rawConnections: {
+    producer: string;
+    consumer: string;
+    label?: string;
+  }[] = [];
 
   const lines = instructions.split(/\n/i);
 
@@ -44,7 +48,7 @@ export function parseWiremarksDSL(instructions: string): GraphData {
       continue;
     }
 
-    const producerMatch = line.match(/^([^-]+)[-$]/) || emptyMatch;
+    const producerMatch = line.match(/^(.*?)(?:->|-\[)/) || emptyMatch;
     const currencyMatch = line.match(/\[([^\]]+)\]/) || emptyMatch;
     const consumerMatch = line.match(/->(.+)$/) || emptyMatch;
 
