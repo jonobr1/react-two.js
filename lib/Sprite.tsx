@@ -47,10 +47,13 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
 
       for (const key in props) {
         if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
-          eventHandlers[key as keyof EventHandlers] = props[
-            key as keyof EventHandlers
+          // An explicitly `undefined` handler means "not interactive", so it
+          // must not count toward the registered handler set.
+          const handler = props[key as keyof EventHandlers];
+          if (handler !== undefined) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ] as any;
+            eventHandlers[key as keyof EventHandlers] = handler as any;
+          }
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           shapeProps[key] = (props as any)[key];
@@ -90,14 +93,19 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
       }
     }, [shapeProps, sprite, x, y, autoPlay]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(sprite);
+      };
+    }, [sprite, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(sprite, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(sprite);
-        };
+      } else {
+        unregisterEventShape(sprite);
       }
     }, [
       sprite,

@@ -1,75 +1,50 @@
-/**
- * Event system for react-two.js
- * Implements R3F-style event handlers using Two.js hit testing
- */
-
 import Two from 'two.js';
 import type { Shape } from 'two.js/src/shape';
 import type { Group } from 'two.js/src/group';
 
-/**
- * Event object passed to event handlers
- * Similar to React Three Fiber's ThreeEvent
- */
-export interface TwoEvent<T = Shape> {
-  /** The original DOM event */
+export interface TwoEvent<T extends Shape | Group = Shape | Group> {
   nativeEvent: PointerEvent | MouseEvent | WheelEvent;
-  /** The shape that was directly hit */
   target: T;
-  /** The shape that has the event handler (may be ancestor due to bubbling) */
   currentTarget: T;
-  /** The point in Two.js coordinate space (center origin) */
   point: { x: number; y: number };
-  /** Stop event from bubbling to parent groups */
   stopPropagation: () => void;
-  /** Whether propagation was stopped */
-  stopped: boolean;
+  readonly stopped: boolean;
 }
 
-/**
- * Event handler function type
- */
-export type EventHandler<T = Shape> = (event: TwoEvent<T>) => void;
+export type EventHandler<T extends Shape | Group = Shape | Group> = (
+  event: TwoEvent<T>
+) => void;
 
-/**
- * All supported event handlers (matching R3F API)
- */
 export interface EventHandlers {
   onClick?: EventHandler;
   onContextMenu?: EventHandler;
   onDoubleClick?: EventHandler;
-  onWheel?: EventHandler;
   onPointerDown?: EventHandler;
+  onPointerMove?: EventHandler;
   onPointerUp?: EventHandler;
   onPointerOver?: EventHandler;
   onPointerOut?: EventHandler;
   onPointerEnter?: EventHandler;
   onPointerLeave?: EventHandler;
-  onPointerMove?: EventHandler;
   onPointerCancel?: EventHandler;
+  onWheel?: EventHandler;
 }
 
-/**
- * Event handler names for iteration
- */
-export const EVENT_HANDLER_NAMES = [
+export const EVENT_HANDLER_NAMES: Array<keyof EventHandlers> = [
   'onClick',
   'onContextMenu',
   'onDoubleClick',
-  'onWheel',
   'onPointerDown',
+  'onPointerMove',
   'onPointerUp',
   'onPointerOver',
   'onPointerOut',
   'onPointerEnter',
   'onPointerLeave',
-  'onPointerMove',
   'onPointerCancel',
-] as const;
+  'onWheel',
+];
 
-/**
- * Shape registration entry for event system
- */
 export interface EventShape {
   shape: Shape | Group;
   handlers: Partial<EventHandlers>;
@@ -77,11 +52,10 @@ export interface EventShape {
 }
 
 /**
- * Convert DOM event coordinates to Two.js coordinate space
- * Two.js uses center origin (0,0 at center of canvas)
+ * Convert DOM event coordinates to canvas-relative coordinates (center origin)
  */
 export function getCanvasCoordinates(
-  nativeEvent: PointerEvent | MouseEvent,
+  nativeEvent: PointerEvent | MouseEvent | WheelEvent,
   canvas: HTMLElement,
   two: Two
 ): { x: number; y: number } {
@@ -95,6 +69,23 @@ export function getCanvasCoordinates(
 }
 
 /**
+ * Convert raw client coordinates to world-space coordinates for hit testing.
+ * World space uses a top-left origin, relative to the canvas element.
+ */
+export function clientToWorldPoint(
+  clientX: number,
+  clientY: number,
+  canvas: HTMLElement
+): { x: number; y: number } {
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top,
+  };
+}
+
+/**
  * Convert DOM event coordinates to world-space coordinates for hit testing
  * World-space uses top-left origin (same as DOM but relative to canvas)
  */
@@ -102,13 +93,7 @@ export function getWorldCoordinates(
   nativeEvent: PointerEvent | MouseEvent,
   canvas: HTMLElement
 ): { x: number; y: number } {
-  const rect = canvas.getBoundingClientRect();
-
-  // Convert from DOM space to canvas-relative space (both top-left origin)
-  const x = nativeEvent.clientX - rect.left;
-  const y = nativeEvent.clientY - rect.top;
-
-  return { x, y };
+  return clientToWorldPoint(nativeEvent.clientX, nativeEvent.clientY, canvas);
 }
 
 /**
@@ -139,41 +124,121 @@ export function createTwoEvent<T extends Shape | Group>(
 /**
  * Check if a shape contains a point using Two.js hit testing
  */
-export function hitTest(shape: Shape | Group, x: number, y: number): boolean {
+export function hitTest(shape: Shape | Group, x: number, y: number, two?: Two | null): boolean {
   // Check if shape is visible
   if ('visible' in shape && !shape.visible) {
     return false;
   }
 
-  // Use Two.js hit testing API
-  if (typeof shape.contains === 'function') {
-    return shape.contains(x, y);
+  // Use shape.contains if custom contains function exists.
+  // DOM nodes also expose a `contains`, with completely different semantics,
+  // so exclude those. The globals are guarded because this module must not
+  // throw when evaluated outside a DOM runtime.
+  const candidateShape = shape as unknown as { contains?: unknown };
+  const isDomContains =
+    (typeof Node !== 'undefined' &&
+      candidateShape.contains === Node.prototype.contains) ||
+    (typeof Element !== 'undefined' &&
+      candidateShape.contains === Element.prototype.contains);
+  if (typeof candidateShape.contains === 'function' && !isDomContains) {
+    return (candidateShape.contains as (x: number, y: number) => boolean)(x, y);
   }
 
-  // Fallback for shapes without hit testing
+  // Use Two.js getBoundingClientRect API
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (typeof (shape as any).getBoundingClientRect === 'function') {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rect = (shape as any).getBoundingClientRect(false);
+      if (rect && typeof rect.left === 'number' && typeof rect.right === 'number') {
+        const isRealTwoShape = 'worldMatrix' in shape || '_matrix' in shape;
+        const offsetX = (!isRealTwoShape && two) ? two.width / 2 : 0;
+        const offsetY = (!isRealTwoShape && two) ? two.height / 2 : 0;
+        const left = rect.left + offsetX;
+        const right = rect.right + offsetX;
+        const top = rect.top + offsetY;
+        const bottom = rect.bottom + offsetY;
+
+        if (x >= left && x <= right && y >= top && y <= bottom) {
+          return true;
+        }
+      }
+    } catch {
+      // Fallback to checking children if getBoundingClientRect fails
+    }
+  }
+
+  // For Groups without bounds, recursively check children
+  if ('children' in shape && Array.isArray((shape as Group).children)) {
+    for (const child of (shape as Group).children) {
+      if (hitTest(child, x, y, two)) {
+        return true;
+      }
+    }
+  }
+
   return false;
 }
 
 /**
+ * Sort shapes front-to-back (topmost visible shape first).
+ * In 2D rendering, shapes drawn later (or with higher parent.children index) sit on top of shapes drawn earlier.
+ */
+export function sortFrontToBack(
+  hits: Array<Shape | Group>,
+  shapes: Map<Shape | Group, EventShape>
+): Array<Shape | Group> {
+  if (hits.length <= 1) return hits;
+
+  const keys = Array.from(shapes.keys());
+
+  return [...hits].sort((a, b) => {
+    const entryA = shapes.get(a);
+    const entryB = shapes.get(b);
+
+    // If both belong to the same parent Group, compare their index in parent.children
+    if (entryA?.parent && entryB?.parent && entryA.parent === entryB.parent) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const parentChildren = (entryA.parent as any).children;
+      if (parentChildren && typeof parentChildren.indexOf === 'function') {
+        const indexA = parentChildren.indexOf(a);
+        const indexB = parentChildren.indexOf(b);
+        if (indexA !== -1 && indexB !== -1) {
+          return indexB - indexA; // Higher index = drawn on top = should be first
+        }
+      }
+    }
+
+    // Default: reverse registration order (shapes registered later sit on top)
+    const indexA = keys.indexOf(a);
+    const indexB = keys.indexOf(b);
+    return indexB - indexA; // Higher registration index = frontmost
+  });
+}
+
+/**
  * Get all shapes at a point, sorted by depth (front to back)
- * Uses scene graph traversal to maintain z-order
+ * Uses scene graph traversal and registration order to maintain z-order
  */
 export function getShapesAtPoint(
   shapes: Map<Shape | Group, EventShape>,
   x: number,
-  y: number
+  y: number,
+  two?: Two | null
 ): Array<Shape | Group> {
+  if (two?.scene) {
+    (two.scene as unknown as { _update: (deep?: boolean) => void })._update(true);
+  }
+
   const hits: Array<Shape | Group> = [];
 
   for (const [shape] of shapes) {
-    if (hitTest(shape, x, y)) {
+    if (hitTest(shape, x, y, two)) {
       hits.push(shape);
     }
   }
 
-  // TODO: Sort by z-order/drawing order when Two.js provides this info
-  // For now, return in registration order
-  return hits;
+  return sortFrontToBack(hits, shapes);
 }
 
 /**

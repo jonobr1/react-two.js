@@ -16,16 +16,21 @@ import {
   CommandLineIcon,
   CurrencyDollarIcon,
   SparklesIcon,
+  Squares2X2Icon,
+  ShareIcon,
 } from '@heroicons/react/20/solid';
 import cn from 'clsx';
 import Playground from './Playground';
 import { useEffect, useState } from 'react';
 import { version } from '../package.json';
+import { PLAYGROUNDS } from './playgrounds/registry';
 
 export default function App() {
   const [domElement, setDomElement] = useState<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(400);
   const [height, setHeight] = useState(300);
+  const [activePlaygroundId, setActivePlaygroundId] = useState('wiremarks');
+
   const sidebar = (
     <Sidebar>
       <SidebarBody>
@@ -60,24 +65,42 @@ export default function App() {
         <SidebarDivider />
 
         <SidebarSection>
-          <SidebarItem href="https://github.com/jonobr1/react-two.js">
-            <CodeBracketIcon /> <SidebarLabel>Github</SidebarLabel>
-          </SidebarItem>
-          <SidebarItem href="https://npmjs.com/package/react-two.js">
-            <CommandLineIcon /> <SidebarLabel>Package</SidebarLabel>
-          </SidebarItem>
-          <SidebarItem href="https://github.com/sponsors/jonobr1">
-            <CurrencyDollarIcon /> <SidebarLabel>Sponsor</SidebarLabel>
-          </SidebarItem>
-          <SidebarItem href="https://chatgpt.com/g/g-hkcTX8uPm-two-js-tutor">
-            <SparklesIcon />
-            <SidebarLabel>ChatGPT</SidebarLabel>
-          </SidebarItem>
+          <SidebarHeading>Playgrounds</SidebarHeading>
+          {PLAYGROUNDS.map((playground) => {
+            const isWiremarks = playground.id === 'wiremarks';
+            const Icon = isWiremarks ? ShareIcon : Squares2X2Icon;
+            const isCurrent = activePlaygroundId === playground.id;
+
+            return (
+              <SidebarItem
+                key={playground.id}
+                current={isCurrent}
+                onClick={() => setActivePlaygroundId(playground.id)}
+              >
+                <Icon data-slot="icon" />
+                <SidebarLabel>{playground.name}</SidebarLabel>
+              </SidebarItem>
+            );
+          })}
         </SidebarSection>
 
         <SidebarDivider />
 
-        <SidebarSection></SidebarSection>
+        <SidebarSection>
+          <SidebarItem href="https://github.com/jonobr1/react-two.js">
+            <CodeBracketIcon data-slot="icon" /> <SidebarLabel>GitHub</SidebarLabel>
+          </SidebarItem>
+          <SidebarItem href="https://npmjs.com/package/react-two.js">
+            <CommandLineIcon data-slot="icon" /> <SidebarLabel>Package</SidebarLabel>
+          </SidebarItem>
+          <SidebarItem href="https://github.com/sponsors/jonobr1">
+            <CurrencyDollarIcon data-slot="icon" /> <SidebarLabel>Sponsor</SidebarLabel>
+          </SidebarItem>
+          <SidebarItem href="https://chatgpt.com/g/g-hkcTX8uPm-two-js-tutor">
+            <SparklesIcon data-slot="icon" />
+            <SidebarLabel>ChatGPT</SidebarLabel>
+          </SidebarItem>
+        </SidebarSection>
       </SidebarBody>
     </Sidebar>
   );
@@ -101,7 +124,11 @@ export default function App() {
 
   return (
     <SidebarLayout ref={setDomElement} navbar={null} sidebar={sidebar}>
-      <Playground width={width} height={height} />
+      <Playground
+        width={width}
+        height={height}
+        activePlaygroundId={activePlaygroundId}
+      />
     </SidebarLayout>
   );
 }

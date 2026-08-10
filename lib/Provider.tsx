@@ -18,6 +18,7 @@ import {
 } from './Context';
 import type { EventHandlers } from './Events';
 import {
+  clientToWorldPoint,
   createTwoEvent,
   getCanvasCoordinates,
   getWorldCoordinates,
@@ -79,7 +80,10 @@ type ComponentProps = React.PropsWithChildren<
  * Warns in development mode if DOM elements or incompatible components are found.
  */
 function validateChildren(children: React.ReactNode): void {
-  if (process.env.NODE_ENV === 'production') {
+  if (
+    (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env
+      ?.NODE_ENV === 'production'
+  ) {
     return;
   }
 
@@ -188,6 +192,25 @@ export const Provider = React.forwardRef<
     }
   }, []);
 
+  /**
+   * Returns true if any registered event shape sits under the given client
+   * coordinates. Used by `useZUI` to leave pointerdowns that landed on a
+   * shape alone, so shape drags and canvas panning never fight.
+   */
+  const hitTestPoint = useCallback(
+    (clientX: number, clientY: number): boolean => {
+      const canvas = twoState?.renderer.domElement;
+      if (!canvas) return false;
+
+      const point = clientToWorldPoint(clientX, clientY, canvas);
+      return (
+        getShapesAtPoint(eventShapes.current, point.x, point.y, twoState)
+          .length > 0
+      );
+    },
+    [twoState],
+  );
+
   // Initialize root Two.js instance
   useEffect(() => {
     const isRoot = !two;
@@ -237,11 +260,12 @@ export const Provider = React.forwardRef<
     }
   }, [two, twoState, props.width, props.height]);
 
-  // Validate children in development mode
+  // Validate children in development mode.
+  // `validateChildren` already no-ops in production, so no guard is needed
+  // here — gating the call on production as well made it dead in every
+  // environment.
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') {
-      validateChildren(props.children);
-    }
+    validateChildren(props.children);
   }, [props.children]);
 
   // Setup event listeners on canvas
@@ -293,6 +317,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -307,6 +332,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -321,6 +347,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -335,6 +362,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -349,6 +377,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -389,6 +418,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -405,18 +435,30 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
-      const currentHovered = new Set(shapes);
 
-      // Dispatch pointer move to hovered shapes
-      if (shapes.length > 0) {
-        dispatchEvent(shapes, 'onPointerMove', e);
+      // Topmost shape under pointer (front-to-back sorted)
+      const topShape = shapes.length > 0 ? shapes[0] : null;
+
+      // Build set of currently hovered shapes (topmost shape + its parent hierarchy)
+      const currentHovered = new Set<Shape | Group>();
+      if (topShape) {
+        const hierarchy = getParentHierarchy(topShape, eventShapes.current);
+        for (const s of hierarchy) {
+          currentHovered.add(s);
+        }
       }
 
-      // Handle pointer enter/leave
+      // Dispatch pointer move to topmost shape hierarchy
+      if (topShape) {
+        dispatchEvent([topShape], 'onPointerMove', e);
+      }
+
+      // Handle pointer enter/leave and over/out
       const previousHovered = hoveredShapes.current;
 
-      // Enter: shapes now hovered but weren't before
+      // Enter / Over: shapes in currentHovered (topmost hierarchy) that weren't hovered before
       for (const shape of currentHovered) {
         if (!previousHovered.has(shape)) {
           dispatchEvent([shape], 'onPointerEnter', e);
@@ -424,7 +466,7 @@ export const Provider = React.forwardRef<
         }
       }
 
-      // Leave: shapes previously hovered but aren't now
+      // Leave / Out: shapes previously hovered that are no longer in currentHovered
       for (const shape of previousHovered) {
         if (!currentHovered.has(shape)) {
           dispatchEvent([shape], 'onPointerLeave', e);
@@ -442,6 +484,7 @@ export const Provider = React.forwardRef<
         eventShapes.current,
         worldPoint.x,
         worldPoint.y,
+        twoState,
       );
 
       if (shapes.length > 0) {
@@ -505,7 +548,7 @@ export const Provider = React.forwardRef<
         // Merge style object
         Object.assign(element.style, value);
       } else if (key === 'className') {
-        element.className = value as string;
+        element.setAttribute('class', value as string);
       } else if (key.startsWith('on') && typeof value === 'function') {
         // Handle React event props (onClick, onMouseMove, etc.)
         const eventName = key.slice(2).toLowerCase();
@@ -539,8 +582,9 @@ export const Provider = React.forwardRef<
       two: twoState,
       registerEventShape,
       unregisterEventShape,
+      hitTestPoint,
     }),
-    [twoState, registerEventShape, unregisterEventShape],
+    [twoState, registerEventShape, unregisterEventShape, hitTestPoint],
   );
 
   const parentValue = useMemo(

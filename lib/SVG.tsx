@@ -52,6 +52,7 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
       height,
       registerEventShape,
       unregisterEventShape,
+      hitTestPoint,
     } = useTwo();
     const svg = useMemo(() => new Two.Group(), []);
     const ref = useRef<Instance | null>(null);
@@ -77,10 +78,13 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
 
       for (const key in props) {
         if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
-          eventHandlers[key as keyof EventHandlers] = props[
-            key as keyof EventHandlers
+          // An explicitly `undefined` handler means "not interactive", so it
+          // must not count toward the registered handler set.
+          const handler = props[key as keyof EventHandlers];
+          if (handler !== undefined) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ] as any;
+            eventHandlers[key as keyof EventHandlers] = handler as any;
+          }
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           shapeProps[key] = (props as any)[key];
@@ -213,16 +217,27 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
       }
     }, [svg, x, y, shapeProps]);
 
-    // Register event handlers
+    // Unregister on unmount only
+    useEffect(() => {
+      return () => {
+        unregisterEventShape(svg);
+      };
+    }, [svg, unregisterEventShape]);
+
+    // Register / update event handlers
     useEffect(() => {
       if (Object.keys(eventHandlers).length > 0) {
         registerEventShape(svg, eventHandlers, parent ?? undefined);
-
-        return () => {
-          unregisterEventShape(svg);
-        };
+      } else {
+        unregisterEventShape(svg);
       }
-    }, [svg, registerEventShape, unregisterEventShape, parent, eventHandlers]);
+    }, [
+      svg,
+      registerEventShape,
+      unregisterEventShape,
+      parent,
+      eventHandlers,
+    ]);
 
     useImperativeHandle(forwardedRef, () => svg, [svg]);
 
@@ -231,8 +246,9 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
         two,
         registerEventShape,
         unregisterEventShape,
+        hitTestPoint,
       }),
-      [two, registerEventShape, unregisterEventShape]
+      [two, registerEventShape, unregisterEventShape, hitTestPoint]
     );
 
     const parentValue = useMemo(
