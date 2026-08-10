@@ -30,6 +30,8 @@ if (typeof window !== 'undefined' && HTMLCanvasElement.prototype) {
       clip: () => {},
       bezierCurveTo: () => {},
       quadraticCurveTo: () => {},
+      setLineDash: () => {},
+      getLineDash: () => [],
     } as unknown as CanvasRenderingContext2D;
     // `getContext` is an overloaded signature covering 2d/webgl/bitmaprenderer;
     // this stub only ever serves the 2d path, so assert the whole assignment.

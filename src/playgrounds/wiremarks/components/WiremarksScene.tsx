@@ -8,7 +8,6 @@ interface WiremarksSceneProps {
   nodes: WiremarkNode[];
   edges: WiremarkEdge[];
   nodesMap: Map<string, WiremarkNode>;
-  dashOffset?: number;
   draggingNodeId?: string | null;
   onDragStart?: (nodeId: string, clientX: number, clientY: number) => void;
   onDrag?: (nodeId: string, clientX: number, clientY: number) => void;
@@ -19,7 +18,6 @@ export function WiremarksScene({
   nodes,
   edges,
   nodesMap,
-  dashOffset = 0,
   draggingNodeId,
   onDragStart,
   onDrag,
@@ -68,7 +66,6 @@ export function WiremarksScene({
               targetNode={targetNode}
               sourceOffsetIndex={sourceOffsetIndex}
               totalSourceConnections={totalSourceConnections}
-              dashOffset={dashOffset}
             />
           );
         })}

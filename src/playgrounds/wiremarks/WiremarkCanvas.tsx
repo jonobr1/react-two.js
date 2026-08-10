@@ -5,7 +5,7 @@ import {
   useState,
   type MutableRefObject,
 } from 'react';
-import { useFrame, useZUI, Group, RefGroup, type ZUIControls } from 'react-two.js';
+import { useZUI, Group, RefGroup, type ZUIControls } from 'react-two.js';
 import { useWiremarksGraph } from './hooks/useWiremarksGraph';
 import { WiremarksScene } from './components/WiremarksScene';
 
@@ -24,7 +24,6 @@ export function WiremarkCanvas({
 }: WiremarkCanvasProps) {
   const sceneGroupRef = useRef<RefGroup | null>(null);
 
-  const [dashOffset, setDashOffset] = useState(0);
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
   const dragOriginRef = useRef<{
     pointer: { x: number; y: number };
@@ -54,10 +53,9 @@ export function WiremarkCanvas({
     }
   }, [controlsRef, zui]);
 
-  // Smooth 60fps dash offset animation loop
-  useFrame((_, frameDelta) => {
-    setDashOffset((prev) => prev - frameDelta / 10);
-  });
+  // The dash animation lives inside WiremarkConnection, which mutates its own
+  // Two.js path each frame. Driving it from here through React state
+  // re-rendered the whole graph 60 times a second.
 
   const handleDragStart = useCallback(
     (nodeId: string, clientX: number, clientY: number) => {
@@ -104,7 +102,6 @@ export function WiremarkCanvas({
         nodes={nodes}
         edges={edges}
         nodesMap={nodesMap}
-        dashOffset={dashOffset}
         draggingNodeId={draggingNodeId}
         onDragStart={handleDragStart}
         onDrag={handleDrag}

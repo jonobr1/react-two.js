@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import Two from 'two.js';
-import { Group, Path, Text } from 'react-two.js';
+import { Group, Path, Text, useFrame, type RefPath } from 'react-two.js';
 import { WiremarkEdge, WiremarkNode, Vector2D } from '../types';
 import { unit, textStyles } from '../constants';
 
@@ -10,7 +10,6 @@ interface WiremarkConnectionProps {
   targetNode?: WiremarkNode;
   sourceOffsetIndex?: number;
   totalSourceConnections?: number;
-  dashOffset?: number;
 }
 
 const HALF_PI = Math.PI * 0.5;
@@ -33,8 +32,8 @@ export function WiremarkConnection({
   targetNode,
   sourceOffsetIndex = 0,
   totalSourceConnections = 1,
-  dashOffset = 0,
 }: WiremarkConnectionProps) {
+  const pathRef = useRef<RefPath | null>(null);
   const points = useMemo(() => {
     if (!sourceNode || !targetNode) return null;
 
@@ -80,11 +79,23 @@ export function WiremarkConnection({
     };
   }, [edge.label, points]);
 
+  // Stable across renders so the offset mutated below survives re-renders.
+  // Two.js stores the dashes array by reference, so re-assigning the same
+  // object leaves the running offset intact.
   const dashesPattern = useMemo(() => {
-    return Object.assign([unit * 0.03, unit * 0.045], {
-      offset: dashOffset,
-    });
-  }, [dashOffset]);
+    return Object.assign([unit * 0.03, unit * 0.045], { offset: 0 });
+  }, []);
+
+  // Animate the marching-ants offset directly on the Two.js path. Driving
+  // this through React state re-renders the entire graph every frame.
+  useFrame((_, frameDelta) => {
+    const dashes = pathRef.current?.dashes as unknown as
+      | { offset: number }
+      | undefined;
+    if (dashes) {
+      dashes.offset -= frameDelta / 10;
+    }
+  });
 
   if (!sourceNode || !targetNode || !points) {
     return null;
@@ -93,6 +104,7 @@ export function WiremarkConnection({
   return (
     <Group>
       <Path
+        ref={pathRef}
         vertices={vertices}
         curved={true}
         stroke={edge.color}
