@@ -223,6 +223,43 @@ useFrame((elapsed: number) => {
 })
 ```
 
+#### `useZUI(targetRef, options?)`
+
+Adds zoom and pan interactions to a `<Group>` component. Panning is gated on registered shape hit testing so node dragging and canvas panning never conflict.
+
+```tsx
+import { useRef } from 'react';
+import { Canvas, Group, Circle, useZUI, RefGroup } from 'react-two.js';
+
+function Scene() {
+  const groupRef = useRef<RefGroup | null>(null);
+  const zui = useZUI(groupRef, { minZoom: 0.25, maxZoom: 8 });
+
+  return (
+    <Group ref={groupRef}>
+      <Circle x={0} y={0} radius={50} fill="#00AEFF" />
+    </Group>
+  );
+}
+```
+
+Returns `ZUIControls`:
+- `controls.zoomBy(ratio, clientX?, clientY?)` — Zoom relative to center or given client point.
+- `controls.zoomTo(scale, clientX?, clientY?)` — Set absolute zoom scale.
+- `controls.panBy(dx, dy)` — Pan by screen pixel delta.
+- `controls.reset()` — Reset zoom and pan to identity state.
+- `controls.clientToSurface(clientX, clientY)` — Convert screen coordinates to surface coordinates.
+- `controls.state` — Ref containing `{ scale, x, y }`.
+
+#### `useZUIState(zui, onChange?)`
+
+Subscribes to ZUI zoom and pan state updates for rendering reactive zoom UI controls.
+
+```tsx
+const zui = useZUI(groupRef);
+const { scale } = useZUIState(zui);
+```
+
 ### Props
 
 All Two.js properties work as React props:

@@ -6,8 +6,8 @@ import { unit } from '../constants';
 interface WiremarkEntityProps {
   node: WiremarkNode;
   isDragging?: boolean;
-  onDragStart?: (nodeId: string, event: TwoEvent) => void;
-  onDrag?: (nodeId: string, dx: number, dy: number) => void;
+  onDragStart?: (nodeId: string, clientX: number, clientY: number) => void;
+  onDrag?: (nodeId: string, clientX: number, clientY: number) => void;
   onDragEnd?: (nodeId: string) => void;
 }
 
@@ -23,26 +23,26 @@ export function WiremarkEntity({
 
   const handlePointerDown = useCallback(
     (e: TwoEvent) => {
+      // Keeps useZUI from also treating this as a background pan.
       e.stopPropagation();
-      onDragStart?.(node.id, e);
 
-      const startX = e.nativeEvent.clientX;
-      const startY = e.nativeEvent.clientY;
+      const native = e.nativeEvent as PointerEvent;
+      onDragStart?.(node.id, native.clientX, native.clientY);
 
-      const handlePointerMove = (moveEvt: MouseEvent) => {
-        const dx = moveEvt.clientX - startX;
-        const dy = moveEvt.clientY - startY;
-        onDrag?.(node.id, dx, dy);
+      const handlePointerMove = (moveEvt: PointerEvent) => {
+        onDrag?.(node.id, moveEvt.clientX, moveEvt.clientY);
       };
 
       const handlePointerUp = () => {
         onDragEnd?.(node.id);
-        window.removeEventListener('mousemove', handlePointerMove);
-        window.removeEventListener('mouseup', handlePointerUp);
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerup', handlePointerUp);
+        window.removeEventListener('pointercancel', handlePointerUp);
       };
 
-      window.addEventListener('mousemove', handlePointerMove);
-      window.addEventListener('mouseup', handlePointerUp);
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp);
+      window.addEventListener('pointercancel', handlePointerUp);
     },
     [node.id, onDragStart, onDrag, onDragEnd],
   );

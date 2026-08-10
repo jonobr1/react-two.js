@@ -1,20 +1,58 @@
-import { useCallback, useRef, useState } from 'react';
-import { useFrame, Group, RefGroup } from 'react-two.js';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react';
+import { useFrame, useZUI, Group, RefGroup, type ZUIControls } from 'react-two.js';
 import { useWiremarksGraph } from './hooks/useWiremarksGraph';
 import { WiremarksScene } from './components/WiremarksScene';
 
 interface WiremarkCanvasProps {
   instructions: string;
+  /** Receives the ZUI controls so DOM chrome outside <Canvas> can drive zoom. */
+  controlsRef?: MutableRefObject<ZUIControls | null>;
+  /** Called at most once per frame while the zoom level changes. */
+  onZoomChange?: (scale: number) => void;
 }
 
-export function WiremarkCanvas({ instructions }: WiremarkCanvasProps) {
+export function WiremarkCanvas({
+  instructions,
+  controlsRef,
+  onZoomChange,
+}: WiremarkCanvasProps) {
   const sceneGroupRef = useRef<RefGroup | null>(null);
 
   const [dashOffset, setDashOffset] = useState(0);
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
-  const dragStartNodePosRef = useRef<{ x: number; y: number } | null>(null);
+  const dragOriginRef = useRef<{
+    pointer: { x: number; y: number };
+    node: { x: number; y: number };
+  } | null>(null);
 
-  const { nodes, edges, nodesMap, updateNodePosition } = useWiremarksGraph(instructions);
+  const { nodes, edges, nodesMap, updateNodePosition } =
+    useWiremarksGraph(instructions);
+
+  const handleZoomChange = useCallback(
+    (state: { scale: number }) => onZoomChange?.(state.scale),
+    [onZoomChange],
+  );
+
+  // `pan: 'background'` leaves pointerdowns that landed on an entity alone, so
+  // dragging a node never also pans the canvas.
+  const zui = useZUI(sceneGroupRef, {
+    minZoom: 0.25,
+    maxZoom: 8,
+    pan: 'background',
+    onChange: handleZoomChange,
+  });
+
+  useEffect(() => {
+    if (controlsRef) {
+      controlsRef.current = zui;
+    }
+  }, [controlsRef, zui]);
 
   // Smooth 60fps dash offset animation loop
   useFrame((_, frameDelta) => {
@@ -22,32 +60,45 @@ export function WiremarkCanvas({ instructions }: WiremarkCanvasProps) {
   });
 
   const handleDragStart = useCallback(
-    (nodeId: string) => {
+    (nodeId: string, clientX: number, clientY: number) => {
       setDraggingNodeId(nodeId);
       const node = nodesMap.get(nodeId);
-      if (node) {
-        dragStartNodePosRef.current = { x: node.x, y: node.y };
-      }
+      if (!node) return;
+
+      const pointer = zui.clientToSurface(clientX, clientY);
+      dragOriginRef.current = {
+        pointer,
+        node: { x: node.x, y: node.y },
+      };
     },
-    [nodesMap]
+    [nodesMap, zui],
   );
 
   const handleDrag = useCallback(
-    (nodeId: string, dx: number, dy: number) => {
-      const initialPos = dragStartNodePosRef.current;
-      if (initialPos) {
-        updateNodePosition(nodeId, initialPos.x + dx, initialPos.y + dy);
-      }
+    (nodeId: string, clientX: number, clientY: number) => {
+      const origin = dragOriginRef.current;
+      if (!origin) return;
+
+      // Diffing two surface-space points stays exact even if the view zooms
+      // or pans partway through the drag.
+      const pointer = zui.clientToSurface(clientX, clientY);
+      updateNodePosition(
+        nodeId,
+        origin.node.x + (pointer.x - origin.pointer.x),
+        origin.node.y + (pointer.y - origin.pointer.y),
+      );
     },
-    [updateNodePosition]
+    [updateNodePosition, zui],
   );
 
   const handleDragEnd = useCallback(() => {
     setDraggingNodeId(null);
-    dragStartNodePosRef.current = null;
+    dragOriginRef.current = null;
   }, []);
 
   return (
+    // NOTE: this Group's translation and scale are owned by useZUI.
+    // Do not add x, y, or scale props to it.
     <Group ref={sceneGroupRef}>
       <WiremarksScene
         nodes={nodes}

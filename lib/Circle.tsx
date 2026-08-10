@@ -67,6 +67,7 @@ export const Circle = React.forwardRef<Instance, ComponentProps>(
     useEffect(() => {
       if (parent) {
         parent.add(circle);
+
         return () => {
           parent.remove(circle);
         };

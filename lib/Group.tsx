@@ -39,6 +39,7 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
       height,
       registerEventShape,
       unregisterEventShape,
+      hitTestPoint,
     } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
@@ -112,8 +113,9 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
         two,
         registerEventShape,
         unregisterEventShape,
+        hitTestPoint,
       }),
-      [two, registerEventShape, unregisterEventShape]
+      [two, registerEventShape, unregisterEventShape, hitTestPoint]
     );
 
     const parentValue = useMemo(

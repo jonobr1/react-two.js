@@ -18,6 +18,7 @@ import {
 } from './Context';
 import type { EventHandlers } from './Events';
 import {
+  clientToWorldPoint,
   createTwoEvent,
   getCanvasCoordinates,
   getWorldCoordinates,
@@ -190,6 +191,25 @@ export const Provider = React.forwardRef<
       capturedShape.current = null;
     }
   }, []);
+
+  /**
+   * Returns true if any registered event shape sits under the given client
+   * coordinates. Used by `useZUI` to leave pointerdowns that landed on a
+   * shape alone, so shape drags and canvas panning never fight.
+   */
+  const hitTestPoint = useCallback(
+    (clientX: number, clientY: number): boolean => {
+      const canvas = twoState?.renderer.domElement;
+      if (!canvas) return false;
+
+      const point = clientToWorldPoint(clientX, clientY, canvas);
+      return (
+        getShapesAtPoint(eventShapes.current, point.x, point.y, twoState)
+          .length > 0
+      );
+    },
+    [twoState],
+  );
 
   // Initialize root Two.js instance
   useEffect(() => {
@@ -564,8 +584,9 @@ export const Provider = React.forwardRef<
       two: twoState,
       registerEventShape,
       unregisterEventShape,
+      hitTestPoint,
     }),
-    [twoState, registerEventShape, unregisterEventShape],
+    [twoState, registerEventShape, unregisterEventShape, hitTestPoint],
   );
 
   const parentValue = useMemo(

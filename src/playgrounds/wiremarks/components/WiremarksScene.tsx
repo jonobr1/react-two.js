@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Group, type TwoEvent } from 'react-two.js';
+import { Group } from 'react-two.js';
 import { WiremarkNode, WiremarkEdge } from '../types';
 import { WiremarkEntity } from './WiremarkEntity';
 import { WiremarkConnection } from './WiremarkConnection';
@@ -10,8 +10,8 @@ interface WiremarksSceneProps {
   nodesMap: Map<string, WiremarkNode>;
   dashOffset?: number;
   draggingNodeId?: string | null;
-  onDragStart?: (nodeId: string, event: TwoEvent) => void;
-  onDrag?: (nodeId: string, dx: number, dy: number) => void;
+  onDragStart?: (nodeId: string, clientX: number, clientY: number) => void;
+  onDrag?: (nodeId: string, clientX: number, clientY: number) => void;
   onDragEnd?: (nodeId: string) => void;
 }
 

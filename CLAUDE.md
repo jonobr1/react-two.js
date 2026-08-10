@@ -103,6 +103,16 @@ useFrame((elapsed: number) => {
 ```
 Frame-based animation system for smooth animations.
 
+### useZUI() and useZUIState() Hooks
+```typescript
+const zui = useZUI(groupRef, { minZoom: 0.25, maxZoom: 8 });
+const { scale, x, y } = useZUIState(zui);
+```
+- Wrap a `<Group ref={groupRef}>` to enable mouse wheel zoom & background drag pan.
+- Automatically gates canvas panning using registered shape hit testing so node drag events do not trigger pan.
+- High-frequency wheel/pan events update Two.js transforms directly in a ref (no React re-renders on pan).
+- `zui.clientToSurface(clientX, clientY)` converts raw DOM screen pixel coordinates into surface space for node dragging.
+
 ## Ref System
 Each component has a corresponding ref type:
 - `RefCircle`, `RefRectangle`, `RefPath`, etc.

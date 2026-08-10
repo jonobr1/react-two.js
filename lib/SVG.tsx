@@ -52,6 +52,7 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
       height,
       registerEventShape,
       unregisterEventShape,
+      hitTestPoint,
     } = useTwo();
     const svg = useMemo(() => new Two.Group(), []);
     const ref = useRef<Instance | null>(null);
@@ -234,8 +235,9 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
         two,
         registerEventShape,
         unregisterEventShape,
+        hitTestPoint,
       }),
-      [two, registerEventShape, unregisterEventShape]
+      [two, registerEventShape, unregisterEventShape, hitTestPoint]
     );
 
     const parentValue = useMemo(

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Two from 'two.js';
-import { Canvas, Group, RoundedRectangle, Circle } from '../lib/main';
+import { Canvas, Group, RoundedRectangle, Circle, useTwo } from '../lib/main';
 import { hitTest, sortFrontToBack } from '../lib/Events';
 
 // Mock Canvas HTML element methods for JSDOM
@@ -189,6 +189,8 @@ describe('react-two.js Event System', () => {
         <Canvas width={800} height={600} autostart={false}>
           {/* Bottom Shape */}
           <RoundedRectangle
+            x={400}
+            y={300}
             width={200}
             height={200}
             onPointerOver={onBottomOver}
@@ -196,6 +198,8 @@ describe('react-two.js Event System', () => {
           />
           {/* Top Shape (drawn later on top) */}
           <Circle
+            x={400}
+            y={300}
             radius={50}
             onPointerOver={onTopOver}
             onPointerOut={onTopOut}
@@ -266,6 +270,40 @@ describe('react-two.js Event System', () => {
 
       const canvasElement = container.querySelector('canvas') || container.querySelector('svg');
       expect(canvasElement).not.toBeNull();
+    });
+  });
+
+  describe('hitTestPoint', () => {
+    it('reports true over a registered shape and false over empty canvas', () => {
+      const seen: Array<{ label: string; hit: boolean }> = [];
+
+      function Probe() {
+        const { two, hitTestPoint } = useTwo();
+        useEffect(() => {
+          if (!two) return;
+          seen.push({ label: 'inside', hit: hitTestPoint(400, 300) });
+          seen.push({ label: 'outside', hit: hitTestPoint(10, 10) });
+        }, [two, hitTestPoint]);
+        return null;
+      }
+
+      render(
+        <Canvas type={Two.Types.canvas} width={800} height={600}>
+          <Group>
+            <RoundedRectangle
+              x={400}
+              y={300}
+              width={100}
+              height={60}
+              onPointerDown={() => {}}
+            />
+          </Group>
+          <Probe />
+        </Canvas>,
+      );
+
+      expect(seen.find((s) => s.label === 'inside')?.hit).toBe(true);
+      expect(seen.find((s) => s.label === 'outside')?.hit).toBe(false);
     });
   });
 });

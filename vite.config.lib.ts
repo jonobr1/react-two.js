@@ -16,7 +16,7 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
-      external: ['react', 'react/jsx-runtime', 'two.js'],
+      external: [/^react$/, /^react\/jsx-runtime$/, /^two\.js(\/.*)?$/],
       output: {
         globals: {
           react: 'React',

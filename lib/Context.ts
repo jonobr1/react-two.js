@@ -12,6 +12,7 @@ export interface TwoCoreContextValue {
     parent?: Group
   ) => void;
   unregisterEventShape: (shape: Shape | Group) => void;
+  hitTestPoint: (clientX: number, clientY: number) => boolean;
 }
 
 export interface TwoParentContextValue {
@@ -27,6 +28,7 @@ export const TwoCoreContext = createContext<TwoCoreContextValue>({
   two: null,
   registerEventShape: () => {},
   unregisterEventShape: () => {},
+  hitTestPoint: () => false,
 });
 
 export const TwoParentContext = createContext<TwoParentContextValue>({

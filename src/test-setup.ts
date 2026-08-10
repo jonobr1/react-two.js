@@ -28,6 +28,37 @@ if (typeof window !== 'undefined' && HTMLCanvasElement.prototype) {
       transform: () => {},
       rect: () => {},
       clip: () => {},
+      bezierCurveTo: () => {},
+      quadraticCurveTo: () => {},
     } as unknown as CanvasRenderingContext2D;
   };
+}
+
+/**
+ * jsdom does not implement PointerEvent. The ZUI hook binds pointer events
+ * exclusively, so tests need a minimal stand-in. MouseEvent already carries
+ * clientX/clientY/button/buttons, so only the pointer-specific fields are added.
+ */
+interface PointerEventInitLike extends MouseEventInit {
+  pointerId?: number;
+  pointerType?: string;
+  isPrimary?: boolean;
+}
+
+if (typeof globalThis.PointerEvent === 'undefined') {
+  class PointerEventPolyfill extends MouseEvent {
+    readonly pointerId: number;
+    readonly pointerType: string;
+    readonly isPrimary: boolean;
+
+    constructor(type: string, params: PointerEventInitLike = {}) {
+      super(type, params);
+      this.pointerId = params.pointerId ?? 0;
+      this.pointerType = params.pointerType ?? 'mouse';
+      this.isPrimary = params.isPrimary ?? true;
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).PointerEvent = PointerEventPolyfill;
 }

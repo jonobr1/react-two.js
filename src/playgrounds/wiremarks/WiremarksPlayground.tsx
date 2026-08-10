@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Canvas } from 'react-two.js';
+import { Canvas } from '../../../lib/main';
+import type { ZUIControls } from '../../../lib/main';
 import Two from 'two.js';
 import { WiremarkCanvas } from './WiremarkCanvas';
 import { PlaygroundProps } from '../types';
@@ -44,6 +45,8 @@ const defaultPrompt = `
 export function WiremarksPlayground({ width, height }: PlaygroundProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const zuiRef = useRef<ZUIControls | null>(null);
+  const [scale, setScale] = useState(1);
 
   const [text, setText] = useState(() => {
     return window.localStorage.getItem('wiremarks-state') || defaultPrompt;
@@ -96,11 +99,15 @@ export function WiremarksPlayground({ width, height }: PlaygroundProps) {
           width={width}
           height={height}
           autostart={true}
-          // className="w-full h-full cursor-grab active:cursor-grabbing"
-          // style={{ userSelect: 'none' }}
+          className="w-full h-full cursor-grab active:cursor-grabbing"
+          style={{ userSelect: 'none', touchAction: 'none' }}
           aria-label="Wiremarks interactive visual graph canvas"
         >
-          <WiremarkCanvas instructions={text} />
+          <WiremarkCanvas
+            instructions={text}
+            controlsRef={zuiRef}
+            onZoomChange={setScale}
+          />
         </Canvas>
       </div>
 
@@ -116,6 +123,18 @@ export function WiremarksPlayground({ width, height }: PlaygroundProps) {
           <ArrowDownTrayIcon className="w-4 h-4 mr-1.5" />
           Export SVG
         </Button>
+      </div>
+
+      {/* Floating Zoom Controls Overlay */}
+      <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-lg p-1 shadow-lg pointer-events-auto">
+        <button
+          onClick={() => zuiRef.current?.reset()}
+          className="px-2 py-1 text-xs font-mono text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors"
+          aria-label="Reset zoom"
+          title="Reset Zoom"
+        >
+          {Math.round(scale * 100)}%
+        </button>
       </div>
 
       {/* DSL Editor Overlay Panel */}

@@ -1,6 +1,14 @@
 export { Provider as Canvas } from './Provider';
 export { Context, useTwo, useFrame } from './Context';
 export { Group, type RefGroup } from './Group';
+export {
+  useZUI,
+  useZUIState,
+  type UseZUIOptions,
+  type ZUIControls,
+  type ZUIState,
+  type ReadonlyRef,
+} from './ZUI';
 export { SVG, type RefSVG } from './SVG';
 export { Path, type RefPath } from './Path';
 export { Points, type RefPoints } from './Points';
