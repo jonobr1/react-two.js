@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Group, RoundedRectangle, Text, type TwoEvent } from 'react-two.js';
 import { WiremarkNode } from '../types';
 import { unit } from '../constants';
@@ -21,10 +21,25 @@ export function WiremarkEntity({
   const [isHovered, setIsHovered] = useState(false);
   const borderWidth = unit * 0.015;
 
+  /**
+   * Ends the in-flight drag, if any. Held in a ref so the unmount effect can
+   * reach the listeners registered by an earlier render — editing the DSL
+   * mid-drag re-parses the graph and unmounts this entity before pointerup
+   * ever arrives.
+   */
+  const endDragRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => endDragRef.current?.();
+  }, []);
+
   const handlePointerDown = useCallback(
     (e: TwoEvent) => {
       // Keeps useZUI from also treating this as a background pan.
       e.stopPropagation();
+
+      // Never let two drags stack up on the same entity.
+      endDragRef.current?.();
 
       const native = e.nativeEvent as PointerEvent;
       onDragStart?.(node.id, native.clientX, native.clientY);
@@ -33,16 +48,18 @@ export function WiremarkEntity({
         onDrag?.(node.id, moveEvt.clientX, moveEvt.clientY);
       };
 
-      const handlePointerUp = () => {
-        onDragEnd?.(node.id);
+      const endDrag = () => {
         window.removeEventListener('pointermove', handlePointerMove);
-        window.removeEventListener('pointerup', handlePointerUp);
-        window.removeEventListener('pointercancel', handlePointerUp);
+        window.removeEventListener('pointerup', endDrag);
+        window.removeEventListener('pointercancel', endDrag);
+        endDragRef.current = null;
+        onDragEnd?.(node.id);
       };
 
       window.addEventListener('pointermove', handlePointerMove);
-      window.addEventListener('pointerup', handlePointerUp);
-      window.addEventListener('pointercancel', handlePointerUp);
+      window.addEventListener('pointerup', endDrag);
+      window.addEventListener('pointercancel', endDrag);
+      endDragRef.current = endDrag;
     },
     [node.id, onDragStart, onDrag, onDragEnd],
   );
