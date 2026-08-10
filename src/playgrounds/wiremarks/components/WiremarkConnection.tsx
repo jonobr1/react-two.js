@@ -1,6 +1,13 @@
 import { useMemo, useRef } from 'react';
 import Two from 'two.js';
-import { Group, Path, Text, useFrame, type RefPath } from 'react-two.js';
+import {
+  Group,
+  Path,
+  Text,
+  useFrame,
+  type RefPath,
+  type RefText,
+} from 'react-two.js';
 import { WiremarkEdge, WiremarkNode, Vector2D } from '../types';
 import { unit, textStyles } from '../constants';
 
@@ -14,17 +21,11 @@ interface WiremarkConnectionProps {
 
 const HALF_PI = Math.PI * 0.5;
 
-function cubicBezier(p0: Vector2D, p1: Vector2D, p2: Vector2D, p3: Vector2D, t: number): Vector2D {
-  const oneMinusT = 1 - t;
-  const a = oneMinusT * oneMinusT * oneMinusT;
-  const b = 3 * oneMinusT * oneMinusT * t;
-  const c = 3 * oneMinusT * t * t;
-  const d = t * t * t;
-  return {
-    x: a * p0.x + b * p1.x + c * p2.x + d * p3.x,
-    y: a * p0.y + b * p1.y + c * p2.y + d * p3.y,
-  };
-}
+const labelSize = textStyles.size * 0.75;
+
+// Sampled either side of the curve's midpoint to derive a tangent.
+const LABEL_T_BEFORE = 0.45;
+const LABEL_T_AFTER = 0.55;
 
 export function WiremarkConnection({
   edge,
@@ -34,6 +35,7 @@ export function WiremarkConnection({
   totalSourceConnections = 1,
 }: WiremarkConnectionProps) {
   const pathRef = useRef<RefPath | null>(null);
+  const labelRef = useRef<RefText | null>(null);
   const points = useMemo(() => {
     if (!sourceNode || !targetNode) return null;
 
@@ -59,26 +61,6 @@ export function WiremarkConnection({
     ];
   }, [points]);
 
-  const labelInfo = useMemo(() => {
-    if (!edge.label || !points) return null;
-    const { p0, p1, p2, p3 } = points;
-
-    const ptA = cubicBezier(p0, p1, p2, p3, 0.45);
-    const ptB = cubicBezier(p0, p1, p2, p3, 0.55);
-    const angle = Math.atan2(ptB.y - ptA.y, ptB.x - ptA.x);
-    const labelSize = textStyles.size * 0.75;
-
-    const ox = labelSize * Math.cos(angle - HALF_PI);
-    const oy = labelSize * Math.sin(angle - HALF_PI);
-
-    return {
-      x: 0.5 * (ptB.x - ptA.x) + ptA.x + ox,
-      y: 0.5 * (ptB.y - ptA.y) + ptA.y + oy,
-      rotation: angle,
-      size: labelSize,
-    };
-  }, [edge.label, points]);
-
   // Stable across renders so the offset mutated below survives re-renders.
   // Two.js stores the dashes array by reference, so re-assigning the same
   // object leaves the running offset intact.
@@ -86,15 +68,35 @@ export function WiremarkConnection({
     return Object.assign([unit * 0.03, unit * 0.045], { offset: 0 });
   }, []);
 
-  // Animate the marching-ants offset directly on the Two.js path. Driving
-  // this through React state re-renders the entire graph every frame.
   useFrame((_, frameDelta) => {
-    const dashes = pathRef.current?.dashes as unknown as
-      | { offset: number }
-      | undefined;
+    const path = pathRef.current;
+    if (!path) return;
+
+    // Animate the marching-ants offset directly on the Two.js path. Driving
+    // this through React state re-renders the entire graph every frame.
+    const dashes = path.dashes as unknown as { offset: number } | undefined;
     if (dashes) {
       dashes.offset -= frameDelta / 10;
     }
+
+    // Sit the label on the curve Two.js actually renders. `curved` paths are
+    // catmull-rom-like splines *through* every anchor, so treating the middle
+    // anchors as Bezier control points puts the label off the line and skews
+    // its angle. getPointAt samples the real curve by arc length.
+    const label = labelRef.current;
+    if (!label) return;
+
+    const a = path.getPointAt(LABEL_T_BEFORE) as unknown as Vector2D;
+    const b = path.getPointAt(LABEL_T_AFTER) as unknown as Vector2D;
+    if (!a || !b) return;
+
+    const angle = Math.atan2(b.y - a.y, b.x - a.x);
+    const ox = labelSize * Math.cos(angle - HALF_PI);
+    const oy = labelSize * Math.sin(angle - HALF_PI);
+
+    label.position.x = 0.5 * (b.x - a.x) + a.x + ox;
+    label.position.y = 0.5 * (b.y - a.y) + a.y + oy;
+    label.rotation = angle;
   });
 
   if (!sourceNode || !targetNode || !points) {
@@ -114,13 +116,13 @@ export function WiremarkConnection({
         cap="round"
         join="round"
       />
-      {edge.label && labelInfo && (
+      {edge.label && (
         <Text
-          x={labelInfo.x}
-          y={labelInfo.y}
-          rotation={labelInfo.rotation}
+          /* Position and rotation are owned by the frame loop above — passing
+             x/y/rotation props here would overwrite them every render. */
+          ref={labelRef}
           value={edge.label}
-          size={labelInfo.size}
+          size={labelSize}
           fill={edge.color}
           family={textStyles.family}
           baseline="middle"

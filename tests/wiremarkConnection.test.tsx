@@ -27,6 +27,30 @@ const edge: WiremarkEdge = {
   color: '#000',
 };
 
+const labeledEdge: WiremarkEdge = { ...edge, label: 'Algorithms' };
+
+type SceneNode = {
+  value?: string;
+  rotation?: number;
+  size?: number;
+  position?: { x: number; y: number };
+  dashes?: { offset: number };
+  getPointAt?: (t: number) => { x: number; y: number };
+  children?: SceneNode[];
+};
+
+function find(
+  node: SceneNode,
+  predicate: (n: SceneNode) => boolean
+): SceneNode | null {
+  if (predicate(node)) return node;
+  for (const child of node.children ?? []) {
+    const found = find(child, predicate);
+    if (found) return found;
+  }
+  return null;
+}
+
 describe('WiremarkConnection dash animation', () => {
   it('advances the dash offset on frame updates without React state', () => {
     const captured: { two?: Two | null } = {};
@@ -78,5 +102,54 @@ describe('WiremarkConnection dash animation', () => {
 
     // The offset advanced purely by mutation, so nothing re-rendered.
     expect(container).toBeTruthy();
+  });
+});
+
+describe('WiremarkConnection label alignment', () => {
+  it('places the label on the rendered curve, not a Bezier approximation', () => {
+    const captured: { two?: Two | null } = {};
+
+    function Probe() {
+      captured.two = useTwo().two;
+      return null;
+    }
+
+    render(
+      <Canvas type={Two.Types.canvas} width={800} height={600} autostart={false}>
+        <WiremarkConnection
+          edge={labeledEdge}
+          sourceNode={source}
+          targetNode={target}
+        />
+        <Probe />
+      </Canvas>
+    );
+
+    const two = captured.two!;
+    act(() => {
+      two.update();
+      two.update();
+    });
+
+    const scene = two.scene as unknown as SceneNode;
+    const path = find(scene, (n) => typeof n.getPointAt === 'function');
+    const label = find(scene, (n) => n.value === 'Algorithms');
+
+    expect(path).not.toBeNull();
+    expect(label).not.toBeNull();
+
+    // Ground truth comes from the path Two.js actually renders.
+    const a = path!.getPointAt!(0.45);
+    const b = path!.getPointAt!(0.55);
+    const expectedAngle = Math.atan2(b.y - a.y, b.x - a.x);
+
+    expect(label!.rotation).toBeCloseTo(expectedAngle, 3);
+
+    const size = label!.size!;
+    const ox = size * Math.cos(expectedAngle - Math.PI / 2);
+    const oy = size * Math.sin(expectedAngle - Math.PI / 2);
+
+    expect(label!.position!.x).toBeCloseTo(0.5 * (b.x - a.x) + a.x + ox, 3);
+    expect(label!.position!.y).toBeCloseTo(0.5 * (b.y - a.y) + a.y + oy, 3);
   });
 });
