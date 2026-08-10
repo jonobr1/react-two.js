@@ -1,30 +1,50 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { parseWiremarksDSL } from '../parser';
+import { layoutGraph } from '../layout';
+import { clearPositions, loadPositions, savePositions } from '../storage';
 import { GraphData, WiremarkNode, Vector2D } from '../types';
+import { nodeWidth, nodeHeight } from '../constants';
 
-export function useWiremarksGraph(instructions: string) {
-  // Store user-dragged node position overrides
-  const [positionOverrides, setPositionOverrides] = useState<Record<string, Vector2D>>({});
+const NODE_SIZE = { width: nodeWidth, height: nodeHeight };
 
-  // Parse DSL text into base graph layout
+/**
+ * Builds the renderable graph from DSL text.
+ *
+ * Position precedence is: a user's dragged position, otherwise whatever the
+ * layout algorithm computes. Editing the text therefore reflows untouched
+ * nodes while leaving deliberately placed ones alone.
+ *
+ * @param instructions - The Wiremarks DSL source.
+ * @param resetToken - Increment to discard all dragged positions.
+ */
+export function useWiremarksGraph(instructions: string, resetToken = 0) {
+  // Dragged positions, seeded from the previous session.
+  const [positionOverrides, setPositionOverrides] = useState<
+    Record<string, Vector2D>
+  >(() => loadPositions());
+
+  // Parse DSL text into a graph, without coordinates.
   const baseGraph = useMemo<GraphData>(() => {
     return parseWiremarksDSL(instructions);
   }, [instructions]);
 
-  // Combine base nodes layout with position overrides
+  // Lay that graph out into columns and rows.
+  const layout = useMemo(() => {
+    return layoutGraph(
+      baseGraph.nodes.map((node) => node.id),
+      baseGraph.edges,
+      NODE_SIZE
+    );
+  }, [baseGraph]);
+
   const nodes = useMemo<WiremarkNode[]>(() => {
     return baseGraph.nodes.map((node) => {
-      const override = positionOverrides[node.id];
-      if (override) {
-        return {
-          ...node,
-          x: override.x,
-          y: override.y,
-        };
-      }
-      return node;
+      const position = positionOverrides[node.id] ??
+        layout.get(node.id) ?? { x: 0, y: 0 };
+
+      return { ...node, x: position.x, y: position.y };
     });
-  }, [baseGraph.nodes, positionOverrides]);
+  }, [baseGraph.nodes, layout, positionOverrides]);
 
   // Map for fast node lookup by ID
   const nodesMap = useMemo<Map<string, WiremarkNode>>(() => {
@@ -35,18 +55,51 @@ export function useWiremarksGraph(instructions: string) {
     return map;
   }, [nodes]);
 
-  // Callback to update position of a specific node during/after drag
-  const updateNodePosition = useCallback((nodeId: string, x: number, y: number) => {
-    setPositionOverrides((prev) => ({
-      ...prev,
-      [nodeId]: { x, y },
-    }));
+  // Latest values for `commitPositions`, which is invoked from a pointerup
+  // handler that may still hold a closure from before the drag began.
+  const latest = useRef<{ overrides: Record<string, Vector2D>; ids: string[] }>({
+    overrides: positionOverrides,
+    ids: [],
+  });
+  useEffect(() => {
+    latest.current = {
+      overrides: positionOverrides,
+      ids: nodes.map((node) => node.id),
+    };
+  }, [positionOverrides, nodes]);
+
+  // State only. This runs on every pointermove, so it must stay off the
+  // localStorage path.
+  const updateNodePosition = useCallback(
+    (nodeId: string, x: number, y: number) => {
+      setPositionOverrides((prev) => ({
+        ...prev,
+        [nodeId]: { x, y },
+      }));
+    },
+    []
+  );
+
+  /** Persist dragged positions. Call when a drag finishes, not during it. */
+  const commitPositions = useCallback(() => {
+    savePositions(latest.current.overrides, latest.current.ids);
   }, []);
+
+  const previousResetToken = useRef(resetToken);
+  useEffect(() => {
+    if (previousResetToken.current === resetToken) {
+      return;
+    }
+    previousResetToken.current = resetToken;
+    setPositionOverrides({});
+    clearPositions();
+  }, [resetToken]);
 
   return {
     nodes,
     edges: baseGraph.edges,
     nodesMap,
     updateNodePosition,
+    commitPositions,
   };
 }

@@ -36,6 +36,7 @@ export function WiremarksPlayground({ width, height }: PlaygroundProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const zuiRef = useRef<ZUIControls | null>(null);
   const [scale, setScale] = useState(1);
+  const [layoutResetToken, setLayoutResetToken] = useState(0);
 
   const [text, setText] = useState(() => {
     return window.localStorage.getItem('wiremarks-state') || defaultPrompt;
@@ -59,6 +60,11 @@ export function WiremarksPlayground({ width, height }: PlaygroundProps) {
 
   const handleReset = () => {
     setText(defaultPrompt);
+    // Also discard dragged node positions, so Reset genuinely restores the
+    // default diagram rather than the default text in a custom arrangement.
+    setLayoutResetToken((token) => token + 1);
+    zuiRef.current?.reset();
+    setScale(1);
   };
 
   const handleDownload = () => {
@@ -96,6 +102,7 @@ export function WiremarksPlayground({ width, height }: PlaygroundProps) {
             instructions={text}
             controlsRef={zuiRef}
             onZoomChange={setScale}
+            resetToken={layoutResetToken}
           />
         </Canvas>
       </div>

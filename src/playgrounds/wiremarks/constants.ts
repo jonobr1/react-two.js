@@ -1,5 +1,8 @@
 export const unit = 200;
 
+export const nodeWidth = unit * 1.5;
+export const nodeHeight = unit;
+
 export interface DashesArray extends Array<number> {
   offset: number;
 }

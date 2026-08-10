@@ -15,12 +15,15 @@ interface WiremarkCanvasProps {
   controlsRef?: MutableRefObject<ZUIControls | null>;
   /** Called at most once per frame while the zoom level changes. */
   onZoomChange?: (scale: number) => void;
+  /** Increment to discard every dragged node position. */
+  resetToken?: number;
 }
 
 export function WiremarkCanvas({
   instructions,
   controlsRef,
   onZoomChange,
+  resetToken,
 }: WiremarkCanvasProps) {
   const sceneGroupRef = useRef<RefGroup | null>(null);
 
@@ -30,8 +33,8 @@ export function WiremarkCanvas({
     node: { x: number; y: number };
   } | null>(null);
 
-  const { nodes, edges, nodesMap, updateNodePosition } =
-    useWiremarksGraph(instructions);
+  const { nodes, edges, nodesMap, updateNodePosition, commitPositions } =
+    useWiremarksGraph(instructions, resetToken);
 
   const handleZoomChange = useCallback(
     (state: { scale: number }) => onZoomChange?.(state.scale),
@@ -92,7 +95,9 @@ export function WiremarkCanvas({
   const handleDragEnd = useCallback(() => {
     setDraggingNodeId(null);
     dragOriginRef.current = null;
-  }, []);
+    // Persist once the drag settles, never during it.
+    commitPositions();
+  }, [commitPositions]);
 
   return (
     // NOTE: this Group's translation and scale are owned by useZUI.

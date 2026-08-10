@@ -27,7 +27,13 @@ export interface WiremarkEdge {
   color: string;
 }
 
+/**
+ * A node as it comes out of the parser, before layout assigns coordinates.
+ * The parser turns text into a graph; `layout.ts` turns a graph into geometry.
+ */
+export type ParsedNode = Omit<WiremarkNode, 'x' | 'y'>;
+
 export interface GraphData {
-  nodes: WiremarkNode[];
+  nodes: ParsedNode[];
   edges: WiremarkEdge[];
 }

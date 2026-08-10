@@ -1,5 +1,5 @@
-import { GraphData, WiremarkNode, WiremarkEdge, NodeColors } from './types';
-import { unit } from './constants';
+import { GraphData, ParsedNode, WiremarkEdge, NodeColors } from './types';
+import { nodeWidth, nodeHeight } from './constants';
 import { dilute, stringToColor } from './utils/color';
 
 function generateNodeColors(name: string): NodeColors {
@@ -76,23 +76,14 @@ export function parseWiremarksDSL(instructions: string): GraphData {
     }
   }
 
-  const nodeWidth = unit * 1.5;
-  const nodeHeight = unit;
-
-  const nodes: WiremarkNode[] = rawEntityNames.map((name, index) => {
-    const x = index * nodeWidth + unit * 0.25;
-    const y = 2 * (index % 2) * nodeHeight + nodeHeight;
-
-    return {
-      id: name,
-      name,
-      x,
-      y,
-      width: nodeWidth,
-      height: nodeHeight,
-      colors: generateNodeColors(name),
-    };
-  });
+  // Coordinates are deliberately absent here — see `layout.ts`.
+  const nodes: ParsedNode[] = rawEntityNames.map((name) => ({
+    id: name,
+    name,
+    width: nodeWidth,
+    height: nodeHeight,
+    colors: generateNodeColors(name),
+  }));
 
   const edges: WiremarkEdge[] = rawConnections.map((conn, index) => {
     const label = conn.label || 'connection';
