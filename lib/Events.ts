@@ -130,13 +130,17 @@ export function hitTest(shape: Shape | Group, x: number, y: number, two?: Two | 
     return false;
   }
 
-  // Use shape.contains if custom contains function exists
+  // Use shape.contains if custom contains function exists.
+  // DOM nodes also expose a `contains`, with completely different semantics,
+  // so exclude those. The globals are guarded because this module must not
+  // throw when evaluated outside a DOM runtime.
   const candidateShape = shape as unknown as { contains?: unknown };
-  if (
-    typeof candidateShape.contains === 'function' &&
-    candidateShape.contains !== Node.prototype.contains &&
-    candidateShape.contains !== Element.prototype.contains
-  ) {
+  const isDomContains =
+    (typeof Node !== 'undefined' &&
+      candidateShape.contains === Node.prototype.contains) ||
+    (typeof Element !== 'undefined' &&
+      candidateShape.contains === Element.prototype.contains);
+  if (typeof candidateShape.contains === 'function' && !isDomContains) {
     return (candidateShape.contains as (x: number, y: number) => boolean)(x, y);
   }
 

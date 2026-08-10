@@ -260,14 +260,12 @@ export const Provider = React.forwardRef<
     }
   }, [two, twoState, props.width, props.height]);
 
-  // Validate children in development mode
+  // Validate children in development mode.
+  // `validateChildren` already no-ops in production, so no guard is needed
+  // here — gating the call on production as well made it dead in every
+  // environment.
   useEffect(() => {
-    if (
-      (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env
-        ?.NODE_ENV === 'production'
-    ) {
-      validateChildren(props.children);
-    }
+    validateChildren(props.children);
   }, [props.children]);
 
   // Setup event listeners on canvas

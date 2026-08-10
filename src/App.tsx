@@ -88,7 +88,7 @@ export default function App() {
 
         <SidebarSection>
           <SidebarItem href="https://github.com/jonobr1/react-two.js">
-            <CodeBracketIcon data-slot="icon" /> <SidebarLabel>Github</SidebarLabel>
+            <CodeBracketIcon data-slot="icon" /> <SidebarLabel>GitHub</SidebarLabel>
           </SidebarItem>
           <SidebarItem href="https://npmjs.com/package/react-two.js">
             <CommandLineIcon data-slot="icon" /> <SidebarLabel>Package</SidebarLabel>
