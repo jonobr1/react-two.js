@@ -97,7 +97,13 @@ export function WiremarkConnection({
     const b = path.getPointAt(LABEL_T_AFTER) as unknown as Vector2D;
     if (!a || !b) return;
 
-    const angle = Math.atan2(b.y - a.y, b.x - a.x);
+    let angle = Math.atan2(b.y - a.y, b.x - a.x);
+    if (angle > HALF_PI) {
+      angle -= Math.PI;
+    } else if (angle < -HALF_PI) {
+      angle += Math.PI;
+    }
+
     const ox = labelSize * Math.cos(angle - HALF_PI);
     const oy = labelSize * Math.sin(angle - HALF_PI);
 

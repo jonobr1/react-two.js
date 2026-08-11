@@ -152,4 +152,39 @@ describe('WiremarkConnection label alignment', () => {
     expect(label!.position!.x).toBeCloseTo(0.5 * (b.x - a.x) + a.x + ox, 3);
     expect(label!.position!.y).toBeCloseTo(0.5 * (b.y - a.y) + a.y + oy, 3);
   });
+
+  it('keeps label text facing right-side up when connection flows right-to-left', () => {
+    const reverseSource = { ...source, x: 400 };
+    const reverseTarget = { ...target, x: 100 };
+
+    const captured: { two?: Two | null } = {};
+    function Probe() {
+      captured.two = useTwo().two;
+      return null;
+    }
+
+    render(
+      <Canvas type={Two.Types.canvas} width={800} height={600} autostart={false}>
+        <WiremarkConnection
+          edge={labeledEdge}
+          sourceNode={reverseSource}
+          targetNode={reverseTarget}
+        />
+        <Probe />
+      </Canvas>
+    );
+
+    const two = captured.two!;
+    act(() => {
+      two.update();
+      two.update();
+    });
+
+    const scene = two.scene as unknown as SceneNode;
+    const label = find(scene, (n) => n.value === 'Algorithms');
+    expect(label).not.toBeNull();
+
+    // Rotation must be bounded within [-Math.PI / 2, Math.PI / 2] (right-side up)
+    expect(Math.abs(label!.rotation!)).toBeLessThanOrEqual(Math.PI / 2);
+  });
 });

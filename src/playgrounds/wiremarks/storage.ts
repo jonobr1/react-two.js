@@ -7,7 +7,7 @@ export const POSITIONS_KEY = 'wiremarks-positions';
  * a different unit scale). Mismatched payloads are discarded rather than
  * half-restored.
  */
-export const POSITIONS_VERSION = 1;
+export const POSITIONS_VERSION = 2;
 
 export type PositionMap = Record<string, Vector2D>;
 

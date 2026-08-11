@@ -254,3 +254,15 @@ This library follows React patterns with Two.js integration. When adding feature
 4. Test across different Two.js renderer types
 5. Update documentation and examples
 6. Ensure proper ref forwarding and type safety
+
+### Wiremarks Blocks
+`---` (three or more hyphens on their own line) starts a new block. Entity
+names are canonical only *within* a block, so the same name written in two
+blocks renders as two independent entities. Blank lines are cosmetic and
+never split a block; comments never split one either.
+
+Node ids are scoped as `` `${name}\u0000${occurrence}` `` where occurrence
+counts blocks mentioning that name, in document order. `node.name` stays the
+raw name and is what gets rendered — ids are internal only. Changing this
+scheme requires bumping `POSITIONS_VERSION` in `storage.ts`, since stored
+drag positions are keyed by id.

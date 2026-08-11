@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { parseWiremarksDSL } from '../parser';
-import { layoutGraph } from '../layout';
+import { layoutBlocks } from '../layout';
 import { clearPositions, loadPositions, savePositions } from '../storage';
 import { GraphData, WiremarkNode, Vector2D } from '../types';
 import { nodeWidth, nodeHeight } from '../constants';
@@ -28,13 +28,9 @@ export function useWiremarksGraph(instructions: string, resetToken = 0) {
     return parseWiremarksDSL(instructions);
   }, [instructions]);
 
-  // Lay that graph out into columns and rows.
+  // Each block lays out on its own, then stacks below the previous one.
   const layout = useMemo(() => {
-    return layoutGraph(
-      baseGraph.nodes.map((node) => node.id),
-      baseGraph.edges,
-      NODE_SIZE,
-    );
+    return layoutBlocks(baseGraph.blocks, NODE_SIZE);
   }, [baseGraph]);
 
   const nodes = useMemo<WiremarkNode[]>(() => {

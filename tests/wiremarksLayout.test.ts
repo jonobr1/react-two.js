@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { layoutGraph } from '../src/playgrounds/wiremarks/layout';
+import { layoutGraph, layoutBlocks } from '../src/playgrounds/wiremarks/layout';
 
 const size = { width: 300, height: 200 };
 
@@ -235,5 +235,103 @@ describe('layoutGraph', () => {
     // Whichever way round the first column lands, the second column should
     // mirror it so the two edges run parallel instead of crossing.
     expect(yAboveX).toBe(aAboveB);
+  });
+});
+
+describe('layoutBlocks', () => {
+  it('matches layoutGraph exactly for a single block', () => {
+    const nodeIds = ['A', 'B', 'C'];
+    const edges = [edge('A', 'B'), edge('B', 'C')];
+
+    const single = layoutGraph(nodeIds, edges, size);
+    const stacked = layoutBlocks([{ nodeIds, edges }], size);
+
+    expect([...stacked.entries()]).toEqual([...single.entries()]);
+  });
+
+  it('places a later block entirely below an earlier one', () => {
+    const positions = layoutBlocks(
+      [
+        { nodeIds: ['A', 'B'], edges: [edge('A', 'B')] },
+        { nodeIds: ['C', 'D'], edges: [edge('C', 'D')] },
+      ],
+      size
+    );
+
+    const firstBottom = Math.max(positions.get('A')!.y, positions.get('B')!.y);
+    const secondTop = Math.min(positions.get('C')!.y, positions.get('D')!.y);
+
+    expect(secondTop).toBeGreaterThan(firstBottom);
+  });
+
+  it('leaves a gap between block bounding boxes', () => {
+    const positions = layoutBlocks(
+      [
+        { nodeIds: ['A'], edges: [] },
+        { nodeIds: ['B'], edges: [] },
+      ],
+      size,
+      { blockGap: 500 }
+    );
+
+    const gap =
+      positions.get('B')!.y -
+      size.height / 2 -
+      (positions.get('A')!.y + size.height / 2);
+
+    expect(gap).toBe(500);
+  });
+
+  it('keeps every block starting from the same left edge', () => {
+    const positions = layoutBlocks(
+      [
+        { nodeIds: ['A', 'B'], edges: [edge('A', 'B')] },
+        { nodeIds: ['C', 'D'], edges: [edge('C', 'D')] },
+      ],
+      size
+    );
+
+    expect(positions.get('C')!.x).toBe(positions.get('A')!.x);
+  });
+
+  it('accounts for a tall block when placing the next one', () => {
+    // First block stacks three siblings; the second must clear all of them.
+    const positions = layoutBlocks(
+      [
+        {
+          nodeIds: ['R', 'A', 'B', 'C'],
+          edges: [edge('R', 'A'), edge('R', 'B'), edge('R', 'C')],
+        },
+        { nodeIds: ['Z'], edges: [] },
+      ],
+      size
+    );
+
+    const tallest = Math.max(
+      positions.get('A')!.y,
+      positions.get('B')!.y,
+      positions.get('C')!.y
+    );
+
+    expect(positions.get('Z')!.y).toBeGreaterThan(tallest);
+  });
+
+  it('skips empty blocks', () => {
+    const positions = layoutBlocks(
+      [
+        { nodeIds: [], edges: [] },
+        { nodeIds: ['A'], edges: [] },
+      ],
+      size
+    );
+
+    expect(positions.size).toBe(1);
+    expect(positions.get('A')!.y).toBe(
+      layoutBlocks([{ nodeIds: ['A'], edges: [] }], size).get('A')!.y
+    );
+  });
+
+  it('returns an empty map for no blocks', () => {
+    expect(layoutBlocks([], size).size).toBe(0);
   });
 });

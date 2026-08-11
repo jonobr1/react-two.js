@@ -33,7 +33,14 @@ export interface WiremarkEdge {
  */
 export type ParsedNode = Omit<WiremarkNode, 'x' | 'y'>;
 
+/** One `---`-delimited section. Names are canonical only within a block. */
+export interface ParsedBlock {
+  nodeIds: string[];
+  edges: WiremarkEdge[];
+}
+
 export interface GraphData {
   nodes: ParsedNode[];
   edges: WiremarkEdge[];
+  blocks: ParsedBlock[];
 }

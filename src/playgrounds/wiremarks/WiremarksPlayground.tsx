@@ -29,6 +29,13 @@ react-two.js -[wraps]-> two.js
 # Lastly, starting a line with a hashtag
 # makes your text a comment and will not
 # be compiled into any connections.
+
+# Blank lines are just for readability. To
+# start a separate diagram, use three dashes.
+# Names are only shared within one diagram,
+# so the "react" below is its own entity:
+---
+react -> preact
 `.trim();
 
 export function WiremarksPlayground({ width, height }: PlaygroundProps) {
