@@ -1,6 +1,7 @@
 import { PlaygroundDefinition } from './types';
 import { WiremarksPlayground } from './wiremarks/WiremarksPlayground';
 import { ComponentsShowcasePlayground } from './components-showcase/ComponentsShowcasePlayground';
+import { DiffsPlayground } from './diffs/DiffsPlayground';
 
 export const PLAYGROUNDS: PlaygroundDefinition[] = [
   {
@@ -8,6 +9,12 @@ export const PLAYGROUNDS: PlaygroundDefinition[] = [
     name: 'Wiremarks',
     description: 'Declarative text-to-wireframe interactive diagramming tool',
     component: WiremarksPlayground,
+  },
+  {
+    id: 'diffs',
+    name: 'Diffs',
+    description: 'Visually compare texts by shared vocabulary',
+    component: DiffsPlayground,
   },
   {
     id: 'components-showcase',
