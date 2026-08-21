@@ -3,6 +3,7 @@ import { act, render } from '@testing-library/react';
 import Two from 'two.js';
 import { Canvas, useTwo } from 'react-two.js';
 import { DiffsCanvas } from '../src/playgrounds/diffs/DiffsCanvas';
+import { Legend } from '../src/playgrounds/diffs/components/Legend';
 import { buildModel } from '../src/playgrounds/diffs/model/layout';
 import { TextDoc } from '../src/playgrounds/diffs/types';
 
@@ -103,5 +104,44 @@ describe('DiffsCanvas', () => {
     expect(words).toContain('Alpha');
     expect(words).toContain('Beta');
     expect(words).toContain('Shared Words');
+  });
+});
+
+describe('Legend theming', () => {
+  function renderLegend(isDark: boolean) {
+    const sink: { current: Two | null } = { current: null };
+    const model = buildModel(texts, 'chronologic');
+
+    const { container } = render(
+      <Canvas type={Two.Types.svg} width={800} height={600} autostart={false}>
+        <Legend
+          columns={model.columns}
+          shared={model.shared}
+          canvasHeight={600}
+          isDark={isDark}
+        />
+        <Probe sink={sink} />
+      </Canvas>
+    );
+
+    act(() => {
+      sink.current?.update();
+    });
+
+    return [...container.querySelectorAll('svg text')].map((node) =>
+      node.getAttribute('fill')
+    );
+  }
+
+  it('uses black labels on the light theme', () => {
+    const fills = renderLegend(false);
+    expect(fills.length).toBeGreaterThan(0);
+    expect(new Set(fills)).toEqual(new Set(['#000000']));
+  });
+
+  it('uses white labels on the dark theme, so they stay legible', () => {
+    const fills = renderLegend(true);
+    expect(fills.length).toBeGreaterThan(0);
+    expect(new Set(fills)).toEqual(new Set(['#ffffff']));
   });
 });
