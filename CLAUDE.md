@@ -266,3 +266,8 @@ counts blocks mentioning that name, in document order. `node.name` stays the
 raw name and is what gets rendered — ids are internal only. Changing this
 scheme requires bumping `POSITIONS_VERSION` in `storage.ts`, since stored
 drag positions are keyed by id.
+
+### Diffs Playground
+Ported from `~/Documents/diffs`. Compares texts visually by tokenizing, stemming (Porter2 via `wink-porter2-stemmer`), and grouping shared vocabulary into a central Shared Words column. Pure model architecture (`buildModel`) with frame-driven progressive reveal (`useProgressiveReveal`), highlight mode (`selectedStem`), animated arcs, and camera auto-pan tween (`TWEEN`). Storage versioning uses `STORAGE_KEY = 'diffs-state-v1'`.
+
+Text in `StatLine` and `Legend` must set `baseline={TEXT_BASELINE}` (`'baseline'` → `dominant-baseline: alphabetic`). The original asked for `'top'`, which its older two.js emitted verbatim — an invalid CSS value browsers resolve to `auto`, i.e. alphabetic. The `y` offsets (`SIZE * 0.33` for the word, `SIZE * 0.25` for the tally) were tuned against that, so two.js's `middle` default renders the text ~5.6px low.

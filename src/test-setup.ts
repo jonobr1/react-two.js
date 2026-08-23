@@ -66,3 +66,21 @@ if (typeof globalThis.PointerEvent === 'undefined') {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (globalThis as any).PointerEvent = PointerEventPolyfill;
 }
+
+/**
+ * jsdom does not implement `matchMedia`. Components that read the colour
+ * scheme need it to exist; defaulting `matches` to false renders the light
+ * theme, which is what the assertions expect.
+ */
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+}
