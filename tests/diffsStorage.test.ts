@@ -57,3 +57,40 @@ describe('diffs localStorage persistence', () => {
     expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 });
+
+describe('diffs stored state hardening', () => {
+  it('falls back to a known sort mode when the stored one is unrecognised', () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: DIFFS_STATE_VERSION,
+        texts: [],
+        mode: 'not-a-real-mode',
+      })
+    );
+
+    // buildModel drives sortLines, which has no default branch — an unknown
+    // mode would sort to undefined and crash on .map().
+    expect(loadStoredState()?.mode).toBe('chronologic');
+  });
+
+  it('does not log when writing is blocked', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('QuotaExceededError');
+    });
+
+    expect(() => saveStoredState([], 'chronologic')).not.toThrow();
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  it('does not log when clearing is blocked', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new DOMException('SecurityError');
+    });
+
+    expect(() => clearStoredState()).not.toThrow();
+    expect(error).not.toHaveBeenCalled();
+  });
+});

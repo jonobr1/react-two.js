@@ -21,7 +21,7 @@ import {
   saveStoredState,
 } from './storage';
 import { TextColumn } from './components/TextColumn';
-import { SortMode, TextDoc } from './types';
+import { SORT_MODES, SortMode, TextDoc } from './types';
 
 const defaultTexts: TextDoc[] = [
   {
@@ -37,8 +37,6 @@ const defaultTexts: TextDoc[] = [
     body: 'The lazy dog sleeps under the warm sun.',
   },
 ];
-
-const MODES: SortMode[] = ['chronologic', 'frequency', 'alphabetic'];
 
 export function DiffsPlayground({ width, height }: PlaygroundProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -118,8 +116,8 @@ export function DiffsPlayground({ width, height }: PlaygroundProps) {
 
   const handleCycleMode = useCallback(() => {
     setMode((current) => {
-      const idx = MODES.indexOf(current);
-      return MODES[(idx + 1) % MODES.length];
+      const idx = SORT_MODES.indexOf(current);
+      return SORT_MODES[(idx + 1) % SORT_MODES.length];
     });
     setSelectedStem(null);
   }, []);

@@ -1,5 +1,5 @@
 import { DIFFS_STATE_VERSION, STORAGE_KEY } from './constants';
-import { SortMode, TextDoc } from './types';
+import { isSortMode, SortMode, TextDoc } from './types';
 
 export interface StoredDiffsState {
   version: number;
@@ -51,7 +51,9 @@ export function loadStoredState(): { texts: TextDoc[]; mode: SortMode } | null {
     }
     return {
       texts: parsed.texts,
-      mode: parsed.mode || 'chronologic',
+      // `sortLines` switches on this with no default branch, so an unknown
+      // mode would sort to undefined and crash the model build.
+      mode: isSortMode(parsed.mode) ? parsed.mode : 'chronologic',
     };
   } catch {
     return null;
@@ -66,15 +68,16 @@ export function saveStoredState(texts: TextDoc[], mode: SortMode): void {
       mode,
     };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  } catch (e) {
-    console.error('Failed to save diffs state to localStorage:', e);
+  } catch {
+    // Safari private mode and quota limits throw here. Losing a save is not
+    // worth spamming the console on every keystroke.
   }
 }
 
 export function clearStoredState(): void {
   try {
     window.localStorage.removeItem(STORAGE_KEY);
-  } catch (e) {
-    console.error('Failed to clear diffs state from localStorage:', e);
+  } catch {
+    // Storage may be unavailable entirely; nothing to recover from.
   }
 }

@@ -36,27 +36,35 @@ export function mergeTexts(
 
   for (const [s, occurrences] of stemOccurrences.entries()) {
     if (occurrences.length >= 2) {
-      // Shared stem! Hide in owning columns and add to shared column
+      // Shared stem! Hide in owning columns and add to shared column.
+      // The shared line sorts by the earliest occurrence, so its word and
+      // visibility come from that same occurrence rather than from whichever
+      // text happened to be scanned first.
       let totalCount = 0;
-      let minFirstIndex = Infinity;
-      const displayWord = occurrences[0].word;
-      const isVisible = occurrences[0].visible;
+      let earliest = occurrences[0];
+
+      for (const occ of occurrences) {
+        totalCount += occ.count;
+        if (occ.firstIndex < earliest.firstIndex) {
+          earliest = occ;
+        }
+      }
+
+      // Read before hiding: the loop below clears `visible` on every
+      // occurrence, `earliest` included.
+      const { word, firstIndex, visible } = earliest;
 
       for (const occ of occurrences) {
         occ.visible = false;
-        totalCount += occ.count;
-        if (occ.firstIndex < minFirstIndex) {
-          minFirstIndex = occ.firstIndex;
-        }
       }
 
       sharedLines.push({
         textId: 'shared',
-        word: displayWord,
+        word,
         stem: s,
         count: totalCount,
-        firstIndex: minFirstIndex,
-        visible: isVisible,
+        firstIndex,
+        visible,
       });
     }
   }

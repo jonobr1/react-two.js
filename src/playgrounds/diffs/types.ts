@@ -1,4 +1,11 @@
-export type SortMode = 'chronologic' | 'frequency' | 'alphabetic';
+export const SORT_MODES = ['chronologic', 'frequency', 'alphabetic'] as const;
+
+export type SortMode = (typeof SORT_MODES)[number];
+
+/** Guards untrusted input, such as a hand-edited localStorage payload. */
+export function isSortMode(value: unknown): value is SortMode {
+  return SORT_MODES.includes(value as SortMode);
+}
 
 export interface TextDoc {
   id: string;

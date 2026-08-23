@@ -72,3 +72,33 @@ describe('diffs model building & layout', () => {
     });
   });
 });
+
+describe('shared column display word', () => {
+  it('takes its word from the same occurrence that supplies its index', () => {
+    // "dog" appears late in t1 ("dogs", index 3) but first in t2 (index 0).
+    // The shared line sorts by the earliest index, so it must display the word
+    // belonging to that earliest occurrence.
+    const model = buildModel(
+      [
+        {
+          id: 't1',
+          name: 'Text 1',
+          color: 'rgb(255, 0, 0)',
+          body: 'alpha beta gamma dogs',
+        },
+        {
+          id: 't2',
+          name: 'Text 2',
+          color: 'rgb(0, 255, 0)',
+          body: 'dog delta',
+        },
+      ],
+      'chronologic'
+    );
+
+    const shared = model.shared.lines.find((line) => line.stem === 'dog');
+    expect(shared).toBeDefined();
+    expect(shared?.word).toBe('dog');
+    expect(shared?.count).toBe(2);
+  });
+});
