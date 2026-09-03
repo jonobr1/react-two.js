@@ -17,7 +17,12 @@ export interface TwoCoreContextValue {
 
 export interface TwoParentContextValue {
   parent: Group | null;
+  attachChild?: (child: Shape | Group) => void;
+  detachChild?: (child: Shape | Group) => void;
+  registerChildOrder?: (child: Shape | Group) => void;
 }
+
+export const ChildSlotContext = createContext<number | null>(null);
 
 export interface TwoSizeContextValue {
   width: number;

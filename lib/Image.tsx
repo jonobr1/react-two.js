@@ -1,12 +1,10 @@
-import React, { useEffect, useImperativeHandle, useMemo } from 'react';
+import React from 'react';
 import Two from 'two.js';
-import { useTwo } from './Context';
-
 import type { Image as Instance } from 'two.js/src/effects/image';
 import { RectangleProps } from './Rectangle';
 import type { Texture } from 'two.js/src/effects/texture';
 import { type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
+import { useTwoObject } from './useTwoObject';
 
 type ImageProps = RectangleProps | 'mode' | 'texture';
 
@@ -25,85 +23,25 @@ type ComponentProps = React.PropsWithChildren<
 export type RefImage = Instance;
 
 export const Image = React.forwardRef<Instance, ComponentProps>(
-  ({ mode, src, texture, x, y, ...props }, forwardedRef) => {
-    const { parent, registerEventShape, unregisterEventShape } = useTwo();
-
-    // Create the instance synchronously so it's available for refs immediately
-    const image = useMemo(() => new Two.Image(src), [src]);
-
-    // Extract event handlers from props
-    const { eventHandlers, shapeProps } = useMemo(() => {
-      const eventHandlers: Partial<EventHandlers> = {};
-      const shapeProps: Record<string, unknown> = {};
-
-      for (const key in props) {
-        if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
-          // An explicitly `undefined` handler means "not interactive", so it
-          // must not count toward the registered handler set.
-          const handler = props[key as keyof EventHandlers];
-          if (handler !== undefined) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            eventHandlers[key as keyof EventHandlers] = handler as any;
-          }
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          shapeProps[key] = (props as any)[key];
+  (props, forwardedRef) => {
+    useTwoObject(props, forwardedRef, {
+      factory: (p) => new Two.Image(p.src),
+      constructionProps: ['src'],
+      specialProps: ['mode', 'texture'],
+      applySpecialProps: (image, currentProps, changed, removed) => {
+        if ('mode' in changed && currentProps.mode !== undefined) {
+          image.mode = currentProps.mode;
+        } else if (removed.includes('mode')) {
+          image.mode = 'fill';
         }
-      }
 
-      return { eventHandlers, shapeProps };
-    }, [props]);
-
-    useEffect(() => {
-      if (parent) {
-        parent.add(image);
-
-        return () => {
-          parent.remove(image);
-        };
-      }
-    }, [parent, image]);
-
-    useEffect(() => {
-      if (typeof mode !== 'undefined') image.mode = mode;
-      if (typeof texture !== 'undefined') image.texture = texture;
-
-      // Update position
-      if (typeof x === 'number') image.translation.x = x;
-      if (typeof y === 'number') image.translation.y = y;
-
-      // Update other properties (excluding event handlers)
-      for (const key in shapeProps) {
-        if (key in image) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (image as any)[key] = (shapeProps as any)[key];
+        if ('texture' in changed && currentProps.texture !== undefined) {
+          image.texture = currentProps.texture;
+        } else if (removed.includes('texture')) {
+          image.texture = null as unknown as Texture;
         }
-      }
-    }, [image, shapeProps, mode, texture, x, y]);
-
-    // Unregister on unmount only
-    useEffect(() => {
-      return () => {
-        unregisterEventShape(image);
-      };
-    }, [image, unregisterEventShape]);
-
-    // Register / update event handlers
-    useEffect(() => {
-      if (Object.keys(eventHandlers).length > 0) {
-        registerEventShape(image, eventHandlers, parent ?? undefined);
-      } else {
-        unregisterEventShape(image);
-      }
-    }, [
-      image,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
-
-    useImperativeHandle(forwardedRef, () => image, [image]);
+      },
+    });
 
     return <></>;
   }

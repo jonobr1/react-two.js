@@ -1,8 +1,8 @@
-import React, { useImperativeHandle, useEffect, useMemo } from 'react';
+import React from 'react';
 import Two from 'two.js';
-
 import type { LinearGradient as Instance } from 'two.js/src/effects/linear-gradient';
 import { GradientProps } from './Properties';
+import { useTwoObject } from './useTwoObject';
 
 type LinearGradientProps = GradientProps | 'left' | 'right';
 
@@ -20,34 +20,46 @@ type ComponentProps = React.PropsWithChildren<
 export type RefLinearGradient = Instance;
 
 export const LinearGradient = React.forwardRef<Instance, ComponentProps>(
-  ({ x1, y1, x2, y2, ...props }, forwardedRef) => {
-    const gradient = useMemo(() => new Two.LinearGradient(), []);
+  (props, forwardedRef) => {
+    useTwoObject(props as Record<string, unknown>, forwardedRef, {
+      factory: () => new Two.LinearGradient(),
+      isSceneObject: false,
+      specialProps: ['x1', 'y1', 'x2', 'y2'],
+      applySpecialProps: (gradient, currentProps, changed, removed) => {
+        const p = currentProps as unknown as {
+          x1?: number;
+          y1?: number;
+          x2?: number;
+          y2?: number;
+        };
+        const grad = gradient as unknown as Instance;
 
-    useEffect(() => {
-      if (typeof x1 === 'number') {
-        gradient.left.x = x1;
-      }
-      if (typeof y1 === 'number') {
-        gradient.left.y = y1;
-      }
-      if (typeof x2 === 'number') {
-        gradient.right.x = x2;
-      }
-      if (typeof y2 === 'number') {
-        gradient.right.y = y2;
-      }
-
-      // Update other properties (excluding event handlers)
-      for (const key in props) {
-        if (key in gradient) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (gradient as any)[key] = (props as any)[key];
+        if ('x1' in changed) {
+          grad.left.x = typeof p.x1 === 'number' ? p.x1 : 0;
+        } else if (removed.includes('x1')) {
+          grad.left.x = 0;
         }
-      }
-    }, [gradient, x1, y1, x2, y2, props]);
 
-    useImperativeHandle(forwardedRef, () => gradient, [gradient]);
+        if ('y1' in changed) {
+          grad.left.y = typeof p.y1 === 'number' ? p.y1 : 0;
+        } else if (removed.includes('y1')) {
+          grad.left.y = 0;
+        }
 
-    return null; // No visual representation
+        if ('x2' in changed) {
+          grad.right.x = typeof p.x2 === 'number' ? p.x2 : 0;
+        } else if (removed.includes('x2')) {
+          grad.right.x = 0;
+        }
+
+        if ('y2' in changed) {
+          grad.right.y = typeof p.y2 === 'number' ? p.y2 : 0;
+        } else if (removed.includes('y2')) {
+          grad.right.y = 0;
+        }
+      },
+    });
+
+    return null;
   }
 );

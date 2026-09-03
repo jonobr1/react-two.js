@@ -1,11 +1,9 @@
-import React, { useEffect, useImperativeHandle, useMemo } from 'react';
+import React from 'react';
 import Two from 'two.js';
-import { useTwo } from './Context';
-
 import type { RoundedRectangle as Instance } from 'two.js/src/shapes/rounded-rectangle';
 import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
+import { useTwoObject } from './useTwoObject';
 
 type RoundedRectangleProps = PathProps | 'width' | 'height' | 'radius';
 type ComponentProps = React.PropsWithChildren<
@@ -20,88 +18,10 @@ type ComponentProps = React.PropsWithChildren<
 export type RefRoundedRectangle = Instance;
 
 export const RoundedRectangle = React.forwardRef<Instance, ComponentProps>(
-  ({ x, y, ...props }, forwardedRef) => {
-    const { parent, registerEventShape, unregisterEventShape } = useTwo();
-
-    // Create the instance synchronously so it's available for refs immediately
-    const roundedRectangle = useMemo(() => new Two.RoundedRectangle(), []);
-
-    // Extract event handlers from props
-    const { eventHandlers, shapeProps } = useMemo(() => {
-      const eventHandlers: Partial<EventHandlers> = {};
-      const shapeProps: Record<string, unknown> = {};
-
-      for (const key in props) {
-        if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
-          // An explicitly `undefined` handler means "not interactive", so it
-          // must not count toward the registered handler set.
-          const handler = props[key as keyof EventHandlers];
-          if (handler !== undefined) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            eventHandlers[key as keyof EventHandlers] = handler as any;
-          }
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          shapeProps[key] = (props as any)[key];
-        }
-      }
-
-      return { eventHandlers, shapeProps };
-    }, [props]);
-
-    useEffect(() => {
-      if (parent) {
-        parent.add(roundedRectangle);
-
-        return () => {
-          parent.remove(roundedRectangle);
-        };
-      }
-    }, [parent, roundedRectangle]);
-
-    useEffect(() => {
-      // Update position
-      if (typeof x === 'number') roundedRectangle.translation.x = x;
-      if (typeof y === 'number') roundedRectangle.translation.y = y;
-
-      // Update other properties (excluding event handlers)
-      for (const key in shapeProps) {
-        if (key in roundedRectangle) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (roundedRectangle as any)[key] = (shapeProps as any)[key];
-        }
-      }
-    }, [shapeProps, roundedRectangle, x, y]);
-
-    // Unregister on unmount only
-    useEffect(() => {
-      return () => {
-        unregisterEventShape(roundedRectangle);
-      };
-    }, [roundedRectangle, unregisterEventShape]);
-
-    // Register / update event handlers
-    useEffect(() => {
-      if (Object.keys(eventHandlers).length > 0) {
-        registerEventShape(
-          roundedRectangle,
-          eventHandlers,
-          parent ?? undefined
-        );
-      } else {
-        unregisterEventShape(roundedRectangle);
-      }
-    }, [
-      roundedRectangle,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
-
-    useImperativeHandle(forwardedRef, () => roundedRectangle, [
-      roundedRectangle,
-    ]);
+  (props, forwardedRef) => {
+    useTwoObject(props, forwardedRef, {
+      factory: () => new Two.RoundedRectangle(),
+    });
 
     return <></>;
   }

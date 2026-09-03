@@ -34,6 +34,10 @@ export { RadialGradient, type RefRadialGradient } from './RadialGradient';
 // Texture exports
 export { Texture, type RefTexture } from './Texture';
 
+// Lifecycle & Reconciliation exports
+export { useTwoObject, useTwoGroup } from './useTwoObject';
+export { TWO_DEFAULT_PROPS } from './reconciliation';
+
 // Event exports
 export type { TwoEvent, EventHandler, EventHandlers } from './Events';
 

@@ -1,8 +1,8 @@
-import React, { useImperativeHandle, useEffect, useMemo } from 'react';
+import React from 'react';
 import Two from 'two.js';
-
 import type { RadialGradient as Instance } from 'two.js/src/effects/radial-gradient';
 import { GradientProps } from './Properties';
+import { useTwoObject } from './useTwoObject';
 
 type RadialGradientProps = GradientProps | 'center' | 'radius' | 'focal';
 
@@ -20,27 +20,46 @@ type ComponentProps = React.PropsWithChildren<
 export type RefRadialGradient = Instance;
 
 export const RadialGradient = React.forwardRef<Instance | null, ComponentProps>(
-  ({ x, y, focalX, focalY, ...props }, forwardedRef) => {
-    const radialGradient = useMemo(() => new Two.RadialGradient(), []);
+  (props, forwardedRef) => {
+    useTwoObject(props as Record<string, unknown>, forwardedRef, {
+      factory: () => new Two.RadialGradient(),
+      isSceneObject: false,
+      specialProps: ['x', 'y', 'focalX', 'focalY'],
+      applySpecialProps: (gradient, currentProps, changed, removed) => {
+        const p = currentProps as unknown as {
+          x?: number;
+          y?: number;
+          focalX?: number;
+          focalY?: number;
+        };
+        const grad = gradient as unknown as Instance;
 
-    useEffect(() => {
-      if (typeof x === 'number') radialGradient.center.x = x;
-      if (typeof y === 'number') radialGradient.center.y = y;
-
-      if (typeof focalX === 'number') radialGradient.focal.x = focalX;
-      if (typeof focalY === 'number') radialGradient.focal.y = focalY;
-
-      // Update other properties (excluding event handlers)
-      for (const key in props) {
-        if (key in radialGradient) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (radialGradient as any)[key] = (props as any)[key];
+        if ('x' in changed) {
+          grad.center.x = typeof p.x === 'number' ? p.x : 0;
+        } else if (removed.includes('x')) {
+          grad.center.x = 0;
         }
-      }
-    }, [props, radialGradient, x, y, focalX, focalY]);
 
-    useImperativeHandle(forwardedRef, () => radialGradient, [radialGradient]);
+        if ('y' in changed) {
+          grad.center.y = typeof p.y === 'number' ? p.y : 0;
+        } else if (removed.includes('y')) {
+          grad.center.y = 0;
+        }
 
-    return null; // No visual representation
+        if ('focalX' in changed) {
+          grad.focal.x = typeof p.focalX === 'number' ? p.focalX : 0;
+        } else if (removed.includes('focalX')) {
+          grad.focal.x = 0;
+        }
+
+        if ('focalY' in changed) {
+          grad.focal.y = typeof p.focalY === 'number' ? p.focalY : 0;
+        } else if (removed.includes('focalY')) {
+          grad.focal.y = 0;
+        }
+      },
+    });
+
+    return null;
   }
 );

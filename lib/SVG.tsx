@@ -1,12 +1,9 @@
-import React, { useEffect, useImperativeHandle, useMemo, useRef } from 'react';
-import Two from 'two.js';
+import React, { useEffect, useRef } from 'react';
 import { Context, TwoParentContext, TwoSizeContext, useTwo } from './Context';
-
 import type { Group as Instance } from 'two.js/src/group';
 import { ShapeProps, type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
+import { useTwoGroup } from './useTwoObject';
 
-// SVG-specific props
 type GroupProps =
   | ShapeProps
   | 'fill'
@@ -24,42 +21,34 @@ type ComponentProps = React.PropsWithChildren<
     [K in Extract<GroupProps, keyof Instance>]?: Instance[K];
   } & (
     | {
-        // Source (one required)
-        src: string; // URL to .svg file
-        content?: never; // Inline SVG markup string
+        src: string;
+        content?: never;
       }
     | {
-        src?: never; // URL to .svg file
-        content: string; // Inline SVG markup string
+        src?: never;
+        content: string;
       }
   ) & {
       x?: number;
       y?: number;
       onLoad?: (group: Instance, svg: SVGElement | SVGElement[]) => void;
       onError?: (error: Error) => void;
-      shallow?: boolean; // Flatten groups when interpreting
+      shallow?: boolean;
     } & Partial<EventHandlers>
 >;
 
 export type RefSVG = Instance;
 
 export const SVG = React.forwardRef<Instance, ComponentProps>(
-  ({ x, y, src, content, onLoad, onError, ...props }, forwardedRef) => {
-    const {
-      two,
-      parent,
-      width,
-      height,
-      registerEventShape,
-      unregisterEventShape,
-      hitTestPoint,
-    } = useTwo();
-    const svg = useMemo(() => new Two.Group(), []);
-    const ref = useRef<Instance | null>(null);
+  (props, forwardedRef) => {
+    const { two } = useTwo();
+    const { src, content, onLoad, onError, shallow, ...restProps } = props;
+
     const onLoadRef = useRef(onLoad);
     const onErrorRef = useRef(onError);
+    const rafRef = useRef<number | null>(null);
     const lastLoadedSource = useRef<{
-      two: Two | null;
+      two: unknown;
       key: string | null;
     }>({ two: null, key: null });
 
@@ -71,44 +60,13 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
       onErrorRef.current = onError;
     }, [onError]);
 
-    // Extract event handlers from props
-    const { eventHandlers, shapeProps } = useMemo(() => {
-      const eventHandlers: Partial<EventHandlers> = {};
-      const shapeProps: Record<string, unknown> = {};
-
-      for (const key in props) {
-        if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
-          // An explicitly `undefined` handler means "not interactive", so it
-          // must not count toward the registered handler set.
-          const handler = props[key as keyof EventHandlers];
-          if (handler !== undefined) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            eventHandlers[key as keyof EventHandlers] = handler as any;
-          }
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          shapeProps[key] = (props as any)[key];
-        }
-      }
-
-      return { eventHandlers, shapeProps };
-    }, [props]);
-
-    // Hoist instance for async access
-    useEffect(() => {
-      ref.current = svg;
-    }, [svg]);
-
-    // Add group to parent
-    useEffect(() => {
-      if (parent && svg) {
-        parent.add(svg);
-
-        return () => {
-          parent.remove(svg);
-        };
-      }
-    }, [svg, parent]);
+    const {
+      instance: svg,
+      coreValue,
+      parentValue,
+      sizeValue,
+      renderChildren,
+    } = useTwoGroup(restProps, forwardedRef);
 
     // Validate props
     useEffect(() => {
@@ -134,7 +92,6 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
       const currentKey = source;
       const last = lastLoadedSource.current;
 
-      // Skip reload if the source and Two instance are unchanged
       if (last.two === two && last.key === currentKey) {
         return;
       }
@@ -143,26 +100,31 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
       lastLoadedSource.current = { two, key: currentKey };
 
       try {
-        // two.load() returns a Group immediately (empty initially)
-        // and populates it asynchronously via callback
         two.load(
           source,
-          (loadedGroup: Instance, svg: SVGElement | SVGElement[]) => {
+          (loadedGroup: Instance, svgElement: SVGElement | SVGElement[]) => {
             if (!mounted) return;
-            ref.current?.add(loadedGroup.children);
 
-            // Invoke user callback if provided
+            if (shallow) {
+              svg.add(loadedGroup.children);
+            } else {
+              svg.add(loadedGroup.children);
+            }
+
             const handleLoad = onLoadRef.current;
             if (handleLoad) {
               try {
-                // Wait until next frame once Two.js has computed
-                // all necessary rendering / bounding box updates
-                requestAnimationFrame(() => handleLoad(ref.current!, svg));
+                if (rafRef.current !== null) {
+                  cancelAnimationFrame(rafRef.current);
+                }
+                rafRef.current = requestAnimationFrame(() => {
+                  rafRef.current = null;
+                  if (mounted) {
+                    handleLoad(svg, svgElement);
+                  }
+                });
               } catch (err) {
-                console.error(
-                  '[react-two.js] Error in SVG onLoad callback:',
-                  err
-                );
+                console.error('[react-two.js] Error in SVG onLoad callback:', err);
               }
             }
           }
@@ -189,88 +151,21 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
       }
 
       return () => {
-        // Note: Two.js XHR requests cannot be cancelled
-        // We track mounted state to prevent setState on unmounted component
         mounted = false;
-        // Reset last loaded key so the same source can be reloaded after cleanup
-        lastLoadedSource.current = { two: null, key: null };
-        // Remove previously added children
-        ref.current?.remove(ref.current.children);
-      };
-    }, [two, src, content]);
-
-    // Update position and properties
-    useEffect(() => {
-      // Update position
-      if (typeof x === 'number') svg.translation.x = x;
-      if (typeof y === 'number') svg.translation.y = y;
-
-      const args = { ...shapeProps };
-      delete args.children; // Allow react to handle children
-
-      // Update other properties (excluding event handlers)
-      for (const key in args) {
-        if (key in svg) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (svg as any)[key] = (args as any)[key];
+        if (rafRef.current !== null) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
         }
-      }
-    }, [svg, x, y, shapeProps]);
-
-    // Unregister on unmount only
-    useEffect(() => {
-      return () => {
-        unregisterEventShape(svg);
+        lastLoadedSource.current = { two: null, key: null };
+        svg.remove(svg.children);
       };
-    }, [svg, unregisterEventShape]);
-
-    // Register / update event handlers
-    useEffect(() => {
-      if (Object.keys(eventHandlers).length > 0) {
-        registerEventShape(svg, eventHandlers, parent ?? undefined);
-      } else {
-        unregisterEventShape(svg);
-      }
-    }, [
-      svg,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
-
-    useImperativeHandle(forwardedRef, () => svg, [svg]);
-
-    const coreValue = useMemo(
-      () => ({
-        two,
-        registerEventShape,
-        unregisterEventShape,
-        hitTestPoint,
-      }),
-      [two, registerEventShape, unregisterEventShape, hitTestPoint]
-    );
-
-    const parentValue = useMemo(
-      () => ({
-        parent: svg,
-      }),
-      [svg]
-    );
-
-    const sizeValue = useMemo(
-      () => ({
-        width,
-        height,
-      }),
-      [width, height]
-    );
+    }, [two, src, content, shallow, svg]);
 
     return (
       <Context.Provider value={coreValue}>
         <TwoParentContext.Provider value={parentValue}>
           <TwoSizeContext.Provider value={sizeValue}>
-            {props.children}
+            {renderChildren()}
           </TwoSizeContext.Provider>
         </TwoParentContext.Provider>
       </Context.Provider>
