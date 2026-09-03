@@ -5,7 +5,7 @@ import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
 import { useTwoObject } from './useTwoObject';
 
-type LineProps = PathProps | 'left' | 'right';
+export type LineProps = PathProps | 'left' | 'right';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<LineProps, keyof Instance>]?: Instance[K];

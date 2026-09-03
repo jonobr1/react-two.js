@@ -4,7 +4,7 @@ import type { Group as Instance } from 'two.js/src/group';
 import { ShapeProps, type EventHandlers } from './Properties';
 import { useTwoGroup } from './useTwoObject';
 
-type GroupProps =
+export type GroupProps =
   | ShapeProps
   | 'fill'
   | 'stroke'
@@ -16,8 +16,11 @@ type GroupProps =
   | 'curved'
   | 'automatic'
   | 'opacity'
-  | 'visible';
-
+  | 'visible'
+  | 'mask'
+  | 'beginning'
+  | 'ending'
+  | 'strokeAttenuation';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<GroupProps, keyof Instance>]?: Instance[K];
@@ -33,7 +36,7 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
   (props, forwardedRef) => {
     const { coreValue, parentValue, sizeValue, renderChildren } = useTwoGroup(
       props,
-      forwardedRef
+      forwardedRef,
     );
 
     return (
@@ -45,5 +48,5 @@ export const Group = React.forwardRef<Instance, ComponentProps>(
         </TwoParentContext.Provider>
       </Context.Provider>
     );
-  }
+  },
 );

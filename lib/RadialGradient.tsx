@@ -4,7 +4,7 @@ import type { RadialGradient as Instance } from 'two.js/src/effects/radial-gradi
 import { GradientProps } from './Properties';
 import { useTwoObject } from './useTwoObject';
 
-type RadialGradientProps = GradientProps | 'center' | 'radius' | 'focal';
+export type RadialGradientProps = GradientProps | 'center' | 'radius' | 'focal';
 
 type ComponentProps = React.PropsWithChildren<
   {

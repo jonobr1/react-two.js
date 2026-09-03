@@ -5,7 +5,7 @@ import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
 import { useTwoObject } from './useTwoObject';
 
-type StarProps = PathProps | 'innerRadius' | 'outerRadius' | 'sides';
+export type StarProps = PathProps | 'innerRadius' | 'outerRadius' | 'sides';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<StarProps, keyof Instance>]?: Instance[K];

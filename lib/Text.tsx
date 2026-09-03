@@ -4,7 +4,7 @@ import type { Text as Instance } from 'two.js/src/text';
 import { ShapeProps, type EventHandlers } from './Properties';
 import { useTwoObject } from './useTwoObject';
 
-type TextProps =
+export type TextProps =
   | ShapeProps
   | 'value'
   | 'family'
@@ -21,7 +21,10 @@ type TextProps =
   | 'visible'
   | 'fill'
   | 'stroke'
-  | 'dashes';
+  | 'dashes'
+  | 'mask'
+  | 'clip'
+  | 'strokeAttenuation';
 
 type ComponentProps = React.PropsWithChildren<
   {

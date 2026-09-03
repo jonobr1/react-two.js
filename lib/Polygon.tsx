@@ -5,7 +5,7 @@ import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
 import { useTwoObject } from './useTwoObject';
 
-type PolygonProps = PathProps | 'width' | 'height' | 'sides';
+export type PolygonProps = PathProps | 'width' | 'height' | 'sides' | 'radius';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<PolygonProps, keyof Instance>]?: Instance[K];

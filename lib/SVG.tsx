@@ -1,20 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { Context, TwoParentContext, TwoSizeContext, useTwo } from './Context';
 import type { Group as Instance } from 'two.js/src/group';
-import { ShapeProps, type EventHandlers } from './Properties';
+import { type EventHandlers } from './Properties';
+import type { GroupProps } from './Group';
 import { useTwoGroup } from './useTwoObject';
 
-type GroupProps =
-  | ShapeProps
-  | 'fill'
-  | 'stroke'
-  | 'linewidth'
-  | 'cap'
-  | 'join'
-  | 'miter'
-  | 'closed'
-  | 'curved'
-  | 'automatic';
+export type SVGProps = GroupProps;
 
 type ComponentProps = React.PropsWithChildren<
   {

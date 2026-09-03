@@ -5,7 +5,7 @@ import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
 import { useTwoObject } from './useTwoObject';
 
-type EllipseProps = PathProps | 'width' | 'height';
+export type EllipseProps = PathProps | 'width' | 'height';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<EllipseProps, keyof Instance>]?: Instance[K];

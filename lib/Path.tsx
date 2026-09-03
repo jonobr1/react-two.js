@@ -20,8 +20,10 @@ export type PathProps =
   | 'beginning'
   | 'ending'
   | 'dashes'
-  | 'vertices';
-
+  | 'vertices'
+  | 'mask'
+  | 'clip'
+  | 'strokeAttenuation';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<PathProps, keyof Instance>]?: Instance[K];
@@ -49,5 +51,5 @@ export const Path = React.forwardRef<Instance, ComponentProps>(
     });
 
     return <></>;
-  }
+  },
 );

@@ -5,7 +5,7 @@ import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
 import { useTwoObject } from './useTwoObject';
 
-type CircleProps = PathProps | 'radius';
+export type CircleProps = PathProps | 'radius';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<CircleProps, keyof Instance>]?: Instance[K];
