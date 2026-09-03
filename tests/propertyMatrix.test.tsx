@@ -43,6 +43,13 @@ import {
   type SpriteProps,
   type ImageProps,
   type ImageSequenceProps,
+  type ElementProps,
+  type ShapeProps,
+  type OriginProp,
+  ELEMENT_PROPERTIES,
+  SHAPE_PROPERTIES,
+  GRADIENT_PROPERTIES,
+  applyOrigin,
 } from '../lib/main';
 
 describe('Property Matrix & Declarative Coverage (Issue #30)', () => {
@@ -103,6 +110,62 @@ describe('Property Matrix & Declarative Coverage (Issue #30)', () => {
       expectTypeOf<{ beginning?: number }>().toExtend<GProps>();
       expectTypeOf<{ ending?: number }>().toExtend<GProps>();
       expectTypeOf<{ strokeAttenuation?: boolean }>().toExtend<GProps>();
+    });
+
+    it('should exclude internal/read-only fields renderer and worldMatrix from ElementProps and ShapeProps', () => {
+      expectTypeOf<'renderer'>().not.toExtend<ElementProps>();
+      expectTypeOf<'worldMatrix'>().not.toExtend<ShapeProps>();
+      expectTypeOf<'renderer'>().not.toExtend<ShapeProps>();
+      expectTypeOf<'id'>().toExtend<ElementProps>();
+      expectTypeOf<'className'>().toExtend<ElementProps>();
+      expectTypeOf<'translation'>().toExtend<ShapeProps>();
+    });
+  });
+
+  describe('Shared Property Lists', () => {
+    it('should not contain renderer or worldMatrix in exported property arrays', () => {
+      expect((ELEMENT_PROPERTIES as readonly string[]).includes('renderer')).toBe(false);
+      expect((SHAPE_PROPERTIES as readonly string[]).includes('renderer')).toBe(false);
+      expect((SHAPE_PROPERTIES as readonly string[]).includes('worldMatrix')).toBe(false);
+      expect((ELEMENT_PROPERTIES as readonly string[]).includes('id')).toBe(true);
+      expect((SHAPE_PROPERTIES as readonly string[]).includes('translation')).toBe(true);
+      expect((GRADIENT_PROPERTIES as readonly string[]).includes('stops')).toBe(true);
+    });
+
+    it('should type check OriginProp accepting Vector, object literal, and tuple', () => {
+      expectTypeOf<Two.Vector>().toExtend<OriginProp>();
+      expectTypeOf<{ x: number; y: number }>().toExtend<OriginProp>();
+      expectTypeOf<[number, number]>().toExtend<OriginProp>();
+    });
+  });
+
+  describe('applyOrigin helper', () => {
+    it('should apply Two.Vector directly', () => {
+      const shape = { origin: new Two.Vector(0, 0) };
+      const newVec = new Two.Vector(12, 34);
+      applyOrigin(shape, newVec);
+      expect(shape.origin).toBe(newVec);
+    });
+
+    it('should apply array tuple coordinates', () => {
+      const shape = { origin: new Two.Vector(0, 0) };
+      applyOrigin(shape, [56, 78]);
+      expect(shape.origin.x).toBe(56);
+      expect(shape.origin.y).toBe(78);
+    });
+
+    it('should apply object literal coordinates', () => {
+      const shape = { origin: new Two.Vector(0, 0) };
+      applyOrigin(shape, { x: 99, y: 88 });
+      expect(shape.origin.x).toBe(99);
+      expect(shape.origin.y).toBe(88);
+    });
+
+    it('should no-op on undefined origin', () => {
+      const shape = { origin: new Two.Vector(10, 20) };
+      applyOrigin(shape, undefined);
+      expect(shape.origin.x).toBe(10);
+      expect(shape.origin.y).toBe(20);
     });
   });
 

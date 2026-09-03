@@ -4,19 +4,19 @@ import { useTwo } from './Context';
 
 import type { Rectangle as Instance } from 'two.js/src/shapes/rectangle';
 import { PathProps } from './Path';
-import { type EventHandlers } from './Properties';
+import { applyOrigin, type EventHandlers, type OriginProp } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
 export type RectangleProps = PathProps | 'width' | 'height' | 'origin';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<RectangleProps, keyof Instance>]?: K extends 'origin'
-      ? Instance[K] | { x?: number; y?: number } | [number, number]
+      ? OriginProp
       : Instance[K];
   } & {
     x?: number;
     y?: number;
-    origin?: Instance['origin'] | { x?: number; y?: number } | [number, number];
+    origin?: OriginProp;
   } & Partial<EventHandlers>
 >;
 
@@ -68,17 +68,7 @@ export const Rectangle = React.forwardRef<Instance, ComponentProps>(
       if (typeof y === 'number') rectangle.translation.y = y;
 
       // Update origin
-      if (typeof origin !== 'undefined') {
-        if (origin instanceof Two.Vector) {
-          rectangle.origin = origin;
-        } else if (Array.isArray(origin) && origin.length >= 2) {
-          rectangle.origin.set(origin[0], origin[1]);
-        } else if (typeof origin === 'object' && origin !== null) {
-          const originObj = origin as { x?: number; y?: number };
-          if (typeof originObj.x === 'number') rectangle.origin.x = originObj.x;
-          if (typeof originObj.y === 'number') rectangle.origin.y = originObj.y;
-        }
-      }
+      applyOrigin(rectangle, origin);
 
       // Update other properties (excluding event handlers)
       for (const key in shapeProps) {

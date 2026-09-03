@@ -5,7 +5,7 @@ import { useTwo } from './Context';
 import type { ImageSequence as Instance } from 'two.js/src/effects/image-sequence';
 import { RectangleProps } from './Rectangle';
 import type { Texture } from 'two.js/src/effects/texture';
-import { type EventHandlers } from './Properties';
+import { applyOrigin, type EventHandlers, type OriginProp } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
 export type ImageSequenceProps =
@@ -20,13 +20,13 @@ export type ImageSequenceProps =
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<ImageSequenceProps, keyof Instance>]?: K extends 'origin'
-      ? Instance[K] | { x?: number; y?: number } | [number, number]
+      ? OriginProp
       : Instance[K];
   } & {
     src?: string | string[] | Texture | Texture[];
     x?: number;
     y?: number;
-    origin?: Instance['origin'] | { x?: number; y?: number } | [number, number];
+    origin?: OriginProp;
     autoPlay?: boolean;
   } & Partial<EventHandlers>
 >;
@@ -85,17 +85,7 @@ export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
       if (typeof y === 'number') imageSequence.translation.y = y;
 
       // Update origin
-      if (typeof origin !== 'undefined') {
-        if (origin instanceof Two.Vector) {
-          imageSequence.origin = origin;
-        } else if (Array.isArray(origin) && origin.length >= 2) {
-          imageSequence.origin.set(origin[0], origin[1]);
-        } else if (typeof origin === 'object' && origin !== null) {
-          const originObj = origin as { x?: number; y?: number };
-          if (typeof originObj.x === 'number') imageSequence.origin.x = originObj.x;
-          if (typeof originObj.y === 'number') imageSequence.origin.y = originObj.y;
-        }
-      }
+      applyOrigin(imageSequence, origin);
 
       // Update other properties (excluding event handlers)
       for (const key in shapeProps) {

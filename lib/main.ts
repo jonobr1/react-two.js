@@ -38,11 +38,17 @@ export { Texture, type RefTexture, type TextureProps } from './Texture';
 export type { TwoEvent, EventHandler, EventHandlers } from './Events';
 
 // Shared property types
-export type { ElementProps, ShapeProps, GradientProps } from './Properties';
+export type {
+  ElementProps,
+  ShapeProps,
+  GradientProps,
+  OriginProp,
+} from './Properties';
 export {
   ELEMENT_PROPERTIES,
   SHAPE_PROPERTIES,
   GRADIENT_PROPERTIES,
+  applyOrigin,
 } from './Properties';
 
 // Property matrix exports

@@ -5,7 +5,7 @@ import { Context, TwoParentContext, TwoSizeContext, useTwo } from './Context';
 import type { Group as Instance } from 'two.js/src/group';
 import { type EventHandlers } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
-import { GroupProps } from './Group';
+import type { GroupProps } from './Group';
 
 export type SVGProps = GroupProps;
 
