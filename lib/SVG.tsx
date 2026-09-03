@@ -3,21 +3,11 @@ import Two from 'two.js';
 import { Context, TwoParentContext, TwoSizeContext, useTwo } from './Context';
 
 import type { Group as Instance } from 'two.js/src/group';
-import { ShapeProps, type EventHandlers } from './Properties';
+import { type EventHandlers } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
+import type { GroupProps } from './Group';
 
-// SVG-specific props
-type GroupProps =
-  | ShapeProps
-  | 'fill'
-  | 'stroke'
-  | 'linewidth'
-  | 'cap'
-  | 'join'
-  | 'miter'
-  | 'closed'
-  | 'curved'
-  | 'automatic';
+export type SVGProps = GroupProps;
 
 type ComponentProps = React.PropsWithChildren<
   {

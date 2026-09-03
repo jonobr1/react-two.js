@@ -5,17 +5,20 @@ import { useTwo } from './Context';
 import type { Image as Instance } from 'two.js/src/effects/image';
 import { RectangleProps } from './Rectangle';
 import type { Texture } from 'two.js/src/effects/texture';
-import { type EventHandlers } from './Properties';
+import { applyOrigin, type EventHandlers, type OriginProp } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-type ImageProps = RectangleProps | 'mode' | 'texture';
+export type ImageProps = RectangleProps | 'mode' | 'texture';
 
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in Extract<ImageProps, keyof Instance>]?: Instance[K];
+    [K in Extract<ImageProps, keyof Instance>]?: K extends 'origin'
+      ? OriginProp
+      : Instance[K];
   } & {
     x?: number;
     y?: number;
+    origin?: OriginProp;
     mode?: string;
     src?: string | Texture;
     texture?: Texture;
@@ -25,7 +28,7 @@ type ComponentProps = React.PropsWithChildren<
 export type RefImage = Instance;
 
 export const Image = React.forwardRef<Instance, ComponentProps>(
-  ({ mode, src, texture, x, y, ...props }, forwardedRef) => {
+  ({ mode, src, texture, x, y, origin, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
@@ -72,6 +75,9 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
       if (typeof x === 'number') image.translation.x = x;
       if (typeof y === 'number') image.translation.y = y;
 
+      // Update origin
+      applyOrigin(image, origin);
+
       // Update other properties (excluding event handlers)
       for (const key in shapeProps) {
         if (key in image) {
@@ -79,7 +85,7 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
           (image as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [image, shapeProps, mode, texture, x, y]);
+    }, [image, shapeProps, mode, texture, x, y, origin]);
 
     // Unregister on unmount only
     useEffect(() => {

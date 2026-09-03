@@ -7,7 +7,7 @@ import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-type ArcSegmentProps =
+export type ArcSegmentProps =
   | PathProps
   | 'startAngle'
   | 'endAngle'

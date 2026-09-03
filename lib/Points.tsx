@@ -6,7 +6,7 @@ import type { Points as Instance } from 'two.js/src/shapes/points';
 import { ShapeProps, type EventHandlers } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-type PointsProps =
+export type PointsProps =
   | ShapeProps
   | 'fill'
   | 'stroke'
@@ -18,7 +18,8 @@ type PointsProps =
   | 'beginning'
   | 'ending'
   | 'dashes'
-  | 'vertices';
+  | 'vertices'
+  | 'strokeAttenuation';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<PointsProps, keyof Instance>]?: Instance[K];

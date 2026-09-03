@@ -5,10 +5,10 @@ import { useTwo } from './Context';
 import type { ImageSequence as Instance } from 'two.js/src/effects/image-sequence';
 import { RectangleProps } from './Rectangle';
 import type { Texture } from 'two.js/src/effects/texture';
-import { type EventHandlers } from './Properties';
+import { applyOrigin, type EventHandlers, type OriginProp } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-type ImageSequenceProps =
+export type ImageSequenceProps =
   | RectangleProps
   | 'textures'
   | 'frameRate'
@@ -19,11 +19,14 @@ type ImageSequenceProps =
 
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in Extract<ImageSequenceProps, keyof Instance>]?: Instance[K];
+    [K in Extract<ImageSequenceProps, keyof Instance>]?: K extends 'origin'
+      ? OriginProp
+      : Instance[K];
   } & {
     src?: string | string[] | Texture | Texture[];
     x?: number;
     y?: number;
+    origin?: OriginProp;
     autoPlay?: boolean;
   } & Partial<EventHandlers>
 >;
@@ -31,7 +34,7 @@ type ComponentProps = React.PropsWithChildren<
 export type RefImageSequence = Instance;
 
 export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
-  ({ src, x, y, autoPlay, ...props }, forwardedRef) => {
+  ({ src, x, y, origin, autoPlay, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
@@ -81,6 +84,9 @@ export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
       if (typeof x === 'number') imageSequence.translation.x = x;
       if (typeof y === 'number') imageSequence.translation.y = y;
 
+      // Update origin
+      applyOrigin(imageSequence, origin);
+
       // Update other properties (excluding event handlers)
       for (const key in shapeProps) {
         if (key in imageSequence) {
@@ -88,7 +94,7 @@ export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
           (imageSequence as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [shapeProps, imageSequence, x, y, autoPlay]);
+    }, [shapeProps, imageSequence, x, y, origin, autoPlay]);
 
     // Unregister on unmount only
     useEffect(() => {

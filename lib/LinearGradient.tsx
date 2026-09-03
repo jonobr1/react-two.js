@@ -4,7 +4,7 @@ import Two from 'two.js';
 import type { LinearGradient as Instance } from 'two.js/src/effects/linear-gradient';
 import { GradientProps } from './Properties';
 
-type LinearGradientProps = GradientProps | 'left' | 'right';
+export type LinearGradientProps = GradientProps | 'left' | 'right';
 
 type ComponentProps = React.PropsWithChildren<
   {

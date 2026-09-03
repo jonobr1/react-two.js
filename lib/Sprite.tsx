@@ -3,11 +3,12 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Sprite as Instance } from 'two.js/src/effects/sprite';
+import type { Texture } from 'two.js/src/effects/texture';
 import { RectangleProps } from './Rectangle';
-import { type EventHandlers } from './Properties';
+import { applyOrigin, type EventHandlers, type OriginProp } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-type SpriteProps =
+export type SpriteProps =
   | RectangleProps
   | 'texture'
   | 'columns'
@@ -20,13 +21,14 @@ type SpriteProps =
 
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in Extract<SpriteProps, keyof Instance>]?: K extends keyof Instance
-      ? Instance[K]
-      : never;
+    [K in Extract<SpriteProps, keyof Instance>]?: K extends 'origin'
+      ? OriginProp
+      : Instance[K];
   } & {
-    src?: string;
+    src?: string | Texture;
     x?: number;
     y?: number;
+    origin?: OriginProp;
     autoPlay?: boolean;
   } & Partial<EventHandlers>
 >;
@@ -34,7 +36,7 @@ type ComponentProps = React.PropsWithChildren<
 export type RefSprite = Instance;
 
 export const Sprite = React.forwardRef<Instance, ComponentProps>(
-  ({ src, x, y, autoPlay, ...props }, forwardedRef) => {
+  ({ src, x, y, origin, autoPlay, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
@@ -78,6 +80,9 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
       if (typeof x === 'number') sprite.translation.x = x;
       if (typeof y === 'number') sprite.translation.y = y;
 
+      // Update origin
+      applyOrigin(sprite, origin);
+
       if (autoPlay) {
         sprite.play();
       } else {
@@ -91,7 +96,7 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
           (sprite as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [shapeProps, sprite, x, y, autoPlay]);
+    }, [shapeProps, sprite, x, y, origin, autoPlay]);
 
     // Unregister on unmount only
     useEffect(() => {
