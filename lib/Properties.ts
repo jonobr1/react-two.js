@@ -36,11 +36,40 @@ export const GRADIENT_PROPERTIES = [
   'stops',
 ] as const;
 
-export type OriginProp =
+export type VectorProp =
   | Vector
   | { x?: number; y?: number }
   | readonly [number, number]
   | [number, number];
+
+export type OriginProp = VectorProp;
+
+export type ScaleProp =
+  | number
+  | Vector
+  | { x?: number; y?: number }
+  | readonly [number, number]
+  | [number, number];
+
+/**
+ * Normalizes and applies vector coordinates onto a Two.js Vector instance.
+ */
+export function applyVector(
+  target: Vector,
+  source: VectorProp | undefined
+): void {
+  if (typeof source === 'undefined') return;
+
+  if (source instanceof Two.Vector) {
+    target.copy(source);
+  } else if (Array.isArray(source) && source.length >= 2) {
+    target.set(source[0], source[1]);
+  } else if (typeof source === 'object' && source !== null) {
+    const obj = source as { x?: number; y?: number };
+    if (typeof obj.x === 'number') target.x = obj.x;
+    if (typeof obj.y === 'number') target.y = obj.y;
+  }
+}
 
 /**
  * Normalizes and applies origin coordinates onto a Two.js shape instance.
@@ -62,4 +91,34 @@ export function applyOrigin(
   }
 }
 
+/**
+ * Normalizes and applies scale onto a Two.js object.
+ * Protects against object assignments that would otherwise cause _matrix to produce NaN.
+ */
+export function applyScale(
+  instance: { scale: number | Vector },
+  scale: ScaleProp | undefined
+): void {
+  if (typeof scale === 'undefined') return;
 
+  if (typeof scale === 'number') {
+    instance.scale = scale;
+  } else if (scale instanceof Two.Vector) {
+    instance.scale = scale;
+  } else if (Array.isArray(scale) && scale.length >= 2) {
+    if (instance.scale instanceof Two.Vector) {
+      instance.scale.set(scale[0], scale[1]);
+    } else {
+      instance.scale = new Two.Vector(scale[0], scale[1]);
+    }
+  } else if (typeof scale === 'object' && scale !== null) {
+    const obj = scale as { x?: number; y?: number };
+    const sx = typeof obj.x === 'number' ? obj.x : 1;
+    const sy = typeof obj.y === 'number' ? obj.y : sx;
+    if (instance.scale instanceof Two.Vector) {
+      instance.scale.set(sx, sy);
+    } else {
+      instance.scale = new Two.Vector(sx, sy);
+    }
+  }
+}

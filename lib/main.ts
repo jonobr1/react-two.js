@@ -34,6 +34,10 @@ export { RadialGradient, type RefRadialGradient, type RadialGradientProps } from
 // Texture exports
 export { Texture, type RefTexture, type TextureProps } from './Texture';
 
+// Lifecycle & Reconciliation exports
+export { useTwoObject, useTwoGroup } from './useTwoObject';
+export { TWO_DEFAULT_PROPS } from './reconciliation';
+
 // Event exports
 export type { TwoEvent, EventHandler, EventHandlers } from './Events';
 
@@ -43,12 +47,16 @@ export type {
   ShapeProps,
   GradientProps,
   OriginProp,
+  VectorProp,
+  ScaleProp,
 } from './Properties';
 export {
   ELEMENT_PROPERTIES,
   SHAPE_PROPERTIES,
   GRADIENT_PROPERTIES,
   applyOrigin,
+  applyVector,
+  applyScale,
 } from './Properties';
 
 // Property matrix exports

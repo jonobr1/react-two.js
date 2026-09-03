@@ -11,11 +11,14 @@ import Two from 'two.js';
 import type { Shape } from 'two.js/src/shape';
 import type { Group } from 'two.js/src/group';
 import {
+  ChildSlotContext,
   TwoCoreContext,
   TwoParentContext,
   TwoSizeContext,
   useTwo,
+  type TwoParentContextValue,
 } from './Context';
+import { reconcileSceneOrder } from './reconciliation';
 import type { EventHandlers } from './Events';
 import {
   clientToWorldPoint,
@@ -134,11 +137,34 @@ export const Provider = React.forwardRef<
   const eventShapes = useRef<Map<Shape | Group, EventShape>>(new Map());
   const hoveredShapes = useRef<Set<Shape | Group>>(new Set());
   const capturedShape = useRef<Shape | Group | null>(null);
+  const childrenOrderRef = useRef<Array<Shape | Group>>([]);
+  const attachedChildrenRef = useRef<Set<Shape | Group>>(new Set());
 
   const [twoState, setTwoState] = useState<typeof two>(two);
   const [parentState, setParentState] = useState<typeof parent>(parent);
   const [width, setWidth] = useState<number>(0);
   const [height, setHeight] = useState<number>(0);
+
+  const attachChild = useCallback((child: Shape | Group) => {
+    attachedChildrenRef.current.add(child);
+    parentState?.add(child);
+  }, [parentState]);
+
+  const detachChild = useCallback((child: Shape | Group) => {
+    attachedChildrenRef.current.delete(child);
+    parentState?.remove(child);
+  }, [parentState]);
+
+  const registerChildOrder = useCallback((child: Shape | Group) => {
+    childrenOrderRef.current.push(child);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (parentState && childrenOrderRef.current.length > 0) {
+      reconcileSceneOrder(parentState, childrenOrderRef.current);
+      childrenOrderRef.current = [];
+    }
+  });
 
   // Separate Two.js constructor props from DOM element props
   const { twoProps, domProps } = useMemo(() => {
@@ -226,6 +252,10 @@ export const Provider = React.forwardRef<
       setWidth(two.width);
       setHeight(two.height);
 
+      const shapes = eventShapes.current;
+      const hovered = hoveredShapes.current;
+      const attached = attachedChildrenRef.current;
+
       return () => {
         two.renderer.domElement.parentElement?.removeChild(
           two.renderer.domElement,
@@ -238,6 +268,11 @@ export const Provider = React.forwardRef<
           Two.Instances.splice(index, 1);
         }
         two.clear();
+        shapes.clear();
+        hovered.clear();
+        capturedShape.current = null;
+        attached.clear();
+        childrenOrderRef.current = [];
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -587,11 +622,14 @@ export const Provider = React.forwardRef<
     [twoState, registerEventShape, unregisterEventShape, hitTestPoint],
   );
 
-  const parentValue = useMemo(
+  const parentValue = useMemo<TwoParentContextValue>(
     () => ({
       parent: parentState,
+      attachChild,
+      detachChild,
+      registerChildOrder,
     }),
-    [parentState],
+    [parentState, attachChild, detachChild, registerChildOrder],
   );
 
   const sizeValue = useMemo(
@@ -607,7 +645,14 @@ export const Provider = React.forwardRef<
       <TwoParentContext.Provider value={parentValue}>
         <TwoSizeContext.Provider value={sizeValue}>
           <div ref={container} style={{ display: 'none' }}>
-            {props.children}
+            {React.Children.map(props.children, (child, index) => {
+              if (!React.isValidElement(child)) return child;
+              return (
+                <ChildSlotContext.Provider value={index} key={child.key ?? index}>
+                  {child}
+                </ChildSlotContext.Provider>
+              );
+            })}
           </div>
         </TwoSizeContext.Provider>
       </TwoParentContext.Provider>

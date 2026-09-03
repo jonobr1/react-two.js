@@ -1,11 +1,9 @@
-import React, { useEffect, useImperativeHandle, useMemo } from 'react';
+import React from 'react';
 import Two from 'two.js';
-import { useTwo } from './Context';
-
 import type { Polygon as Instance } from 'two.js/src/shapes/polygon';
 import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
+import { useTwoObject } from './useTwoObject';
 
 export type PolygonProps = PathProps | 'width' | 'height' | 'sides' | 'radius';
 type ComponentProps = React.PropsWithChildren<
@@ -21,82 +19,11 @@ type ComponentProps = React.PropsWithChildren<
 export type RefPolygon = Instance;
 
 export const Polygon = React.forwardRef<Instance, ComponentProps>(
-  ({ x, y, ...props }, forwardedRef) => {
-    const { parent, registerEventShape, unregisterEventShape } = useTwo();
-
-    // Create the instance synchronously so it's available for refs immediately
-    const polygon = useMemo(() => new Two.Polygon(), []);
-
-    // Extract event handlers from props
-    const { eventHandlers, shapeProps } = useMemo(() => {
-      const eventHandlers: Partial<EventHandlers> = {};
-      const shapeProps: Record<string, unknown> = {};
-
-      for (const key in props) {
-        if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
-          // An explicitly `undefined` handler means "not interactive", so it
-          // must not count toward the registered handler set.
-          const handler = props[key as keyof EventHandlers];
-          if (handler !== undefined) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            eventHandlers[key as keyof EventHandlers] = handler as any;
-          }
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          shapeProps[key] = (props as any)[key];
-        }
-      }
-
-      return { eventHandlers, shapeProps };
-    }, [props]);
-
-    useEffect(() => {
-      if (parent) {
-        parent.add(polygon);
-
-        return () => {
-          parent.remove(polygon);
-        };
-      }
-    }, [parent, polygon]);
-
-    useEffect(() => {
-      // Update position
-      if (typeof x === 'number') polygon.translation.x = x;
-      if (typeof y === 'number') polygon.translation.y = y;
-
-      // Update other properties (excluding event handlers)
-      for (const key in shapeProps) {
-        if (key in polygon) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (polygon as any)[key] = (shapeProps as any)[key];
-        }
-      }
-    }, [shapeProps, polygon, x, y]);
-
-    // Unregister on unmount only
-    useEffect(() => {
-      return () => {
-        unregisterEventShape(polygon);
-      };
-    }, [polygon, unregisterEventShape]);
-
-    // Register / update event handlers
-    useEffect(() => {
-      if (Object.keys(eventHandlers).length > 0) {
-        registerEventShape(polygon, eventHandlers, parent ?? undefined);
-      } else {
-        unregisterEventShape(polygon);
-      }
-    }, [
-      polygon,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
-
-    useImperativeHandle(forwardedRef, () => polygon, [polygon]);
+  (props, forwardedRef) => {
+    useTwoObject(props, forwardedRef, {
+      factory: (p) => new Two.Polygon(0, 0, p.radius, p.sides),
+      constructionProps: ['sides'],
+    });
 
     return <></>;
   }

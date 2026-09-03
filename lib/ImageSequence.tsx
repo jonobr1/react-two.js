@@ -1,12 +1,10 @@
-import React, { useEffect, useImperativeHandle, useMemo } from 'react';
+import React from 'react';
 import Two from 'two.js';
-import { useTwo } from './Context';
-
 import type { ImageSequence as Instance } from 'two.js/src/effects/image-sequence';
 import { RectangleProps } from './Rectangle';
 import type { Texture } from 'two.js/src/effects/texture';
 import { applyOrigin, type EventHandlers, type OriginProp } from './Properties';
-import { EVENT_HANDLER_NAMES } from './Events';
+import { useTwoObject } from './useTwoObject';
 
 export type ImageSequenceProps =
   | RectangleProps
@@ -34,91 +32,28 @@ type ComponentProps = React.PropsWithChildren<
 export type RefImageSequence = Instance;
 
 export const ImageSequence = React.forwardRef<Instance, ComponentProps>(
-  ({ src, x, y, origin, autoPlay, ...props }, forwardedRef) => {
-    const { parent, registerEventShape, unregisterEventShape } = useTwo();
+  (props, forwardedRef) => {
+    useTwoObject(props, forwardedRef, {
+      factory: (p) => new Two.ImageSequence(p.src),
+      constructionProps: ['src'],
+      specialProps: ['autoPlay', 'origin'],
+      applySpecialProps: (seq, currentProps, changed, removed) => {
+        if ('origin' in changed) {
+          applyOrigin(seq, currentProps.origin);
+        } else if (removed.includes('origin')) {
+          seq.origin.set(0, 0);
+        }
 
-    // Create the instance synchronously so it's available for refs immediately
-    const imageSequence = useMemo(() => new Two.ImageSequence(src), [src]);
-
-    // Extract event handlers from props
-    const { eventHandlers, shapeProps } = useMemo(() => {
-      const eventHandlers: Partial<EventHandlers> = {};
-      const shapeProps: Record<string, unknown> = {};
-
-      for (const key in props) {
-        if (EVENT_HANDLER_NAMES.includes(key as keyof EventHandlers)) {
-          // An explicitly `undefined` handler means "not interactive", so it
-          // must not count toward the registered handler set.
-          const handler = props[key as keyof EventHandlers];
-          if (handler !== undefined) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            eventHandlers[key as keyof EventHandlers] = handler as any;
-          }
+        if (currentProps.autoPlay) {
+          seq.play();
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          shapeProps[key] = (props as any)[key];
+          seq.pause();
         }
-      }
-
-      return { eventHandlers, shapeProps };
-    }, [props]);
-
-    useEffect(() => {
-      if (parent) {
-        parent.add(imageSequence);
-
-        return () => {
-          parent.remove(imageSequence);
-        };
-      }
-    }, [parent, imageSequence]);
-
-    useEffect(() => {
-      if (autoPlay) {
-        imageSequence.play();
-      } else {
-        imageSequence.pause();
-      }
-
-      // Update position
-      if (typeof x === 'number') imageSequence.translation.x = x;
-      if (typeof y === 'number') imageSequence.translation.y = y;
-
-      // Update origin
-      applyOrigin(imageSequence, origin);
-
-      // Update other properties (excluding event handlers)
-      for (const key in shapeProps) {
-        if (key in imageSequence) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (imageSequence as any)[key] = (shapeProps as any)[key];
-        }
-      }
-    }, [shapeProps, imageSequence, x, y, origin, autoPlay]);
-
-    // Unregister on unmount only
-    useEffect(() => {
-      return () => {
-        unregisterEventShape(imageSequence);
-      };
-    }, [imageSequence, unregisterEventShape]);
-
-    // Register / update event handlers
-    useEffect(() => {
-      if (Object.keys(eventHandlers).length > 0) {
-        registerEventShape(imageSequence, eventHandlers, parent ?? undefined);
-      } else {
-        unregisterEventShape(imageSequence);
-      }
-    }, [
-      imageSequence,
-      registerEventShape,
-      unregisterEventShape,
-      parent,
-      eventHandlers,
-    ]);
-
-    useImperativeHandle(forwardedRef, () => imageSequence, [imageSequence]);
+      },
+      disposeOwned: (seq) => {
+        seq.pause();
+      },
+    });
 
     return <></>;
   }
