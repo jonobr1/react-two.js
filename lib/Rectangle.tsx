@@ -7,20 +7,23 @@ import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-export type RectangleProps = PathProps | 'width' | 'height';
+export type RectangleProps = PathProps | 'width' | 'height' | 'origin';
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in Extract<RectangleProps, keyof Instance>]?: Instance[K];
+    [K in Extract<RectangleProps, keyof Instance>]?: K extends 'origin'
+      ? Instance[K] | { x?: number; y?: number } | [number, number]
+      : Instance[K];
   } & {
     x?: number;
     y?: number;
+    origin?: Instance['origin'] | { x?: number; y?: number } | [number, number];
   } & Partial<EventHandlers>
 >;
 
 export type RefRectangle = Instance;
 
 export const Rectangle = React.forwardRef<Instance, ComponentProps>(
-  ({ x, y, ...props }, forwardedRef) => {
+  ({ x, y, origin, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
@@ -64,6 +67,19 @@ export const Rectangle = React.forwardRef<Instance, ComponentProps>(
       if (typeof x === 'number') rectangle.translation.x = x;
       if (typeof y === 'number') rectangle.translation.y = y;
 
+      // Update origin
+      if (typeof origin !== 'undefined') {
+        if (origin instanceof Two.Vector) {
+          rectangle.origin = origin;
+        } else if (Array.isArray(origin) && origin.length >= 2) {
+          rectangle.origin.set(origin[0], origin[1]);
+        } else if (typeof origin === 'object' && origin !== null) {
+          const originObj = origin as { x?: number; y?: number };
+          if (typeof originObj.x === 'number') rectangle.origin.x = originObj.x;
+          if (typeof originObj.y === 'number') rectangle.origin.y = originObj.y;
+        }
+      }
+
       // Update other properties (excluding event handlers)
       for (const key in shapeProps) {
         if (key in rectangle) {
@@ -71,7 +87,7 @@ export const Rectangle = React.forwardRef<Instance, ComponentProps>(
           (rectangle as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [shapeProps, rectangle, x, y]);
+    }, [shapeProps, rectangle, x, y, origin]);
 
     // Unregister on unmount only
     useEffect(() => {

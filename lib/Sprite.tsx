@@ -3,11 +3,12 @@ import Two from 'two.js';
 import { useTwo } from './Context';
 
 import type { Sprite as Instance } from 'two.js/src/effects/sprite';
+import type { Texture } from 'two.js/src/effects/texture';
 import { RectangleProps } from './Rectangle';
 import { type EventHandlers } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-type SpriteProps =
+export type SpriteProps =
   | RectangleProps
   | 'texture'
   | 'columns'
@@ -20,13 +21,14 @@ type SpriteProps =
 
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in Extract<SpriteProps, keyof Instance>]?: K extends keyof Instance
-      ? Instance[K]
-      : never;
+    [K in Extract<SpriteProps, keyof Instance>]?: K extends 'origin'
+      ? Instance[K] | { x?: number; y?: number } | [number, number]
+      : Instance[K];
   } & {
-    src?: string;
+    src?: string | Texture;
     x?: number;
     y?: number;
+    origin?: Instance['origin'] | { x?: number; y?: number } | [number, number];
     autoPlay?: boolean;
   } & Partial<EventHandlers>
 >;
@@ -34,7 +36,7 @@ type ComponentProps = React.PropsWithChildren<
 export type RefSprite = Instance;
 
 export const Sprite = React.forwardRef<Instance, ComponentProps>(
-  ({ src, x, y, autoPlay, ...props }, forwardedRef) => {
+  ({ src, x, y, origin, autoPlay, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
@@ -78,6 +80,19 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
       if (typeof x === 'number') sprite.translation.x = x;
       if (typeof y === 'number') sprite.translation.y = y;
 
+      // Update origin
+      if (typeof origin !== 'undefined') {
+        if (origin instanceof Two.Vector) {
+          sprite.origin = origin;
+        } else if (Array.isArray(origin) && origin.length >= 2) {
+          sprite.origin.set(origin[0], origin[1]);
+        } else if (typeof origin === 'object' && origin !== null) {
+          const originObj = origin as { x?: number; y?: number };
+          if (typeof originObj.x === 'number') sprite.origin.x = originObj.x;
+          if (typeof originObj.y === 'number') sprite.origin.y = originObj.y;
+        }
+      }
+
       if (autoPlay) {
         sprite.play();
       } else {
@@ -91,7 +106,7 @@ export const Sprite = React.forwardRef<Instance, ComponentProps>(
           (sprite as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [shapeProps, sprite, x, y, autoPlay]);
+    }, [shapeProps, sprite, x, y, origin, autoPlay]);
 
     // Unregister on unmount only
     useEffect(() => {

@@ -7,7 +7,7 @@ import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-type EllipseProps = PathProps | 'width' | 'height';
+export type EllipseProps = PathProps | 'width' | 'height';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<EllipseProps, keyof Instance>]?: Instance[K];

@@ -7,7 +7,7 @@ import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-type RoundedRectangleProps = PathProps | 'width' | 'height' | 'radius';
+export type RoundedRectangleProps = PathProps | 'width' | 'height' | 'radius';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<RoundedRectangleProps, keyof Instance>]?: Instance[K];

@@ -8,14 +8,17 @@ import type { Texture } from 'two.js/src/effects/texture';
 import { type EventHandlers } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-type ImageProps = RectangleProps | 'mode' | 'texture';
+export type ImageProps = RectangleProps | 'mode' | 'texture';
 
 type ComponentProps = React.PropsWithChildren<
   {
-    [K in Extract<ImageProps, keyof Instance>]?: Instance[K];
+    [K in Extract<ImageProps, keyof Instance>]?: K extends 'origin'
+      ? Instance[K] | { x?: number; y?: number } | [number, number]
+      : Instance[K];
   } & {
     x?: number;
     y?: number;
+    origin?: Instance['origin'] | { x?: number; y?: number } | [number, number];
     mode?: string;
     src?: string | Texture;
     texture?: Texture;
@@ -25,7 +28,7 @@ type ComponentProps = React.PropsWithChildren<
 export type RefImage = Instance;
 
 export const Image = React.forwardRef<Instance, ComponentProps>(
-  ({ mode, src, texture, x, y, ...props }, forwardedRef) => {
+  ({ mode, src, texture, x, y, origin, ...props }, forwardedRef) => {
     const { parent, registerEventShape, unregisterEventShape } = useTwo();
 
     // Create the instance synchronously so it's available for refs immediately
@@ -72,6 +75,19 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
       if (typeof x === 'number') image.translation.x = x;
       if (typeof y === 'number') image.translation.y = y;
 
+      // Update origin
+      if (typeof origin !== 'undefined') {
+        if (origin instanceof Two.Vector) {
+          image.origin = origin;
+        } else if (Array.isArray(origin) && origin.length >= 2) {
+          image.origin.set(origin[0], origin[1]);
+        } else if (typeof origin === 'object' && origin !== null) {
+          const originObj = origin as { x?: number; y?: number };
+          if (typeof originObj.x === 'number') image.origin.x = originObj.x;
+          if (typeof originObj.y === 'number') image.origin.y = originObj.y;
+        }
+      }
+
       // Update other properties (excluding event handlers)
       for (const key in shapeProps) {
         if (key in image) {
@@ -79,7 +95,7 @@ export const Image = React.forwardRef<Instance, ComponentProps>(
           (image as any)[key] = (shapeProps as any)[key];
         }
       }
-    }, [image, shapeProps, mode, texture, x, y]);
+    }, [image, shapeProps, mode, texture, x, y, origin]);
 
     // Unregister on unmount only
     useEffect(() => {

@@ -6,7 +6,7 @@ import type { Group as Instance } from 'two.js/src/group';
 import { ShapeProps, type EventHandlers } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-type GroupProps =
+export type GroupProps =
   | ShapeProps
   | 'fill'
   | 'stroke'
@@ -18,7 +18,11 @@ type GroupProps =
   | 'curved'
   | 'automatic'
   | 'opacity'
-  | 'visible';
+  | 'visible'
+  | 'mask'
+  | 'beginning'
+  | 'ending'
+  | 'strokeAttenuation';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<GroupProps, keyof Instance>]?: Instance[K];

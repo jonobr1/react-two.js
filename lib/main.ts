@@ -1,6 +1,6 @@
 export { Provider as Canvas } from './Provider';
 export { Context, useTwo, useFrame } from './Context';
-export { Group, type RefGroup } from './Group';
+export { Group, type RefGroup, type GroupProps } from './Group';
 export {
   useZUI,
   useZUIState,
@@ -9,31 +9,49 @@ export {
   type ZUIState,
   type ReadonlyRef,
 } from './ZUI';
-export { SVG, type RefSVG } from './SVG';
-export { Path, type RefPath } from './Path';
-export { Points, type RefPoints } from './Points';
-export { Text, type RefText } from './Text';
+export { SVG, type RefSVG, type SVGProps } from './SVG';
+export { Path, type RefPath, type PathProps } from './Path';
+export { Points, type RefPoints, type PointsProps } from './Points';
+export { Text, type RefText, type TextProps } from './Text';
 
-// Primitve exports
-export { ArcSegment, type RefArcSegment } from './ArcSegment';
-export { Circle, type RefCircle } from './Circle';
-export { Ellipse, type RefEllipse } from './Ellipse';
-export { Image, type RefImage } from './Image';
-export { ImageSequence, type RefImageSequence } from './ImageSequence';
-export { Line, type RefLine } from './Line';
-export { Polygon, type RefPolygon } from './Polygon';
-export { Rectangle, type RefRectangle } from './Rectangle';
-export { RoundedRectangle, type RefRoundedRectangle } from './RoundedRectangle';
-export { Sprite, type RefSprite } from './Sprite';
-export { Star, type RefStar } from './Star';
+// Primitive exports
+export { ArcSegment, type RefArcSegment, type ArcSegmentProps } from './ArcSegment';
+export { Circle, type RefCircle, type CircleProps } from './Circle';
+export { Ellipse, type RefEllipse, type EllipseProps } from './Ellipse';
+export { Image, type RefImage, type ImageProps } from './Image';
+export { ImageSequence, type RefImageSequence, type ImageSequenceProps } from './ImageSequence';
+export { Line, type RefLine, type LineProps } from './Line';
+export { Polygon, type RefPolygon, type PolygonProps } from './Polygon';
+export { Rectangle, type RefRectangle, type RectangleProps } from './Rectangle';
+export { RoundedRectangle, type RefRoundedRectangle, type RoundedRectangleProps } from './RoundedRectangle';
+export { Sprite, type RefSprite, type SpriteProps } from './Sprite';
+export { Star, type RefStar, type StarProps } from './Star';
 
 // Gradient exports
-export { LinearGradient, type RefLinearGradient } from './LinearGradient';
-export { RadialGradient, type RefRadialGradient } from './RadialGradient';
+export { LinearGradient, type RefLinearGradient, type LinearGradientProps } from './LinearGradient';
+export { RadialGradient, type RefRadialGradient, type RadialGradientProps } from './RadialGradient';
 
 // Texture exports
-export { Texture, type RefTexture } from './Texture';
+export { Texture, type RefTexture, type TextureProps } from './Texture';
 
 // Event exports
 export type { TwoEvent, EventHandler, EventHandlers } from './Events';
+
+// Shared property types
+export type { ElementProps, ShapeProps, GradientProps } from './Properties';
+export {
+  ELEMENT_PROPERTIES,
+  SHAPE_PROPERTIES,
+  GRADIENT_PROPERTIES,
+} from './Properties';
+
+// Property matrix exports
+export {
+  PROPERTY_MATRIX,
+  SUPPORTED_TWO_VERSION,
+  type ComponentPropertyMatrix,
+  type PropertyOmission,
+  type OmissionCategory,
+} from './propertyMatrix';
+
 

@@ -7,7 +7,7 @@ import { PathProps } from './Path';
 import { type EventHandlers } from './Properties';
 import { EVENT_HANDLER_NAMES } from './Events';
 
-type LineProps = PathProps | 'left' | 'right';
+export type LineProps = PathProps | 'left' | 'right';
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<LineProps, keyof Instance>]?: Instance[K];
