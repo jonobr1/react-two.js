@@ -42,7 +42,7 @@ export type RefSVG = Instance;
 export const SVG = React.forwardRef<Instance, ComponentProps>(
   (props, forwardedRef) => {
     const { two } = useTwo();
-    const { src, content, onLoad, onError, shallow, ...restProps } = props;
+    const { src, content, onLoad, onError, ...restProps } = props;
 
     const onLoadRef = useRef(onLoad);
     const onErrorRef = useRef(onError);
@@ -66,7 +66,9 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
       parentValue,
       sizeValue,
       renderChildren,
-    } = useTwoGroup(restProps, forwardedRef);
+    } = useTwoGroup(restProps, forwardedRef, {
+      specialProps: ['shallow'],
+    });
 
     // Validate props
     useEffect(() => {
@@ -155,7 +157,7 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
         lastLoadedSource.current = { two: null, key: null };
         svg.remove(svg.children);
       };
-    }, [two, src, content, shallow, svg]);
+    }, [two, src, content, svg]);
 
     return (
       <Context.Provider value={coreValue}>

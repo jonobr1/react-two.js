@@ -283,23 +283,40 @@ export function useTwoObject<
       pendingReplacementRef.current = null;
       const { oldInstance } = pending;
 
-      if (isSceneObject && parent) {
-        const children = parent.children as unknown as Array<T>;
-        const idx = children.indexOf(oldInstance);
-        if (idx !== -1) {
-          // Replace in-place at the exact same child index
-          children.splice(idx, 1, instance);
-          (instance as unknown as { parent?: Group }).parent = parent;
-          if (typeof (parent as unknown as { _flagOrder?: boolean })._flagOrder !== 'undefined') {
-            (parent as unknown as { _flagOrder: boolean })._flagOrder = true;
+      if (isSceneObject) {
+        let replacedInPlace = false;
+        if (parent) {
+          const children = parent.children as unknown as Array<T>;
+          const idx = children.indexOf(oldInstance);
+          if (idx !== -1) {
+            // Replace in-place at the exact same child index
+            children.splice(idx, 1, instance);
+            (instance as unknown as { parent?: Group }).parent = parent;
+            if (typeof (parent as unknown as { _flagOrder?: boolean })._flagOrder !== 'undefined') {
+              (parent as unknown as { _flagOrder: boolean })._flagOrder = true;
+            }
+            replacedInPlace = true;
           }
-        } else {
-          // Fallback if not found in children: attach to current parent
-          const sceneItem = instance as unknown as Shape | Group;
-          if (attachChild) {
-            attachChild(sceneItem);
-          } else {
-            parent.add(sceneItem as unknown as Shape);
+        }
+
+        if (!replacedInPlace) {
+          // When a construction-prop change coincides with a parent change,
+          // oldInstance is still in the previous parent's children.
+          // Detach oldInstance from its previous parent so it is not orphaned.
+          const oldParent = (oldInstance as unknown as { parent?: Group }).parent;
+          if (oldParent) {
+            oldParent.remove(oldInstance as unknown as Shape);
+            (oldInstance as unknown as { parent?: Group }).parent = undefined;
+          }
+
+          // Attach replacement to the current parent
+          if (parent) {
+            const sceneItem = instance as unknown as Shape | Group;
+            if (attachChild) {
+              attachChild(sceneItem);
+            } else {
+              parent.add(sceneItem as unknown as Shape);
+            }
           }
         }
       }
@@ -320,7 +337,12 @@ export function useTwoObject<
       // If this instance is about to be replaced by a pending newInstance on the same parent,
       // do not remove it here; the pending replacement will splice the new instance in-place.
       const nextPending = pendingReplacementRef.current;
-      if (nextPending && nextPending.oldInstance === instance && isSceneObject) {
+      if (
+        nextPending &&
+        nextPending.oldInstance === instance &&
+        isSceneObject &&
+        (instance as unknown as { parent?: Group }).parent === parent
+      ) {
         return;
       }
 

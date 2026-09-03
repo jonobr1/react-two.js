@@ -255,6 +255,41 @@ describe('Two.js Scene Graph Reconciliation (Issue #29)', () => {
       expect(g2.children).toContain(circle);
       expect(circle.parent).toBe(g2);
     });
+
+    it('detaches old instance from previous parent when recreation coincides with parent change', () => {
+      const circleRef = React.createRef<RefCircle>();
+      const g1 = new Two.Group();
+      const g2 = new Two.Group();
+
+      function App({ parentGroup, resolution }: { parentGroup: Two.Group; resolution: number }) {
+        return (
+          <Canvas width={800} height={600}>
+            <TwoParentContext.Provider value={{ parent: parentGroup }}>
+              <Circle ref={circleRef} radius={10} resolution={resolution} />
+            </TwoParentContext.Provider>
+          </Canvas>
+        );
+      }
+
+      const { rerender } = render(<App parentGroup={g1} resolution={12} />);
+      const oldCircle = circleRef.current!;
+
+      expect(g1.children).toContain(oldCircle);
+      expect(g2.children).not.toContain(oldCircle);
+      expect(oldCircle.parent).toBe(g1);
+
+      // Simultaneously change parent to g2 AND change construction-only prop resolution (12 -> 36)
+      rerender(<App parentGroup={g2} resolution={36} />);
+      const newCircle = circleRef.current!;
+
+      expect(newCircle).not.toBe(oldCircle);
+      // Old circle must be cleanly detached from g1 and not orphaned!
+      expect(g1.children).not.toContain(oldCircle);
+      expect(g1.children).toHaveLength(0);
+      // New circle must be attached to g2
+      expect(g2.children).toContain(newCircle);
+      expect(newCircle.parent).toBe(g2);
+    });
   });
 
   describe('4. Discrete Prop Updates', () => {
