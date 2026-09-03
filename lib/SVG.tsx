@@ -105,11 +105,7 @@ export const SVG = React.forwardRef<Instance, ComponentProps>(
           (loadedGroup: Instance, svgElement: SVGElement | SVGElement[]) => {
             if (!mounted) return;
 
-            if (shallow) {
-              svg.add(loadedGroup.children);
-            } else {
-              svg.add(loadedGroup.children);
-            }
+            svg.add(loadedGroup.children);
 
             const handleLoad = onLoadRef.current;
             if (handleLoad) {

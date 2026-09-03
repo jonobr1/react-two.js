@@ -412,6 +412,55 @@ describe('Two.js Scene Graph Reconciliation (Issue #29)', () => {
       // Replaced in-place at exact child index 1 between the two rectangles!
       expect(group.children[1]).toBe(newCircle);
       expect(newCircle.fill).toBe('orange');
+
+      // Subsequent recreation (36 -> 48) also keeps the exact same position
+      rerender(<App resolution={48} />);
+      const thirdCircle = circleRef.current!;
+
+      expect(thirdCircle).not.toBe(newCircle);
+      expect(group.children.length).toBe(3);
+      expect(group.children[1]).toBe(thirdCircle);
+    });
+
+    it('defers instance replacement and disposal to commit phase rather than render phase', () => {
+      const groupRef = React.createRef<RefGroup>();
+      let renderPhaseChildrenLengthDuringRecreation = -1;
+
+      function Observer({ resolution }: { resolution: number }) {
+        // Inspect parent group during render phase
+        const group = groupRef.current;
+        if (group && resolution > 12) {
+          renderPhaseChildrenLengthDuringRecreation = group.children.length;
+        }
+        return (
+          <Circle
+            key="obs-circle"
+            radius={20}
+            resolution={resolution}
+          />
+        );
+      }
+
+      function App({ resolution }: { resolution: number }) {
+        return (
+          <Canvas width={800} height={600}>
+            <Group ref={groupRef}>
+              <Rectangle width={30} height={30} />
+              <Observer resolution={resolution} />
+              <Rectangle width={40} height={40} />
+            </Group>
+          </Canvas>
+        );
+      }
+
+      const { rerender } = render(<App resolution={12} />);
+      const group = groupRef.current!;
+      expect(group.children.length).toBe(3);
+
+      rerender(<App resolution={24} />);
+      // During render phase of recreation, group.children was NOT mutated or duplicated
+      expect(renderPhaseChildrenLengthDuringRecreation).toBe(3);
+      expect(group.children.length).toBe(3);
     });
   });
 

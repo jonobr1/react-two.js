@@ -13,11 +13,17 @@ export type TextureProps =
   | 'offset'
   | 'image';
 
+export type TextureSource =
+  | string
+  | HTMLImageElement
+  | HTMLCanvasElement
+  | HTMLVideoElement;
+
 type ComponentProps = React.PropsWithChildren<
   {
     [K in Extract<TextureProps, keyof Instance>]?: Instance[K];
   } & {
-    src?: string | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
+    src?: TextureSource;
   }
 >;
 
@@ -26,7 +32,7 @@ export type RefTexture = Instance;
 export const Texture = React.forwardRef<Instance, ComponentProps>(
   (props, forwardedRef) => {
     useTwoObject(props as Record<string, unknown>, forwardedRef, {
-      factory: (p) => new Two.Texture(p.src as string | HTMLImageElement),
+      factory: (p) => new Two.Texture(p.src as TextureSource),
       constructionProps: ['src'],
       isSceneObject: false,
     });

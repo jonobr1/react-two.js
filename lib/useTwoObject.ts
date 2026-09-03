@@ -165,6 +165,10 @@ export function useTwoObject<
   const defaultPropsRef = useRef<Record<string, unknown>>({});
   const prevPropsRef = useRef<Record<string, unknown>>({});
   const isInitialMountRef = useRef<boolean>(true);
+  const pendingReplacementRef = useRef<{
+    oldInstance: T;
+    newInstance: T;
+  } | null>(null);
 
   // Check if any construction-only prop changed
   let needsRecreation = instanceRef.current === null;
@@ -177,28 +181,14 @@ export function useTwoObject<
     }
   }
 
-  // Create or recreate instance synchronously so it's ready during render / ref forwarding
+  // Create or recreate instance synchronously so it's ready during render / ref forwarding.
+  // Note: All scene-graph mutations and resource disposals are deferred to commit-phase layout effects.
   if (needsRecreation) {
     const oldInstance = instanceRef.current;
     const newInstance = config.factory(props);
 
     if (oldInstance) {
-      // In-place replacement in parent.children if attached
-      if (parent && isSceneObject) {
-        const children = parent.children as unknown as Array<T>;
-        const idx = children.indexOf(oldInstance);
-        if (idx !== -1) {
-          children.splice(idx, 1, newInstance);
-          (newInstance as unknown as { parent?: Group }).parent = parent;
-          if (typeof (parent as unknown as { _flagOrder?: boolean })._flagOrder !== 'undefined') {
-            (parent as unknown as { _flagOrder: boolean })._flagOrder = true;
-          }
-        }
-      }
-
-      // Cleanup old owned resources and unregister old event handlers
-      unregisterEventShape(oldInstance as unknown as Shape | Group);
-      config.disposeOwned?.(oldInstance);
+      pendingReplacementRef.current = { oldInstance, newInstance };
     }
 
     instanceRef.current = newInstance;
@@ -282,26 +272,68 @@ export function useTwoObject<
     }
   });
 
-  // Scene-graph attachment and reparenting lifecycle
+  const configRef = useRef(config);
+  configRef.current = config;
+
+  // Scene-graph attachment, in-place replacement, and reparenting lifecycle
   useLayoutEffect(() => {
-    if (!isSceneObject || !parent) return;
+    const pending = pendingReplacementRef.current;
 
-    const sceneItem = instance as unknown as Shape | Group;
+    if (pending && pending.newInstance === instance) {
+      pendingReplacementRef.current = null;
+      const { oldInstance } = pending;
 
-    if (attachChild) {
-      attachChild(sceneItem);
-    } else {
-      parent.add(sceneItem as unknown as Shape);
+      if (isSceneObject && parent) {
+        const children = parent.children as unknown as Array<T>;
+        const idx = children.indexOf(oldInstance);
+        if (idx !== -1) {
+          // Replace in-place at the exact same child index
+          children.splice(idx, 1, instance);
+          (instance as unknown as { parent?: Group }).parent = parent;
+          if (typeof (parent as unknown as { _flagOrder?: boolean })._flagOrder !== 'undefined') {
+            (parent as unknown as { _flagOrder: boolean })._flagOrder = true;
+          }
+        } else {
+          // Fallback if not found in children: attach to current parent
+          const sceneItem = instance as unknown as Shape | Group;
+          if (attachChild) {
+            attachChild(sceneItem);
+          } else {
+            parent.add(sceneItem as unknown as Shape);
+          }
+        }
+      }
+
+      // Cleanup old instance owned resources and event handlers in commit phase
+      unregisterEventShape(oldInstance as unknown as Shape | Group);
+      configRef.current.disposeOwned?.(oldInstance);
+    } else if (isSceneObject && parent) {
+      const sceneItem = instance as unknown as Shape | Group;
+      if (attachChild) {
+        attachChild(sceneItem);
+      } else {
+        parent.add(sceneItem as unknown as Shape);
+      }
     }
 
     return () => {
-      if (detachChild) {
-        detachChild(sceneItem);
-      } else {
-        parent.remove(sceneItem as unknown as Shape);
+      // If this instance is about to be replaced by a pending newInstance on the same parent,
+      // do not remove it here; the pending replacement will splice the new instance in-place.
+      const nextPending = pendingReplacementRef.current;
+      if (nextPending && nextPending.oldInstance === instance && isSceneObject) {
+        return;
+      }
+
+      if (isSceneObject && parent) {
+        const sceneItem = instance as unknown as Shape | Group;
+        if (detachChild) {
+          detachChild(sceneItem);
+        } else {
+          parent.remove(sceneItem as unknown as Shape);
+        }
       }
     };
-  }, [instance, parent, isSceneObject, attachChild, detachChild]);
+  }, [instance, parent, isSceneObject, attachChild, detachChild, unregisterEventShape]);
 
   // Sibling order registration (runs on every commit in document order)
   useLayoutEffect(() => {
@@ -311,9 +343,6 @@ export function useTwoObject<
       registerChildOrder(instance as unknown as Shape | Group);
     }
   });
-
-  const configRef = useRef(config);
-  configRef.current = config;
 
   // Event handler registration and cleanup
   useEffect(() => {
