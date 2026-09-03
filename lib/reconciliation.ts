@@ -27,6 +27,23 @@ export const TWO_DEFAULT_PROPS: Record<string, unknown> = {
   y: 0,
   rotation: 0,
   scale: 1,
+  skewX: 0,
+  skewY: 0,
+
+  // Masking & clipping
+  mask: null,
+  clip: false,
+  strokeAttenuation: true,
+
+  // General element
+  className: '',
+
+  // Points defaults
+  sizeAttenuation: false,
+
+  // Gradient defaults
+  spread: 'pad',
+  units: 'objectBoundingBox',
 
   // Text defaults
   value: '',

@@ -10,6 +10,7 @@ import React, {
 import Two from 'two.js';
 import type { Shape } from 'two.js/src/shape';
 import type { Group } from 'two.js/src/group';
+import type { Vector } from 'two.js/src/vector';
 import {
   ChildSlotContext,
   useTwo,
@@ -18,6 +19,12 @@ import {
   type TwoSizeContextValue,
 } from './Context';
 import { EVENT_HANDLER_NAMES, type EventHandlers } from './Events';
+import {
+  applyScale,
+  applyVector,
+  type ScaleProp,
+  type VectorProp,
+} from './Properties';
 import {
   captureDefaultProps,
   diffProps,
@@ -77,29 +84,58 @@ export interface TwoObjectConfig<
   isSceneObject?: boolean;
 }
 
+export interface PositionProps {
+  x?: number;
+  y?: number;
+  position?: VectorProp;
+  translation?: VectorProp;
+}
+
 /**
- * Standard handler for applying position (x, y) to translation.
+ * Standard handler for applying position (x, y, position, translation) to translation.
  */
 export function applyDefaultPositionProps<T>(
   instance: T,
-  props: { x?: number; y?: number },
-  changed: { x?: number; y?: number },
+  props: PositionProps,
+  changed: PositionProps,
   removed: Array<string | number | symbol>
 ): void {
   const inst = instance as unknown as Record<string, unknown>;
   if ('translation' in inst && inst.translation) {
-    const translation = inst.translation as { x: number; y: number };
+    const translation = inst.translation as Vector;
 
+    // Check position / translation vector props first
+    if ('position' in changed && changed.position !== undefined) {
+      applyVector(translation, changed.position);
+    } else if ('translation' in changed && changed.translation !== undefined) {
+      applyVector(translation, changed.translation);
+    }
+
+    const hasExplicitPos = props.position !== undefined && props.position !== null;
+    const hasExplicitTrans = props.translation !== undefined && props.translation !== null;
+
+    // Individual x, y props take precedence or apply discretely
     if ('x' in changed) {
       translation.x = typeof props.x === 'number' ? props.x : 0;
-    } else if (removed.includes('x')) {
+    } else if (removed.includes('x') && !hasExplicitPos && !hasExplicitTrans) {
       translation.x = 0;
     }
 
     if ('y' in changed) {
       translation.y = typeof props.y === 'number' ? props.y : 0;
-    } else if (removed.includes('y')) {
+    } else if (removed.includes('y') && !hasExplicitPos && !hasExplicitTrans) {
       translation.y = 0;
+    }
+
+    // If position or translation was removed and no explicit x or y is set
+    if (
+      (removed.includes('position') || removed.includes('translation')) &&
+      typeof props.x !== 'number' &&
+      typeof props.y !== 'number' &&
+      !hasExplicitPos &&
+      !hasExplicitTrans
+    ) {
+      translation.set(0, 0);
     }
   }
 }
@@ -135,7 +171,15 @@ export function useTwoObject<
   const isSceneObject = config.isSceneObject !== false;
   const constructionProps = config.constructionProps ?? [];
   const specialPropsSet = useMemo(
-    () => new Set<string>(['x', 'y', ...(config.specialProps as string[] ?? [])]),
+    () =>
+      new Set<string>([
+        'x',
+        'y',
+        'position',
+        'translation',
+        'scale',
+        ...((config.specialProps as string[]) ?? []),
+      ]),
     [config.specialProps]
   );
 
@@ -249,15 +293,29 @@ export function useTwoObject<
         }
       }
 
-      // 3. Handle default position props (x, y)
+      // 3. Handle default position props (x, y, position, translation)
       applyDefaultPositionProps(
         instance,
-        props as { x?: number; y?: number },
-        changed as { x?: number; y?: number },
+        props as PositionProps,
+        changed as PositionProps,
         removed as string[]
       );
 
-      // 4. Custom special props callback
+      // 4. Handle scale prop safely
+      if ('scale' in changed) {
+        applyScale(
+          instance as unknown as { scale: number | Vector },
+          (changed as { scale?: ScaleProp }).scale
+        );
+      } else if (removed.includes('scale')) {
+        const defaultScale = (defaultPropsRef.current.scale ?? 1) as ScaleProp;
+        applyScale(
+          instance as unknown as { scale: number | Vector },
+          defaultScale
+        );
+      }
+
+      // 5. Custom special props callback
       if (config.applySpecialProps) {
         config.applySpecialProps(
           instance,

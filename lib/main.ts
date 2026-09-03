@@ -47,12 +47,16 @@ export type {
   ShapeProps,
   GradientProps,
   OriginProp,
+  VectorProp,
+  ScaleProp,
 } from './Properties';
 export {
   ELEMENT_PROPERTIES,
   SHAPE_PROPERTIES,
   GRADIENT_PROPERTIES,
   applyOrigin,
+  applyVector,
+  applyScale,
 } from './Properties';
 
 // Property matrix exports

@@ -9,11 +9,19 @@ import {
   Rectangle,
   Polygon,
   Text,
+  Line,
+  LinearGradient,
+  RadialGradient,
   useTwo,
   type RefCircle,
   type RefGroup,
   type RefRectangle,
   type RefPolygon,
+  type RefLine,
+  type RefLinearGradient,
+  type RefRadialGradient,
+  type VectorProp,
+  type ScaleProp,
 } from '../lib/main';
 import { TwoParentContext } from '../lib/Context';
 import { TWO_DEFAULT_PROPS } from '../lib/reconciliation';
@@ -589,6 +597,221 @@ describe('Two.js Scene Graph Reconciliation (Issue #29)', () => {
 
       // Shared texture must NOT be disposed
       expect(textureDisposed).toBe(false);
+    });
+  });
+
+  describe('9. Extended Prop Normalization and Default Resets', () => {
+    it('normalizes position and translation props (objects, tuples, Two.Vector) without throwing', () => {
+      const circleRef = React.createRef<RefCircle>();
+
+      function App({
+        position,
+        translation,
+      }: {
+        position?: VectorProp;
+        translation?: VectorProp;
+      }) {
+        return (
+          <Canvas width={800} height={600}>
+            <Circle ref={circleRef} radius={25} position={position} translation={translation} />
+          </Canvas>
+        );
+      }
+
+      // Object literal
+      const { rerender } = render(<App position={{ x: 120, y: 80 }} />);
+      const circle = circleRef.current!;
+      expect(circle.translation.x).toBe(120);
+      expect(circle.translation.y).toBe(80);
+
+      // Tuple
+      rerender(<App translation={[45, 65]} />);
+      expect(circle.translation.x).toBe(45);
+      expect(circle.translation.y).toBe(65);
+
+      // Two.Vector
+      const v = new Two.Vector(200, 300);
+      rerender(<App position={v} />);
+      expect(circle.translation.x).toBe(200);
+      expect(circle.translation.y).toBe(300);
+
+      // Removal resets to (0, 0)
+      rerender(<App />);
+      expect(circle.translation.x).toBe(0);
+      expect(circle.translation.y).toBe(0);
+    });
+
+    it('normalizes scale tuples and objects safely without matrix NaN', () => {
+      const circleRef = React.createRef<RefCircle>();
+
+      function App({ scale }: { scale?: ScaleProp }) {
+        return (
+          <Canvas width={800} height={600}>
+            <Circle ref={circleRef} radius={25} scale={scale} />
+          </Canvas>
+        );
+      }
+
+      // Tuple scale
+      const { rerender } = render(<App scale={[2, 3]} />);
+      const circle = circleRef.current!;
+      expect(circle.scale).toBeInstanceOf(Two.Vector);
+      expect((circle.scale as Two.Vector).x).toBe(2);
+      expect((circle.scale as Two.Vector).y).toBe(3);
+
+      // Ensure _matrix update does not produce NaN
+      const internalCircle = circle as unknown as {
+        _update: () => void;
+        _matrix: { elements: Float32Array };
+      };
+      internalCircle._update();
+      for (const el of internalCircle._matrix.elements) {
+        expect(Number.isNaN(el)).toBe(false);
+      }
+
+      // Object scale
+      rerender(<App scale={{ x: 0.5, y: 1.5 }} />);
+      expect((circle.scale as Two.Vector).x).toBe(0.5);
+      expect((circle.scale as Two.Vector).y).toBe(1.5);
+      internalCircle._update();
+      for (const el of internalCircle._matrix.elements) {
+        expect(Number.isNaN(el)).toBe(false);
+      }
+
+      // Scalar number scale
+      rerender(<App scale={4} />);
+      expect(circle.scale).toBe(4);
+
+      // Removal resets to default scale 1
+      rerender(<App />);
+      expect(circle.scale).toBe(1);
+    });
+
+    it('resets removed properties to TWO_DEFAULT_PROPS (mask, clip, strokeAttenuation, skew)', () => {
+      const circleRef = React.createRef<RefCircle>();
+      const maskShape = new Two.Rectangle(0, 0, 50, 50);
+
+      function App({
+        mask,
+        clip,
+        strokeAttenuation,
+        skewX,
+        skewY,
+      }: {
+        mask?: Two.Shape | null;
+        clip?: boolean;
+        strokeAttenuation?: boolean;
+        skewX?: number;
+        skewY?: number;
+      }) {
+        return (
+          <Canvas width={800} height={600}>
+            <Circle
+              ref={circleRef}
+              radius={30}
+              mask={mask}
+              clip={clip}
+              strokeAttenuation={strokeAttenuation}
+              skewX={skewX}
+              skewY={skewY}
+            />
+          </Canvas>
+        );
+      }
+
+      const { rerender } = render(
+        <App
+          mask={maskShape}
+          clip={true}
+          strokeAttenuation={false}
+          skewX={0.5}
+          skewY={0.25}
+        />
+      );
+      const circle = circleRef.current!;
+      expect(circle.mask).toBe(maskShape);
+      expect(circle.clip).toBe(true);
+      expect(circle.strokeAttenuation).toBe(false);
+      expect(circle.skewX).toBe(0.5);
+      expect(circle.skewY).toBe(0.25);
+
+      // Remove all props -> must reset to Two.js defaults!
+      rerender(<App />);
+      expect(circle.mask).toBeNull();
+      expect(circle.clip).toBe(false);
+      expect(circle.strokeAttenuation).toBe(true);
+      expect(circle.skewX).toBe(0);
+      expect(circle.skewY).toBe(0);
+    });
+
+    it('normalizes vector endpoints on Line, LinearGradient, and RadialGradient', () => {
+      const lineRef = React.createRef<RefLine>();
+      const linearRef = React.createRef<RefLinearGradient>();
+      const radialRef = React.createRef<RefRadialGradient>();
+
+      function App({
+        lineLeft,
+        lineRight,
+        linearLeft,
+        linearRight,
+        radialCenter,
+        radialFocal,
+      }: {
+        lineLeft?: VectorProp;
+        lineRight?: VectorProp;
+        linearLeft?: VectorProp;
+        linearRight?: VectorProp;
+        radialCenter?: VectorProp;
+        radialFocal?: VectorProp;
+      }) {
+        return (
+          <Canvas width={800} height={600}>
+            <Line ref={lineRef} left={lineLeft} right={lineRight} />
+            <LinearGradient ref={linearRef} left={linearLeft} right={linearRight} />
+            <RadialGradient ref={radialRef} center={radialCenter} focal={radialFocal} />
+          </Canvas>
+        );
+      }
+
+      const { rerender } = render(
+        <App
+          lineLeft={{ x: 10, y: 20 }}
+          lineRight={[100, 200]}
+          linearLeft={[5, 10]}
+          linearRight={{ x: 80, y: 90 }}
+          radialCenter={{ x: 40, y: 50 }}
+          radialFocal={[20, 30]}
+        />
+      );
+
+      const line = lineRef.current!;
+      expect(line.left.x).toBe(10);
+      expect(line.left.y).toBe(20);
+      expect(line.right.x).toBe(100);
+      expect(line.right.y).toBe(200);
+
+      const linear = linearRef.current!;
+      expect(linear.left.x).toBe(5);
+      expect(linear.left.y).toBe(10);
+      expect(linear.right.x).toBe(80);
+      expect(linear.right.y).toBe(90);
+
+      const radial = radialRef.current!;
+      expect(radial.center.x).toBe(40);
+      expect(radial.center.y).toBe(50);
+      expect(radial.focal.x).toBe(20);
+      expect(radial.focal.y).toBe(30);
+
+      // Removal resets
+      rerender(<App />);
+      expect(line.left.x).toBe(0);
+      expect(line.left.y).toBe(0);
+      expect(line.right.x).toBe(0);
+      expect(line.right.y).toBe(0);
+      expect(linear.left.x).toBe(0);
+      expect(linear.left.y).toBe(0);
+      expect(radial.center.x).toBe(0);
+      expect(radial.center.y).toBe(0);
     });
   });
 });
