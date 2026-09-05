@@ -1,11 +1,11 @@
 import { PlaygroundDefinition } from './types';
 import { WiremarksPlayground } from './wiremarks/WiremarksPlayground';
 import { ComponentsShowcasePlayground } from './components-showcase/ComponentsShowcasePlayground';
-import { DiffsPlayground } from './diffs/DiffsPlayground';
+// import { DiffsPlayground } from './diffs/DiffsPlayground';
 import {
   ShareIcon,
   Squares2X2Icon,
-  ViewColumnsIcon,
+  // ViewColumnsIcon,
 } from '@heroicons/react/20/solid';
 
 export const PLAYGROUNDS: PlaygroundDefinition[] = [
@@ -16,13 +16,13 @@ export const PLAYGROUNDS: PlaygroundDefinition[] = [
     component: WiremarksPlayground,
     icon: ShareIcon,
   },
-  {
-    id: 'diffs',
-    name: 'Diffs',
-    description: 'Visually compare texts by shared vocabulary',
-    component: DiffsPlayground,
-    icon: ViewColumnsIcon,
-  },
+  // {
+  //   id: 'diffs',
+  //   name: 'Diffs',
+  //   description: 'Visually compare texts by shared vocabulary',
+  //   component: DiffsPlayground,
+  //   icon: ViewColumnsIcon,
+  // },
   {
     id: 'components-showcase',
     name: 'Components Showcase',
