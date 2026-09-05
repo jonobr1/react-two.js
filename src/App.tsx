@@ -16,8 +16,6 @@ import {
   CommandLineIcon,
   CurrencyDollarIcon,
   SparklesIcon,
-  Squares2X2Icon,
-  ShareIcon,
 } from '@heroicons/react/20/solid';
 import cn from 'clsx';
 import Playground from './Playground';

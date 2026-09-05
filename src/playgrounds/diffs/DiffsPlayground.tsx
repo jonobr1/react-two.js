@@ -57,7 +57,7 @@ export function DiffsPlayground({ width, height }: PlaygroundProps) {
     return loaded?.mode || 'chronologic';
   });
 
-  const [textIsVisible, setTextIsVisible] = useState(true);
+  const [textIsVisible, setTextIsVisible] = useState(false);
   const [vizIsVisible, setVizIsVisible] = useState(true);
   const [highlightMode, setHighlightMode] = useState(false);
   const [selectedStem, setSelectedStem] = useState<string | null>(null);

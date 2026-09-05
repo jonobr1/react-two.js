@@ -48,7 +48,7 @@ export function WiremarksPlayground({ width, height }: PlaygroundProps) {
   const [text, setText] = useState(() => {
     return window.localStorage.getItem('wiremarks-state') || defaultPrompt;
   });
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     window.localStorage.setItem('wiremarks-state', text);
