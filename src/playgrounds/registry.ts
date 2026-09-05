@@ -2,6 +2,11 @@ import { PlaygroundDefinition } from './types';
 import { WiremarksPlayground } from './wiremarks/WiremarksPlayground';
 import { ComponentsShowcasePlayground } from './components-showcase/ComponentsShowcasePlayground';
 import { DiffsPlayground } from './diffs/DiffsPlayground';
+import {
+  ShareIcon,
+  Squares2X2Icon,
+  ViewColumnsIcon,
+} from '@heroicons/react/20/solid';
 
 export const PLAYGROUNDS: PlaygroundDefinition[] = [
   {
@@ -9,18 +14,21 @@ export const PLAYGROUNDS: PlaygroundDefinition[] = [
     name: 'Wiremarks',
     description: 'Declarative text-to-wireframe interactive diagramming tool',
     component: WiremarksPlayground,
+    icon: ShareIcon,
   },
   {
     id: 'diffs',
     name: 'Diffs',
     description: 'Visually compare texts by shared vocabulary',
     component: DiffsPlayground,
+    icon: ViewColumnsIcon,
   },
   {
     id: 'components-showcase',
     name: 'Components Showcase',
-    description: 'Comprehensive grid demonstration of Two.js React primitives',
+    description: 'Grid demonstration of Two.js React primitives',
     component: ComponentsShowcasePlayground,
+    icon: Squares2X2Icon,
   },
 ];
 

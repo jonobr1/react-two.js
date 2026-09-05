@@ -284,13 +284,30 @@ export const Provider = React.forwardRef<
 
     if (isRoot) {
       // Only update root instance
+      let sizeChanged = false;
       if (typeof props.width === 'number') {
-        if (twoState) twoState.width = props.width;
+        if (twoState && twoState.width !== props.width) {
+          twoState.width = props.width;
+          sizeChanged = true;
+        }
         setWidth(props.width);
       }
       if (typeof props.height === 'number') {
-        if (twoState) twoState.height = props.height;
+        if (twoState && twoState.height !== props.height) {
+          twoState.height = props.height;
+          sizeChanged = true;
+        }
         setHeight(props.height);
+      }
+      if (twoState && sizeChanged) {
+        twoState.renderer.setSize(
+          twoState.width,
+          twoState.height,
+          (twoState.renderer as { ratio?: number }).ratio,
+        );
+        if (!twoState.playing) {
+          twoState.render();
+        }
       }
     }
   }, [two, twoState, props.width, props.height]);

@@ -41,7 +41,7 @@ export default function App() {
                 className={cn(
                   'font-semibold',
                   'text-zinc-900',
-                  'dark:text-zinc-300'
+                  'dark:text-zinc-300',
                 )}
               >
                 React Two.js
@@ -67,8 +67,7 @@ export default function App() {
         <SidebarSection>
           <SidebarHeading>Playgrounds</SidebarHeading>
           {PLAYGROUNDS.map((playground) => {
-            const isWiremarks = playground.id === 'wiremarks';
-            const Icon = isWiremarks ? ShareIcon : Squares2X2Icon;
+            const Icon = playground.icon;
             const isCurrent = activePlaygroundId === playground.id;
 
             return (
@@ -88,13 +87,16 @@ export default function App() {
 
         <SidebarSection>
           <SidebarItem href="https://github.com/jonobr1/react-two.js">
-            <CodeBracketIcon data-slot="icon" /> <SidebarLabel>GitHub</SidebarLabel>
+            <CodeBracketIcon data-slot="icon" />{' '}
+            <SidebarLabel>GitHub</SidebarLabel>
           </SidebarItem>
           <SidebarItem href="https://npmjs.com/package/react-two.js">
-            <CommandLineIcon data-slot="icon" /> <SidebarLabel>Package</SidebarLabel>
+            <CommandLineIcon data-slot="icon" />{' '}
+            <SidebarLabel>Package</SidebarLabel>
           </SidebarItem>
           <SidebarItem href="https://github.com/sponsors/jonobr1">
-            <CurrencyDollarIcon data-slot="icon" /> <SidebarLabel>Sponsor</SidebarLabel>
+            <CurrencyDollarIcon data-slot="icon" />{' '}
+            <SidebarLabel>Sponsor</SidebarLabel>
           </SidebarItem>
           <SidebarItem href="https://chatgpt.com/g/g-hkcTX8uPm-two-js-tutor">
             <SparklesIcon data-slot="icon" />
@@ -108,18 +110,39 @@ export default function App() {
   useEffect(() => {
     if (!domElement) return;
 
-    const updateSize = () => {
+    const measure = () => {
       const rect = domElement.getBoundingClientRect();
-      setWidth(rect.width);
-      setHeight(rect.height);
+      if (rect.width > 0 && rect.height > 0) {
+        setWidth(Math.floor(rect.width));
+        setHeight(Math.floor(rect.height));
+      }
     };
 
-    updateSize();
-    window.addEventListener('resize', updateSize);
+    measure();
 
-    return () => {
-      window.removeEventListener('resize', updateSize);
-    };
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (entry) {
+          const { width, height } = entry.contentRect;
+          if (width > 0 && height > 0) {
+            setWidth(Math.floor(width));
+            setHeight(Math.floor(height));
+          }
+        }
+      });
+
+      observer.observe(domElement);
+
+      return () => {
+        observer.disconnect();
+      };
+    } else {
+      window.addEventListener('resize', measure);
+      return () => {
+        window.removeEventListener('resize', measure);
+      };
+    }
   }, [domElement]);
 
   return (

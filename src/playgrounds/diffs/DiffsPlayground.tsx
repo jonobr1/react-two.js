@@ -151,7 +151,7 @@ export function DiffsPlayground({ width, height }: PlaygroundProps) {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full min-h-[500px] overflow-hidden bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800"
+      className="relative w-full h-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800"
     >
       {/* Two.js Canvas Stage. Kept mounted and faded, so toggling visuals
           never tears down the scene or resets the zoom. */}

@@ -334,19 +334,21 @@ export function ComponentsShowcasePlayground({ width, height }: PlaygroundProps)
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   return (
-    <div className="w-full h-full min-h-[500px] overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-900">
-      <Canvas
-        ref={canvasRef}
-        type={Two.Types.canvas}
-        width={width}
-        height={height}
-        autostart={true}
-        className="react-two-canvas w-full h-full"
-        style={{ userSelect: 'none' }}
-        aria-label="Interactive Two.js component primitives demonstration"
-      >
-        <Scene />
-      </Canvas>
+    <div className="relative w-full h-full overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-900">
+      <div className="absolute inset-0 z-0">
+        <Canvas
+          ref={canvasRef}
+          type={Two.Types.canvas}
+          width={width}
+          height={height}
+          autostart={true}
+          className="react-two-canvas w-full h-full"
+          style={{ userSelect: 'none' }}
+          aria-label="Interactive Two.js component primitives demonstration"
+        >
+          <Scene />
+        </Canvas>
+      </div>
     </div>
   );
 }

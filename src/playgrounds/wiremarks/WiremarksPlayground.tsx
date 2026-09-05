@@ -92,7 +92,7 @@ export function WiremarksPlayground({ width, height }: PlaygroundProps) {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full min-h-[500px] overflow-hidden bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800"
+      className="relative w-full h-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800"
     >
       {/* Two.js Canvas Stage */}
       <div className="absolute inset-0 z-0">
