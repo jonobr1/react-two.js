@@ -203,8 +203,8 @@ function Scene() {
       <Group x={cellWidth * 2.5} y={cellHeight * 1.5}>
         <Line
           ref={line}
-          left={new Two.Anchor(-50, 20)}
-          right={new Two.Anchor(50, 20)}
+          left={[-50, 0]}
+          right={{ x: 50, y: 0 }}
           stroke="#34495E"
           linewidth={4}
           cap="round"
@@ -330,7 +330,10 @@ function Scene() {
   );
 }
 
-export function ComponentsShowcasePlayground({ width, height }: PlaygroundProps) {
+export function ComponentsShowcasePlayground({
+  width,
+  height,
+}: PlaygroundProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   return (
