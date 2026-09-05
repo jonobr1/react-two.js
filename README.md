@@ -68,7 +68,7 @@ npm install react-two.js react react-dom two.js
 
 **Requirements** as peer dependencies:
 - React 19+
-- Two.js v0.8.22+
+- Two.js v0.8.24+
 
 > [!IMPORTANT]
 > react-two.js is a React renderer, it must pair with a major version of React, like react-dom.

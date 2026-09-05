@@ -1,12 +1,12 @@
 /**
- * Property matrix for react-two.js components against Two.js v0.8.23.
+ * Property matrix for react-two.js components against Two.js v0.8.24.
  *
  * This module defines every exported component, its underlying Two.js class,
  * all supported scene-relevant declarative properties, and intentional omissions
  * (such as internal renderer state or computed properties) with explanations.
  */
 
-export const SUPPORTED_TWO_VERSION = '0.8.23' as const;
+export const SUPPORTED_TWO_VERSION = '0.8.24' as const;
 
 export type OmissionCategory =
   | 'read-only'

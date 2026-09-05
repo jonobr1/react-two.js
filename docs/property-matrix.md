@@ -1,6 +1,6 @@
 # Two.js Property Matrix & Declarative Coverage
 
-This document outlines the declarative prop coverage for `react-two.js` components against **Two.js v0.8.23**.
+This document outlines the declarative prop coverage for `react-two.js` components against **Two.js v0.8.24**.
 
 ## Overview
 
@@ -12,7 +12,7 @@ Where ergonomic improvements are possible without breaking Two.js parity (for ex
 
 ## Property Matrix Table
 
-| Component | Upstream Two.js Class | Supported Declarative Props | Key Additions in v0.8.23-r.2 |
+| Component | Upstream Two.js Class | Supported Declarative Props | Key Additions in v0.8.24 |
 |---|---|---|---|
 | `<Group>` | `Two.Group` | `id`, `className`, `position`, `translation`, `rotation`, `scale`, `skewX`, `skewY`, `matrix`, `fill`, `stroke`, `linewidth`, `cap`, `join`, `miter`, `closed`, `curved`, `automatic`, `opacity`, `visible`, `mask`, `beginning`, `ending`, `strokeAttenuation`, `x`, `y` | `mask`, `beginning`, `ending`, `strokeAttenuation` |
 | `<SVG>` | `Two.Group` | All `<Group>` props, plus `src`, `content`, `shallow`, `onLoad`, `onError` | `opacity`, `visible`, `mask`, `beginning`, `ending`, `strokeAttenuation` |

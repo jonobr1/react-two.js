@@ -170,8 +170,8 @@ describe('Property Matrix & Declarative Coverage (Issue #30)', () => {
   });
 
   describe('Property Matrix Definition', () => {
-    it('should verify supported Two.js version is 0.8.23', () => {
-      expect(SUPPORTED_TWO_VERSION).toBe('0.8.23');
+    it('should verify supported Two.js version is 0.8.24', () => {
+      expect(SUPPORTED_TWO_VERSION).toBe('0.8.24');
     });
 
     it('should contain entries for all 19 exported components', () => {

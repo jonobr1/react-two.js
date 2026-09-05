@@ -5,9 +5,9 @@ This is **react-two.js** - a React wrapper library for Two.js, providing declara
 
 ## Tech Stack
 - **TypeScript** - Primary language with strict typing
-- **React 18.3+** - Peer dependency for component system
+- **React 19+** - Peer dependency for component system
 - **Vite** - Development server and build tool
-- **Two.js** - Core graphics library (peer dependency from @jonobr1/two.js#dev)
+- **Two.js** - Core graphics library (peer dependency >=v0.8.24)
 - **ESLint** - Code linting with React-specific rules
 - **Vitest** - Next-generation testing framework with React Testing Library
 
@@ -206,8 +206,8 @@ export const Shape = forwardRef<RefShape, ShapeProps>((props, ref) => {
 ```
 
 ### Peer Dependencies
-- Ensure React 18.3+ is installed
-- Two.js must be from @jonobr1/two.js#dev branch
+- Ensure React 19+ is installed
+- Two.js must be >=v0.8.24
 - Check peer dependency warnings during install
 
 ### Animation Performance
