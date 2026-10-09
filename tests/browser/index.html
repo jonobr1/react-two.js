@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="UTF-8" /><title>react-two.js browser regressions</title></head>
+  <body>
+    <h1>Renderer regression checks</h1>
+    <pre id="results">Running…</pre>
+    <div id="test-root"></div>
+    <h2>Native pointer capture</h2>
+    <p>Select a renderer, then drag the blue circle outside its renderer. Each drag must report capture, bubbled movement, and release.</p>
+    <button id="svg">SVG drag</button>
+    <button id="canvas">Canvas drag</button>
+    <button id="webgl">WebGL drag</button>
+    <div id="drag-root"></div>
+    <pre id="drag-results">Waiting for a drag.</pre>
+    <script type="module" src="./regressions.tsx"></script>
+  </body>
+</html>

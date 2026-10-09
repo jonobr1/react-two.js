@@ -7,6 +7,10 @@ export interface TwoEvent<T extends Shape | Group = Shape | Group> {
   target: T;
   currentTarget: T;
   point: { x: number; y: number };
+  /** Capture this pointer for currentTarget until release, up, or cancel. */
+  setPointerCapture: (pointerId: number) => void;
+  releasePointerCapture: (pointerId: number) => void;
+  hasPointerCapture: (pointerId: number) => boolean;
   stopPropagation: () => void;
   readonly stopped: boolean;
 }
@@ -51,49 +55,51 @@ export interface EventShape {
   parent?: Group;
 }
 
-/**
- * Convert DOM event coordinates to canvas-relative coordinates (center origin)
- */
-export function getCanvasCoordinates(
-  nativeEvent: PointerEvent | MouseEvent | WheelEvent,
-  canvas: HTMLElement,
-  two: Two
-): { x: number; y: number } {
-  const rect = canvas.getBoundingClientRect();
-
-  // Convert from DOM space (top-left origin) to Two.js space (center origin)
-  const x = nativeEvent.clientX - rect.left - two.width / 2;
-  const y = nativeEvent.clientY - rect.top - two.height / 2;
-
-  return { x, y };
-}
-
-/**
- * Convert raw client coordinates to world-space coordinates for hit testing.
- * World space uses a top-left origin, relative to the canvas element.
- */
+/** Renderer world coordinates, in logical pixels from the top-left origin. */
 export function clientToWorldPoint(
   clientX: number,
   clientY: number,
-  canvas: HTMLElement
+  canvas: HTMLElement,
+  two?: Two | null,
 ): { x: number; y: number } {
+  // SVG viewport sizing does not scale its contents unless a viewBox (or CSS
+  // transform) does so. Its screen CTM also accounts for preserveAspectRatio.
+  const svg = canvas as HTMLElement & { getScreenCTM?: () => DOMMatrix | null };
+  const screen = svg.getScreenCTM?.();
+  if (screen) {
+    const inverse = screen.inverse();
+    return {
+      x: inverse.a * clientX + inverse.c * clientY + inverse.e,
+      y: inverse.b * clientX + inverse.d * clientY + inverse.f,
+    };
+  }
   const rect = canvas.getBoundingClientRect();
-
   return {
-    x: clientX - rect.left,
-    y: clientY - rect.top,
+    x: (clientX - rect.left) * (two && rect.width > 0 ? two.width / rect.width : 1),
+    y: (clientY - rect.top) * (two && rect.height > 0 ? two.height / rect.height : 1),
   };
 }
 
-/**
- * Convert DOM event coordinates to world-space coordinates for hit testing
- * World-space uses top-left origin (same as DOM but relative to canvas)
- */
-export function getWorldCoordinates(
-  nativeEvent: PointerEvent | MouseEvent,
-  canvas: HTMLElement
+export function getCanvasCoordinates(
+  event: PointerEvent | MouseEvent | WheelEvent,
+  canvas: HTMLElement,
+  two: Two,
 ): { x: number; y: number } {
-  return clientToWorldPoint(nativeEvent.clientX, nativeEvent.clientY, canvas);
+  return clientToWorldPoint(event.clientX, event.clientY, canvas, two);
+}
+
+export function getWorldCoordinates(
+  event: PointerEvent | MouseEvent | WheelEvent,
+  canvas: HTMLElement,
+  two?: Two | null,
+): { x: number; y: number } {
+  return clientToWorldPoint(event.clientX, event.clientY, canvas, two);
+}
+
+export interface PointerCaptureControls {
+  setPointerCapture: (pointerId: number) => void;
+  releasePointerCapture: (pointerId: number) => void;
+  hasPointerCapture: (pointerId: number) => boolean;
 }
 
 /**
@@ -103,7 +109,8 @@ export function createTwoEvent<T extends Shape | Group>(
   nativeEvent: PointerEvent | MouseEvent | WheelEvent,
   target: T,
   currentTarget: T,
-  point: { x: number; y: number }
+  point: { x: number; y: number },
+  capture?: PointerCaptureControls,
 ): TwoEvent<T> {
   let stopped = false;
 
@@ -112,6 +119,9 @@ export function createTwoEvent<T extends Shape | Group>(
     target,
     currentTarget,
     point,
+    setPointerCapture: (id) => capture?.setPointerCapture(id),
+    releasePointerCapture: (id) => capture?.releasePointerCapture(id),
+    hasPointerCapture: (id) => capture?.hasPointerCapture(id) ?? false,
     stopPropagation: () => {
       stopped = true;
     },
@@ -121,146 +131,105 @@ export function createTwoEvent<T extends Shape | Group>(
   };
 }
 
-/**
- * Check if a shape contains a point using Two.js hit testing
- */
-export function hitTest(shape: Shape | Group, x: number, y: number, two?: Two | null): boolean {
-  // Check if shape is visible
-  if ('visible' in shape && !shape.visible) {
-    return false;
+/** Test leaf geometry; groups are the union of their descendants. */
+export function hitTest(shape: Shape | Group, x: number, y: number): boolean {
+  if ('visible' in shape && !shape.visible) return false;
+  if ('opacity' in shape && (shape as Group).opacity <= 0) return false;
+  if ('children' in shape) {
+    return Array.from((shape as Group).children).some((child) => hitTest(child, x, y));
   }
-
-  // Use shape.contains if custom contains function exists.
-  // DOM nodes also expose a `contains`, with completely different semantics,
-  // so exclude those. The globals are guarded because this module must not
-  // throw when evaluated outside a DOM runtime.
-  const candidateShape = shape as unknown as { contains?: unknown };
-  const isDomContains =
-    (typeof Node !== 'undefined' &&
-      candidateShape.contains === Node.prototype.contains) ||
-    (typeof Element !== 'undefined' &&
-      candidateShape.contains === Element.prototype.contains);
-  if (typeof candidateShape.contains === 'function' && !isDomContains) {
-    return (candidateShape.contains as (x: number, y: number) => boolean)(x, y);
-  }
-
-  // Use Two.js getBoundingClientRect API
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (typeof (shape as any).getBoundingClientRect === 'function') {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rect = (shape as any).getBoundingClientRect(false);
-      if (rect && typeof rect.left === 'number' && typeof rect.right === 'number') {
-        const isRealTwoShape = 'worldMatrix' in shape || '_matrix' in shape;
-        const offsetX = (!isRealTwoShape && two) ? two.width / 2 : 0;
-        const offsetY = (!isRealTwoShape && two) ? two.height / 2 : 0;
-        const left = rect.left + offsetX;
-        const right = rect.right + offsetX;
-        const top = rect.top + offsetY;
-        const bottom = rect.bottom + offsetY;
-
-        if (x >= left && x <= right && y >= top && y <= bottom) {
-          return true;
-        }
-      }
-    } catch {
-      // Fallback to checking children if getBoundingClientRect fails
-    }
-  }
-
-  // For Groups without bounds, recursively check children
-  if ('children' in shape && Array.isArray((shape as Group).children)) {
-    for (const child of (shape as Group).children) {
-      if (hitTest(child, x, y, two)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
+  const candidate = shape as Shape & { contains?: (x: number, y: number) => boolean };
+  if (typeof candidate.contains === 'function') return candidate.contains(x, y);
+  const rect = (shape as Shape & { getBoundingClientRect?: () => DOMRect }).getBoundingClientRect?.();
+  return !!rect && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 }
 
-/**
- * Sort shapes front-to-back (topmost visible shape first).
- * In 2D rendering, shapes drawn later (or with higher parent.children index) sit on top of shapes drawn earlier.
- */
+/** Walk the actual scene ancestry, including groups without handlers. */
+export function getParentHierarchy(
+  shape: Shape | Group,
+  shapes: Map<Shape | Group, EventShape>,
+): Array<Shape | Group> {
+  const hierarchy: Array<Shape | Group> = [];
+  const visited = new Set<Shape | Group>();
+  let current: Shape | Group | undefined = shape;
+  while (current && !visited.has(current)) {
+    visited.add(current);
+    hierarchy.push(current);
+    current = (current as Shape & { parent?: Group }).parent ?? shapes.get(current)?.parent;
+  }
+  return hierarchy;
+}
+
+/** Compare complete scene paths, including nested and reordered groups. */
 export function sortFrontToBack(
   hits: Array<Shape | Group>,
-  shapes: Map<Shape | Group, EventShape>
+  shapes: Map<Shape | Group, EventShape>,
 ): Array<Shape | Group> {
-  if (hits.length <= 1) return hits;
-
-  const keys = Array.from(shapes.keys());
-
   return [...hits].sort((a, b) => {
-    const entryA = shapes.get(a);
-    const entryB = shapes.get(b);
-
-    // If both belong to the same parent Group, compare their index in parent.children
-    if (entryA?.parent && entryB?.parent && entryA.parent === entryB.parent) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const parentChildren = (entryA.parent as any).children;
-      if (parentChildren && typeof parentChildren.indexOf === 'function') {
-        const indexA = parentChildren.indexOf(a);
-        const indexB = parentChildren.indexOf(b);
-        if (indexA !== -1 && indexB !== -1) {
-          return indexB - indexA; // Higher index = drawn on top = should be first
-        }
-      }
+    const pathA = getParentHierarchy(a, shapes).reverse();
+    const pathB = getParentHierarchy(b, shapes).reverse();
+    let i = 0;
+    while (i < pathA.length && i < pathB.length && pathA[i] === pathB[i]) i++;
+    if (i > 0 && i < pathA.length && i < pathB.length) {
+      const siblings = (pathA[i - 1] as Group).children;
+      return siblings.indexOf(pathB[i]) - siblings.indexOf(pathA[i]);
     }
-
-    // Default: reverse registration order (shapes registered later sit on top)
-    const indexA = keys.indexOf(a);
-    const indexB = keys.indexOf(b);
-    return indexB - indexA; // Higher registration index = frontmost
+    if (i > 0) return pathB.length - pathA.length;
+    return 0;
   });
 }
 
-/**
- * Get all shapes at a point, sorted by depth (front to back)
- * Uses scene graph traversal and registration order to maintain z-order
- */
+function passesMasks(shape: Shape | Group, x: number, y: number): boolean {
+  let current: Shape | Group | undefined = shape;
+  while (current) {
+    const owner = current as Shape & { mask?: Shape | Group; clip?: boolean };
+    if (owner.clip) return false;
+    if (owner.mask) {
+      // Masks are rendered in their owner's local space, even if unattached.
+      const inverse = owner.worldMatrix.inverse();
+      if (!inverse) return false;
+      const local = inverse.multiply(x, y, 1);
+      const maskParent = (owner.mask as Shape & { parent?: Group }).parent;
+      const point = maskParent?.worldMatrix.multiply(local[0], local[1], 1) ?? local;
+      if (!maskContains(owner.mask, point[0], point[1])) return false;
+    }
+    current = (current as Shape & { parent?: Group }).parent;
+  }
+  return true;
+}
+
+function maskContains(mask: Shape | Group, x: number, y: number): boolean {
+  if ('children' in mask) {
+    return Array.from((mask as Group).children).some((child) => maskContains(child, x, y));
+  }
+  const geometry = mask as Shape & {
+    contains: (x: number, y: number, options: Record<string, unknown>) => boolean;
+  };
+  return geometry.contains(x, y, { ignoreVisibility: true, fill: true, stroke: false });
+}
+
+function hasPaint(shape: Shape | Group): boolean {
+  if (!(shape instanceof Two.Path)) return true;
+  const visiblePaint = (paint: unknown) => !!paint &&
+    (typeof paint !== 'string' || !/^(none|transparent)$/i.test(paint));
+  return visiblePaint(shape.fill) || (shape.linewidth > 0 && visiblePaint(shape.stroke));
+}
+
+/** Two.js traversal supplies authoritative draw order; groups never use bounds. */
 export function getShapesAtPoint(
   shapes: Map<Shape | Group, EventShape>,
   x: number,
   y: number,
-  two?: Two | null
+  two?: Two | null,
 ): Array<Shape | Group> {
   if (two?.scene) {
     (two.scene as unknown as { _update: (deep?: boolean) => void })._update(true);
+    const scene = two.scene as Group & {
+      getShapesAtPoint: (x: number, y: number) => Array<Shape | Group>;
+    };
+    return Array.from(scene.getShapesAtPoint(x, y)).filter((shape) =>
+      hasPaint(shape) && passesMasks(shape, x, y) &&
+      getParentHierarchy(shape, shapes).some((parent) => shapes.has(parent)));
   }
-
-  const hits: Array<Shape | Group> = [];
-
-  for (const [shape] of shapes) {
-    if (hitTest(shape, x, y, two)) {
-      hits.push(shape);
-    }
-  }
-
-  return sortFrontToBack(hits, shapes);
-}
-
-/**
- * Get the parent hierarchy for event bubbling
- */
-export function getParentHierarchy(
-  shape: Shape | Group,
-  shapes: Map<Shape | Group, EventShape>
-): Array<Shape | Group> {
-  const hierarchy: Array<Shape | Group> = [shape];
-
-  // Walk up the parent chain
-  const entry = shapes.get(shape);
-  if (entry?.parent) {
-    let currentParent: Group | undefined = entry.parent;
-
-    while (currentParent) {
-      hierarchy.push(currentParent);
-      const parentEntry = shapes.get(currentParent);
-      currentParent = parentEntry?.parent;
-    }
-  }
-
-  return hierarchy;
+  return sortFrontToBack(Array.from(shapes.keys()).filter((shape) => hitTest(shape, x, y)), shapes);
 }

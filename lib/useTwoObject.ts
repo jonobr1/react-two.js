@@ -424,19 +424,21 @@ export function useTwoObject<
     }
   });
 
-  // Event handler registration and cleanup
-  useEffect(() => {
+  // Updating callbacks must not unregister the object: doing so would discard
+  // hover and pointer capture on ordinary React state updates during a drag.
+  useLayoutEffect(() => {
     const eventItem = instance as unknown as Shape | Group;
     if (Object.keys(eventHandlers).length > 0) {
       registerEventShape(eventItem, eventHandlers, parent ?? undefined);
     } else {
       unregisterEventShape(eventItem);
     }
-
-    return () => {
-      unregisterEventShape(eventItem);
-    };
   }, [instance, parent, eventHandlers, registerEventShape, unregisterEventShape]);
+
+  useEffect(() => {
+    const eventItem = instance as unknown as Shape | Group;
+    return () => unregisterEventShape(eventItem);
+  }, [instance, unregisterEventShape]);
 
   // Cleanup on unmount (strict mode safe)
   useEffect(() => {
