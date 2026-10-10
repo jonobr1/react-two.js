@@ -209,10 +209,11 @@ function maskContains(mask: Shape | Group, x: number, y: number): boolean {
 }
 
 function hasPaint(shape: Shape | Group): boolean {
-  if (!(shape instanceof Two.Path)) return true;
+  if (!('fill' in shape) && !('stroke' in shape)) return true;
+  const painted = shape as Shape & { fill?: unknown; stroke?: unknown; linewidth?: number };
   const visiblePaint = (paint: unknown) => !!paint &&
     (typeof paint !== 'string' || !/^(none|transparent)$/i.test(paint));
-  return visiblePaint(shape.fill) || (shape.linewidth > 0 && visiblePaint(shape.stroke));
+  return visiblePaint(painted.fill) || ((painted.linewidth ?? 1) > 0 && visiblePaint(painted.stroke));
 }
 
 /** Two.js traversal supplies authoritative draw order; groups never use bounds. */

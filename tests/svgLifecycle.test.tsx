@@ -134,6 +134,83 @@ describe('SVG loading lifecycle', () => {
 });
 
 describe('SVG ownership and callbacks', () => {
+  it.each([false, true])('releases imported SVG DOM nodes on replacement and removal (shallow=%s)', (shallow) => {
+    const svg = createRef<Two.Group>();
+    const child = createRef<Two.Circle>();
+    const gradient = new Two.LinearGradient(0, 0, 100, 0, [new Two.Stop(0, 'red'), new Two.Stop(1, 'blue')]);
+    const borrowedUnbind = vi.spyOn(gradient, 'unbind');
+    const view = (content: string, enabled = true) => <Canvas>
+      {enabled && <SVG ref={svg} content={content} shallow={shallow} fill={gradient}>
+        <Circle ref={child} radius={3} />
+      </SVG>}
+      <Circle radius={5} fill={gradient} /><Probe />
+    </Canvas>;
+    const { rerender } = render(view(artwork));
+    const wrapper = svg.current!;
+    const jsx = child.current!;
+    const rendererStates = () => {
+      const states: Array<{ elem?: Element }> = [];
+      const visit = (shape: Two.Shape) => {
+        states.push((shape as unknown as { _renderer: { elem?: Element } })._renderer);
+        if (shape instanceof Two.Group) shape.children.forEach(visit);
+      };
+      visit(wrapper.children[0]);
+      return states;
+    };
+    const previous = rendererStates();
+    expect(previous.every((state) => state.elem?.isConnected)).toBe(true);
+    rerender(view('<svg><circle r="5" /></svg>'));
+    expect(previous.every((state) => state.elem === undefined)).toBe(true);
+    expect(wrapper.children[1]).toBe(jsx);
+    expect(borrowedUnbind).not.toHaveBeenCalledWith();
+    const current = rendererStates();
+    rerender(view(artwork, false));
+    expect(current.every((state) => state.elem === undefined)).toBe(true);
+    expect(borrowedUnbind).not.toHaveBeenCalledWith();
+  });
+
+  it('releases WebGL textures and buffers without unbinding borrowed effects', () => {
+    const svg = createRef<Two.Group>();
+    const borrowed = new Two.LinearGradient(0, 0, 100, 0, [new Two.Stop(0, 'red')]);
+    const borrowedUnbind = vi.spyOn(borrowed, 'unbind');
+    const view = (content: string, enabled = true) => <Canvas>
+      {enabled && <SVG ref={svg} content={content} fill={borrowed} stroke={borrowed} />}
+      <Probe />
+    </Canvas>;
+    const { rerender } = render(view(artwork));
+    const gl = { deleteTexture: vi.fn(), deleteBuffer: vi.fn() };
+    // Exercise Two.js's real release path with deterministic GPU handles.
+    const two = instance!;
+    const originalType = two.type;
+    Object.assign(two, { type: Two.Types.webgl });
+    Object.assign(two.renderer, { ctx: gl });
+    const track = () => {
+      const group = svg.current!.children[0] as Two.Group;
+      const nested = group.children[0] as Two.Group;
+      const shape = nested.children[0];
+      const state = (shape as unknown as { _renderer: Record<string, unknown> })._renderer;
+      const handles = { texture: {}, positionBuffer: {}, effect: {} };
+      Object.assign(state, handles);
+      return { state, handles };
+    };
+    const first = track();
+    rerender(view(artwork.replace('red', 'blue')));
+    expect(gl.deleteTexture).toHaveBeenCalledWith(first.handles.texture);
+    expect(gl.deleteBuffer).toHaveBeenCalledWith(first.handles.positionBuffer);
+    expect(first.state.texture).toBeUndefined();
+    expect(first.state.positionBuffer).toBeUndefined();
+    expect(first.state.effect).toBeNull();
+    const second = track();
+    rerender(view(artwork, false));
+    expect(gl.deleteTexture).toHaveBeenCalledWith(second.handles.texture);
+    expect(gl.deleteBuffer).toHaveBeenCalledWith(second.handles.positionBuffer);
+    expect(gl.deleteTexture).toHaveBeenCalledTimes(2);
+    expect(gl.deleteBuffer).toHaveBeenCalledTimes(2);
+    expect(borrowedUnbind).not.toHaveBeenCalled();
+    Object.assign(two, { type: originalType });
+    delete (two.renderer as unknown as { ctx?: unknown }).ctx;
+  });
+
   it('does not release borrowed declarative gradients when imported content is replaced', () => {
     const gradient = new Two.LinearGradient(0, 0, 100, 0, [new Two.Stop(0, 'red'), new Two.Stop(1, 'blue')]);
     const unbind = vi.spyOn(gradient, 'unbind');

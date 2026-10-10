@@ -26,16 +26,21 @@ type ComponentProps = React.PropsWithChildren<
 
 export type RefSVG = Instance;
 
+interface ImportedResource {
+  unbind: () => unknown;
+  _renderer?: unknown;
+}
+
 // Record resources before declarative styles can substitute borrowed effects.
-function importedResources(root: unknown): Set<{ unbind: () => unknown }> {
-  const owned = new Set<{ unbind: () => unknown }>();
+function importedResources(root: unknown): Set<ImportedResource> {
+  const owned = new Set<ImportedResource>();
   const visited = new Set<unknown>();
   const visit = (value: unknown) => {
     if (!value || typeof value !== 'object' || visited.has(value)) return;
     visited.add(value);
     const object = value as Record<string, unknown>;
     if (typeof object.unbind === 'function') {
-      owned.add(value as { unbind: () => unknown });
+      owned.add(value as ImportedResource);
     }
     for (const key of ['children', 'vertices', 'stops']) {
       const list = object[key];
@@ -50,6 +55,17 @@ function importedResources(root: unknown): Set<{ unbind: () => unknown }> {
   };
   visit(root);
   return owned;
+}
+
+function releaseImportedResources(two: Two, owned: Set<ImportedResource>): void {
+  owned.forEach((resource) => {
+    // Release the captured graph one resource at a time. Recursing through its
+    // current children or paints could release borrowed effects or JSX objects.
+    two.release({
+      unbind: () => resource.unbind(),
+      _renderer: resource._renderer,
+    } as unknown as Shape);
+  });
 }
 
 export const SVG = React.forwardRef<Instance, ComponentProps>((props, forwardedRef) => {
@@ -77,7 +93,7 @@ export const SVG = React.forwardRef<Instance, ComponentProps>((props, forwardedR
     const controller = new AbortController();
     let active = true;
     let imported: Array<Shape | Instance> = [];
-    let owned = new Set<{ unbind: () => unknown }>();
+    let owned = new Set<ImportedResource>();
 
     const reportError = (error: unknown) => {
       if (!active) return;
@@ -97,7 +113,7 @@ export const SVG = React.forwardRef<Instance, ComponentProps>((props, forwardedR
       two.load(markup, (loaded: Instance, elements: SVGElement | SVGElement[]) => {
         owned = importedResources(loaded);
         if (!active) {
-          owned.forEach((resource) => resource.unbind());
+          releaseImportedResources(two, owned);
           return;
         }
         imported = shallow
@@ -146,7 +162,7 @@ export const SVG = React.forwardRef<Instance, ComponentProps>((props, forwardedR
       controller.abort();
       svg.remove(imported);
       if (importedChildren.current === imported) importedChildren.current = [];
-      owned.forEach((resource) => resource.unbind());
+      releaseImportedResources(two, owned);
       if (!two.playing && two.renderer.domElement.isConnected) two.update();
     };
   }, [two, src, content, shallow, svg]);

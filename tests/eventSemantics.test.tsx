@@ -2,7 +2,7 @@ import { createRef, memo } from 'react';
 import { fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Two from 'two.js';
-import { Canvas, Circle, Group, Rectangle, type TwoEvent } from '../lib/main';
+import { Canvas, Circle, Group, Points, Rectangle, Text, type TwoEvent } from '../lib/main';
 
 const rect = { left: 10, top: 20, right: 410, bottom: 320, width: 400, height: 300, x: 10, y: 20, toJSON: () => ({}) };
 function renderer(container: HTMLElement) {
@@ -99,6 +99,40 @@ describe.each(['SVGRenderer', 'CanvasRenderer'] as const)('%s event semantics', 
     expect(onClick).toHaveBeenCalledTimes(1);
     fireEvent.click(element, { clientX: 135, clientY: 95 }); // Inside rectangle, outside mask.
     expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['text', 'points'] as const)('ignores unpainted %s above an interactive shape while retaining painted hits', (kind) => {
+    const points = createRef<Two.Points>();
+    const behind = vi.fn();
+    const front = vi.fn();
+    const view = (fill: string, stroke = 'none', linewidth = 1) => <Canvas type={type} width={800} height={600}>
+      <Circle x={200} y={150} radius={40} onClick={behind} />
+      <Group onClick={front}>
+        {kind === 'text'
+          ? <Text x={200} y={150} value="Hit target" fill={fill} stroke={stroke} linewidth={linewidth} />
+          : <Points ref={points} x={200} y={150} vertices={[new Two.Anchor(0, 0)]} size={40} fill={fill} stroke={stroke} linewidth={linewidth} />}
+      </Group>
+    </Canvas>;
+    const { container, rerender } = render(view('transparent'));
+    if (kind === 'points') {
+      // Two.js 0.8.24's Points bounds call Matrix.multiply with two arguments,
+      // which throws. Supply bounds to isolate paint filtering from that bug.
+      vi.spyOn(points.current!, 'getBoundingClientRect').mockReturnValue({
+        left: 180, right: 220, top: 130, bottom: 170, width: 40, height: 40,
+      });
+    }
+    const element = renderer(container);
+    fireEvent.click(element, inside);
+    rerender(view('none', 'red', 0));
+    fireEvent.click(element, inside);
+    expect(behind).toHaveBeenCalledTimes(2);
+    expect(front).not.toHaveBeenCalled();
+    rerender(view('none', 'red', 2));
+    fireEvent.click(element, inside);
+    rerender(view('red'));
+    fireEvent.click(element, inside);
+    expect(front).toHaveBeenCalledTimes(2);
+    expect(behind).toHaveBeenCalledTimes(2);
   });
 
   it('stops bubbling and emits each hover transition once with the real leaf target', () => {
