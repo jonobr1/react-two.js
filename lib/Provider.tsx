@@ -24,13 +24,30 @@ import {
   clientToWorldPoint,
   createTwoEvent,
   getCanvasCoordinates,
-  getWorldCoordinates,
   getParentHierarchy,
   getShapesAtPoint,
   type EventShape,
 } from './Events';
 
 type TwoConstructorProps = ConstructorParameters<typeof Two>[0];
+
+function normalizeRenderer(type: unknown): string {
+  switch (type) {
+    case 'canvas': return Two.Types.canvas;
+    case 'webgl': return Two.Types.webgl;
+    case 'svg':
+    case undefined: return Two.Types.svg;
+    default: return type as string;
+  }
+}
+
+function isProduction(): boolean {
+  return (import.meta as ImportMeta & { env?: { PROD?: boolean } }).env?.PROD === true ||
+    (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV === 'production';
+}
+
+const IMMUTABLE_OPTIONS = ['type', 'fullscreen', 'ratio', 'overdraw', 'smoothing'] as const;
+const FULLSCREEN_BODY_STYLES = ['overflow', 'margin', 'padding', 'top', 'left', 'right', 'bottom', 'position'] as const;
 
 // List of Two.js constructor prop keys
 const TWO_CONSTRUCTOR_KEYS = [
@@ -50,7 +67,7 @@ type TwoConstructorOnlyProps = {
   autostart?: boolean;
   width?: number;
   height?: number;
-  type?: (typeof Two.Types)[keyof typeof Two.Types];
+  type?: 'canvas' | 'CanvasRenderer' | 'svg' | 'SVGRenderer' | 'webgl' | 'WebGLRenderer';
   overdraw?: boolean;
   smoothing?: boolean;
   ratio?: number;
@@ -83,10 +100,7 @@ type ComponentProps = React.PropsWithChildren<
  * Warns in development mode if DOM elements or incompatible components are found.
  */
 function validateChildren(children: React.ReactNode): void {
-  if (
-    (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env
-      ?.NODE_ENV === 'production'
-  ) {
+  if (isProduction()) {
     return;
   }
 
@@ -135,10 +149,16 @@ export const Provider = React.forwardRef<
   const { two, parent } = useTwo();
   const container = useRef<HTMLDivElement | null>(null);
   const eventShapes = useRef<Map<Shape | Group, EventShape>>(new Map());
+  const rendererElement = useRef<HTMLElement | null>(null);
   const hoveredShapes = useRef<Set<Shape | Group>>(new Set());
-  const capturedShape = useRef<Shape | Group | null>(null);
+  const capturedShapes = useRef<Map<number, Shape | Group>>(new Map());
+  const pointerDowns = useRef<Map<number, { missed: boolean; captured: boolean }>>(new Map());
+  const hoverTarget = useRef<Shape | Group | null>(null);
   const childrenOrderRef = useRef<Array<Shape | Group>>([]);
   const attachedChildrenRef = useRef<Set<Shape | Group>>(new Set());
+  const constructorOptions = useRef<Record<string, unknown> | null>(null);
+  const previousOptions = useRef<Record<string, unknown>>({});
+  const onPointerMissed = props.onPointerMissed;
 
   const [twoState, setTwoState] = useState<typeof two>(two);
   const [parentState, setParentState] = useState<typeof parent>(parent);
@@ -187,6 +207,8 @@ export const Provider = React.forwardRef<
       }
     });
 
+    twoProps.type = normalizeRenderer(twoProps.type);
+    twoProps.fullscreen = twoProps.fullscreen ?? false;
     return { twoProps, domProps };
   }, [props]);
 
@@ -213,8 +235,12 @@ export const Provider = React.forwardRef<
   const unregisterEventShape = useCallback((shape: Shape | Group) => {
     eventShapes.current.delete(shape);
     hoveredShapes.current.delete(shape);
-    if (capturedShape.current === shape) {
-      capturedShape.current = null;
+    for (const [id, captured] of capturedShapes.current) {
+      if (captured === shape) {
+        capturedShapes.current.delete(id);
+        const element = rendererElement.current;
+        if (element?.hasPointerCapture?.(id)) element.releasePointerCapture(id);
+      }
     }
   }, []);
 
@@ -228,7 +254,7 @@ export const Provider = React.forwardRef<
       const canvas = twoState?.renderer.domElement;
       if (!canvas) return false;
 
-      const point = clientToWorldPoint(clientX, clientY, canvas);
+      const point = clientToWorldPoint(clientX, clientY, canvas, twoState);
       return (
         getShapesAtPoint(eventShapes.current, point.x, point.y, twoState)
           .length > 0
@@ -242,10 +268,16 @@ export const Provider = React.forwardRef<
     const isRoot = !two;
 
     if (isRoot && container.current && container.current.parentElement) {
+      const bodyStyles = twoProps.fullscreen
+        ? FULLSCREEN_BODY_STYLES.map((key) => [key, document.body.style[key]] as const)
+        : [];
       // Only update root instance
       const two = new Two(twoProps as TwoConstructorProps).appendTo(
         container.current.parentElement,
       );
+      constructorOptions.current = { ...twoProps };
+      previousOptions.current = { ...twoProps };
+      rendererElement.current = two.renderer.domElement;
 
       setTwoState(two);
       setParentState(two.scene);
@@ -255,12 +287,23 @@ export const Provider = React.forwardRef<
       const shapes = eventShapes.current;
       const hovered = hoveredShapes.current;
       const attached = attachedChildrenRef.current;
+      const captures = capturedShapes.current;
+      const downs = pointerDowns.current;
+      const fullscreenStyles = bodyStyles.map(([key]) => document.body.style[key]);
 
       return () => {
         two.renderer.domElement.parentElement?.removeChild(
           two.renderer.domElement,
         );
         two.pause();
+        const fit = two.fit as (() => void) & { attached?: boolean; domElement?: EventTarget };
+        if (fit?.attached) {
+          fit.domElement?.removeEventListener('resize', fit);
+          fit.attached = false;
+        }
+        bodyStyles.forEach(([key, value], index) => {
+          if (document.body.style[key] === fullscreenStyles[index]) document.body.style[key] = value;
+        });
         two.unbind();
         two.release();
         const index = Two.Instances.indexOf(two);
@@ -270,13 +313,35 @@ export const Provider = React.forwardRef<
         two.clear();
         shapes.clear();
         hovered.clear();
-        capturedShape.current = null;
+        captures.clear();
+        downs.clear();
+        rendererElement.current = null;
+        hoverTarget.current = null;
         attached.clear();
         childrenOrderRef.current = [];
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Constructor options are fixed for this mount; a React key opts into recreation.
+  useEffect(() => {
+    if (two || !twoState || !constructorOptions.current) return;
+    if (!isProduction()) {
+      for (const key of IMMUTABLE_OPTIONS) {
+        if (twoProps[key] !== constructorOptions.current[key] && twoProps[key] !== previousOptions.current[key]) {
+          console.warn(`[react-two.js] Canvas "${key}" is a constructor option. Change the Canvas key to apply it.`);
+        }
+      }
+    }
+    previousOptions.current = { ...twoProps };
+  }, [two, twoState, twoProps]);
+
+  useEffect(() => {
+    if (two || !twoState) return;
+    if (props.autostart) twoState.play();
+    else twoState.pause();
+  }, [two, twoState, props.autostart]);
 
   // Update dimensions from props
   useEffect(() => {
@@ -320,266 +385,142 @@ export const Provider = React.forwardRef<
     validateChildren(props.children);
   }, [props.children]);
 
-  // Setup event listeners on canvas
+  // All dispatch paths share coordinates, bubbling, and per-pointer capture.
   useEffect(() => {
     if (!twoState) return;
-
     const canvas = twoState.renderer.domElement;
-
-    // Helper to dispatch events with bubbling
-    const dispatchEvent = (
-      shapes: Array<Shape | Group>,
-      handlerName: keyof EventHandlers,
-      nativeEvent: PointerEvent | MouseEvent | WheelEvent,
+    const hits = (event: MouseEvent) => {
+      const point = getCanvasCoordinates(event, canvas, twoState);
+      return getShapesAtPoint(eventShapes.current, point.x, point.y, twoState);
+    };
+    const release = (id: number) => {
+      capturedShapes.current.delete(id);
+      if (canvas.hasPointerCapture?.(id)) canvas.releasePointerCapture(id);
+    };
+    const dispatch = (
+      target: Shape | Group | undefined,
+      name: keyof EventHandlers,
+      native: PointerEvent | MouseEvent | WheelEvent,
+      recipients?: Array<Shape | Group>,
     ) => {
-      if (shapes.length === 0) return;
-
-      // Get the hit shape (first in array)
-      const hitShape = shapes[0];
-      const point = getCanvasCoordinates(nativeEvent, canvas, twoState!);
-
-      // Get parent hierarchy for bubbling
-      const hierarchy = getParentHierarchy(hitShape, eventShapes.current);
-
-      // Dispatch to each shape in hierarchy until stopped
-      for (const currentTarget of hierarchy) {
-        const entry = eventShapes.current.get(currentTarget);
-        const handler = entry?.handlers[handlerName];
-
-        if (handler) {
-          const event = createTwoEvent(
-            nativeEvent,
-            hitShape,
-            currentTarget,
-            point,
-          );
-          handler(event);
-
-          if (event.stopped) {
-            break;
-          }
-        }
+      if (!target) return;
+      const point = getCanvasCoordinates(native, canvas, twoState);
+      for (const current of recipients ?? getParentHierarchy(target, eventShapes.current)) {
+        const handler = eventShapes.current.get(current)?.handlers[name];
+        if (!handler) continue;
+        const event = createTwoEvent(native, target, current, point, {
+          setPointerCapture: (id) => {
+            if (!('pointerId' in native) || native.pointerId !== id || !pointerDowns.current.has(id)) return;
+            canvas.setPointerCapture?.(id);
+            capturedShapes.current.set(id, current);
+            const down = pointerDowns.current.get(id);
+            if (down) down.captured = true;
+          },
+          releasePointerCapture: (id) => {
+            if (capturedShapes.current.get(id) === current) release(id);
+          },
+          hasPointerCapture: (id) => capturedShapes.current.get(id) === current,
+        });
+        handler(event);
+        if (event.stopped) break;
       }
     };
-
-    // Click handler
-    const handleClick = (e: MouseEvent) => {
-      const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(
-        eventShapes.current,
-        worldPoint.x,
-        worldPoint.y,
-        twoState,
-      );
-
-      if (shapes.length > 0) {
-        dispatchEvent(shapes, 'onClick', e);
+    const updateHover = (target: Shape | Group | undefined, event: PointerEvent) => {
+      const previous = hoverTarget.current;
+      if (previous === (target ?? null)) return;
+      const next = new Set(target ? getParentHierarchy(target, eventShapes.current) : []);
+      const old = hoveredShapes.current;
+      dispatch(previous ?? undefined, 'onPointerOut', event);
+      for (const current of old) {
+        if (!next.has(current)) dispatch(previous ?? undefined, 'onPointerLeave', event, [current]);
+      }
+      dispatch(target, 'onPointerOver', event);
+      for (const current of next) {
+        if (!old.has(current)) dispatch(target, 'onPointerEnter', event, [current]);
+      }
+      hoveredShapes.current = next;
+      hoverTarget.current = target ?? null;
+    };
+    const handleClick = (event: MouseEvent) => dispatch(hits(event)[0], 'onClick', event);
+    const handleDoubleClick = (event: MouseEvent) => dispatch(hits(event)[0], 'onDoubleClick', event);
+    const handleContextMenu = (event: MouseEvent) => dispatch(hits(event)[0], 'onContextMenu', event);
+    const handleWheel = (event: WheelEvent) => dispatch(hits(event)[0], 'onWheel', event);
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = hits(event)[0];
+      pointerDowns.current.set(event.pointerId, {
+        missed: !target && event.button === 0 && event.isPrimary !== false,
+        captured: false,
+      });
+      dispatch(target, 'onPointerDown', event);
+    };
+    const handlePointerMove = (event: PointerEvent) => {
+      const target = hits(event)[0];
+      dispatch(capturedShapes.current.get(event.pointerId) ?? target, 'onPointerMove', event);
+      updateHover(target, event);
+    };
+    const handlePointerUp = (event: PointerEvent) => {
+      const target = hits(event)[0];
+      const down = pointerDowns.current.get(event.pointerId);
+      try {
+        dispatch(capturedShapes.current.get(event.pointerId) ?? target, 'onPointerUp', event);
+        // A complete primary press begun and ended in empty space is missed.
+        if (down?.missed && !down.captured && !target) onPointerMissed?.(event);
+      } finally {
+        pointerDowns.current.delete(event.pointerId);
+        release(event.pointerId);
       }
     };
-
-    // Context menu handler
-    const handleContextMenu = (e: MouseEvent) => {
-      const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(
-        eventShapes.current,
-        worldPoint.x,
-        worldPoint.y,
-        twoState,
-      );
-
-      if (shapes.length > 0) {
-        dispatchEvent(shapes, 'onContextMenu', e);
+    const handlePointerCancel = (event: PointerEvent) => {
+      try {
+        dispatch(capturedShapes.current.get(event.pointerId) ?? hits(event)[0], 'onPointerCancel', event);
+        updateHover(undefined, event);
+      } finally {
+        pointerDowns.current.delete(event.pointerId);
+        release(event.pointerId);
       }
     };
-
-    // Double click handler
-    const handleDoubleClick = (e: MouseEvent) => {
-      const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(
-        eventShapes.current,
-        worldPoint.x,
-        worldPoint.y,
-        twoState,
-      );
-
-      if (shapes.length > 0) {
-        dispatchEvent(shapes, 'onDoubleClick', e);
+    const handlePointerLeave = (event: PointerEvent) => updateHover(undefined, event);
+    const handleLostCapture = (event: PointerEvent) => capturedShapes.current.delete(event.pointerId);
+    const handleOutsideEnd = (event: PointerEvent) => {
+      if (!(event.target instanceof Node) || !canvas.contains(event.target)) {
+        pointerDowns.current.delete(event.pointerId);
+        release(event.pointerId);
       }
     };
-
-    // Wheel handler
-    const handleWheel = (e: WheelEvent) => {
-      const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(
-        eventShapes.current,
-        worldPoint.x,
-        worldPoint.y,
-        twoState,
-      );
-
-      if (shapes.length > 0) {
-        dispatchEvent(shapes, 'onWheel', e);
-      }
-    };
-
-    // Pointer down handler
-    const handlePointerDown = (e: PointerEvent) => {
-      const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(
-        eventShapes.current,
-        worldPoint.x,
-        worldPoint.y,
-        twoState,
-      );
-
-      if (shapes.length > 0) {
-        dispatchEvent(shapes, 'onPointerDown', e);
-
-        // Support pointer capture
-        if (e.target instanceof Element) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const hasCapture = (e.target as any).hasPointerCapture?.(e.pointerId);
-          if (hasCapture) {
-            capturedShape.current = shapes[0];
-          }
-        }
-      }
-    };
-
-    // Pointer up handler
-    const handlePointerUp = (e: PointerEvent) => {
-      // If pointer is captured, send to captured shape
-      if (capturedShape.current) {
-        const entry = eventShapes.current.get(capturedShape.current);
-        if (entry?.handlers.onPointerUp) {
-          const point = getCanvasCoordinates(e, canvas, twoState!);
-          const event = createTwoEvent(
-            e,
-            capturedShape.current,
-            capturedShape.current,
-            point,
-          );
-          entry.handlers.onPointerUp(event);
-        }
-        capturedShape.current = null;
-        return;
-      }
-
-      const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(
-        eventShapes.current,
-        worldPoint.x,
-        worldPoint.y,
-        twoState,
-      );
-
-      if (shapes.length > 0) {
-        dispatchEvent(shapes, 'onPointerUp', e);
-      } else if (props.onPointerMissed) {
-        props.onPointerMissed(e);
-      }
-    };
-
-    // Pointer move handler
-    const handlePointerMove = (e: PointerEvent) => {
-      const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(
-        eventShapes.current,
-        worldPoint.x,
-        worldPoint.y,
-        twoState,
-      );
-
-      // Topmost shape under pointer (front-to-back sorted)
-      const topShape = shapes.length > 0 ? shapes[0] : null;
-
-      // Build set of currently hovered shapes (topmost shape + its parent hierarchy)
-      const currentHovered = new Set<Shape | Group>();
-      if (topShape) {
-        const hierarchy = getParentHierarchy(topShape, eventShapes.current);
-        for (const s of hierarchy) {
-          currentHovered.add(s);
-        }
-      }
-
-      // Dispatch pointer move to topmost shape hierarchy
-      if (topShape) {
-        dispatchEvent([topShape], 'onPointerMove', e);
-      }
-
-      // Handle pointer enter/leave and over/out
-      const previousHovered = hoveredShapes.current;
-
-      // Enter / Over: shapes in currentHovered (topmost hierarchy) that weren't hovered before
-      for (const shape of currentHovered) {
-        if (!previousHovered.has(shape)) {
-          dispatchEvent([shape], 'onPointerEnter', e);
-          dispatchEvent([shape], 'onPointerOver', e);
-        }
-      }
-
-      // Leave / Out: shapes previously hovered that are no longer in currentHovered
-      for (const shape of previousHovered) {
-        if (!currentHovered.has(shape)) {
-          dispatchEvent([shape], 'onPointerLeave', e);
-          dispatchEvent([shape], 'onPointerOut', e);
-        }
-      }
-
-      hoveredShapes.current = currentHovered;
-    };
-
-    // Pointer cancel handler
-    const handlePointerCancel = (e: PointerEvent) => {
-      const worldPoint = getWorldCoordinates(e, canvas);
-      const shapes = getShapesAtPoint(
-        eventShapes.current,
-        worldPoint.x,
-        worldPoint.y,
-        twoState,
-      );
-
-      if (shapes.length > 0) {
-        dispatchEvent(shapes, 'onPointerCancel', e);
-      }
-
-      capturedShape.current = null;
-    };
-
-    // Attach event listeners
     canvas.addEventListener('click', handleClick);
-    canvas.addEventListener('contextmenu', handleContextMenu);
     canvas.addEventListener('dblclick', handleDoubleClick);
+    canvas.addEventListener('contextmenu', handleContextMenu);
     canvas.addEventListener('wheel', handleWheel);
     canvas.addEventListener('pointerdown', handlePointerDown);
-    canvas.addEventListener('pointerup', handlePointerUp);
     canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
     canvas.addEventListener('pointercancel', handlePointerCancel);
-
+    canvas.addEventListener('pointerleave', handlePointerLeave);
+    canvas.addEventListener('lostpointercapture', handleLostCapture);
+    window.addEventListener('pointerup', handleOutsideEnd);
+    window.addEventListener('pointercancel', handleOutsideEnd);
     return () => {
       canvas.removeEventListener('click', handleClick);
-      canvas.removeEventListener('contextmenu', handleContextMenu);
       canvas.removeEventListener('dblclick', handleDoubleClick);
+      canvas.removeEventListener('contextmenu', handleContextMenu);
       canvas.removeEventListener('wheel', handleWheel);
       canvas.removeEventListener('pointerdown', handlePointerDown);
-      canvas.removeEventListener('pointerup', handlePointerUp);
       canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerup', handlePointerUp);
       canvas.removeEventListener('pointercancel', handlePointerCancel);
+      canvas.removeEventListener('pointerleave', handlePointerLeave);
+      canvas.removeEventListener('lostpointercapture', handleLostCapture);
+      window.removeEventListener('pointerup', handleOutsideEnd);
+      window.removeEventListener('pointercancel', handleOutsideEnd);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    twoState,
-    props.onPointerMissed,
-    registerEventShape,
-    unregisterEventShape,
-  ]);
+  }, [twoState, onPointerMissed]);
 
   // Apply DOM props to Two.js's actual canvas/SVG element
   useLayoutEffect(() => {
     if (!twoState) return;
 
     // Skip if in fullscreen mode - Two.js manages styles
-    if (props.fullscreen) {
+    if (constructorOptions.current?.fullscreen) {
       const resize = () => {
         setWidth(twoState.width);
         setHeight(twoState.height);
@@ -607,6 +548,9 @@ export const Provider = React.forwardRef<
         element.addEventListener(eventName, value as EventListener);
       } else if (key.startsWith('aria-') || key.startsWith('data-')) {
         // Set as attribute for aria-* and data-* props
+        element.setAttribute(key, String(value));
+      } else if (element instanceof SVGElement) {
+        // SVG properties such as viewBox are readonly animated objects.
         element.setAttribute(key, String(value));
       } else if (key in element) {
         // Set as property if it exists on the element

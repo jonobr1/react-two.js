@@ -115,6 +115,28 @@ function App() {
 > </Canvas>
 > ```
 
+Canvas accepts `svg` / `SVGRenderer`, `canvas` / `CanvasRenderer`, and
+`webgl` / `WebGLRenderer`. The default is SVG. `width` and `height` update the
+existing renderer; changing `autostart` plays or pauses the existing instance.
+`type`, `fullscreen`, `ratio`, `overdraw`, and `smoothing` are construction
+options. Change the Canvas `key` to apply new values and recreate its scene.
+Changing these options without a remount warns in development.
+
+```tsx
+<Canvas key={renderer} type={renderer} width={800} height={600}>
+  <Scene />
+</Canvas>
+```
+
+When sizing SVG with CSS, use a `viewBox` to scale the artwork with its viewport:
+
+```tsx
+<Canvas type="svg" width={800} height={600} viewBox="0 0 800 600"
+  style={{ width: '100%', height: 'auto' }}>
+  <Scene />
+</Canvas>
+```
+
 ### Adding Shapes
 
 All Two.js primitives are available as React components:
@@ -278,6 +300,61 @@ All Two.js properties work as React props:
 />
 ```
 
+### Pointer events and dragging
+
+Shapes and Groups accept click, double-click, context-menu, wheel, and pointer
+handlers. Every `TwoEvent.point` is in **renderer world coordinates**, measured
+in logical pixels from the top-left origin, before shape or Group transforms.
+Canvas/WebGL CSS sizing and pixel ratio are accounted for; SVG uses its screen
+transform, including `viewBox` and `preserveAspectRatio`. Bubbling and capture
+use the same coordinates. To obtain target-local coordinates, apply the inverse
+of the target's `worldMatrix` to `event.point`.
+
+The topmost interactive geometry follows the current complete Two.js scene
+order. `event.target` is the hit leaf shape, including when only its Group has
+handlers. `event.currentTarget` is the shape or Group running the handler.
+Handlers bubble through all ancestor Groups; `stopPropagation()` stops that
+dispatch. Noninteractive shapes do not block interactive shapes underneath.
+
+A Group is interactive through its descendants' geometry, so empty space in a
+sparse Group does not hit. Invisible or zero-opacity shapes and ancestors,
+`clip` shapes, and paths with neither visible fill nor stroke are excluded.
+Masks restrict hits to their geometry in the owner's local space. Geometry
+precision and fill/stroke tests otherwise follow Two.js `contains()` behavior.
+Pointer over/out bubble once per target transition; enter/leave run once for
+each entered or exited ancestor, without bubbling again.
+
+Use the event's capture methods for dragging. Capture belongs to
+`currentTarget`, is independent for each pointer, and routes subsequent move,
+up, and cancel events through that target's ancestors even outside the
+renderer. Release occurs automatically on up, cancel, lost native capture,
+removal of the last handler, or unmount; it can also be explicit.
+
+```tsx
+<Circle x={200} y={150} radius={40}
+  onPointerDown={(event) => {
+    event.setPointerCapture((event.nativeEvent as PointerEvent).pointerId);
+  }}
+  onPointerMove={(event) => {
+    const id = (event.nativeEvent as PointerEvent).pointerId;
+    if (event.hasPointerCapture(id)) {
+      // This example has no transformed parent Group.
+      event.currentTarget.translation.set(event.point.x, event.point.y);
+    }
+  }}
+  onPointerUp={(event) => {
+    event.releasePointerCapture((event.nativeEvent as PointerEvent).pointerId);
+  }}
+/>
+```
+
+`Canvas.onPointerMissed` runs once on pointer-up for a complete primary-button
+press that both began and ended outside interactive geometry. A hit at either
+end, any capture during the press, cancellation, a nonprimary/right-button
+press, or an up without a preceding down suppresses it. The subsequent click
+does not fire a second missed notification; click handlers use the geometry
+under the click independently of pointer capture.
+
 ## TypeScript
 
 Full TypeScript support with ref types for all components:
@@ -412,6 +489,24 @@ function AnimatedIcon() {
 - `onError(error)` — Callback when loading fails
 - All Two.js Group properties (fill, stroke, opacity, etc.)
 
+`shallow` (default `false`) removes the imported top-level SVG Group and places
+its children directly in the component's stable wrapper. Nested `<g>` groups
+remain intact. This mirrors Two.js shallow interpretation: root SVG transforms
+are discarded with that top-level Group, so leave `shallow` off when preserving
+root transforms matters. Changing `src`, `content`, or `shallow` replaces only
+the imported artwork; JSX children remain attached after the imports in scene
+order and stay visible during loading.
+
+URL sources use `fetch` and an `AbortSignal`, including URLs with query strings.
+Source replacement and unmount abort pending requests, ignore stale responses,
+and release imported resources. Inline content must be a well-formed SVG
+document. Successful loads apply declarative styles before invoking the latest
+`onLoad` callback once per load; network, HTTP, and parsing failures invoke
+`onError`. Cancellation does not invoke either callback. Updating callbacks
+does not reload the artwork. User callback exceptions are logged separately
+from loading errors. If both sources are supplied at runtime, `src` wins with
+a warning; missing sources report an error.
+
 > [!NOTE]
 > The SVG component uses Two.js's `load()` method which supports a subset of SVG 1.1 features. Complex SVG features like filters, animations (SMIL), and some advanced elements may not be fully supported. Refer to [Two.js SVG documentation](https://two.js.org/docs/two/#two-interpret) for details on supported features.
 
@@ -452,6 +547,12 @@ npm test
 # Run linting
 npm run lint
 ```
+
+For real renderer and native pointer-capture checks, run `npm run dev` and open
+`http://localhost:3000/tests/browser/`. The harness checks every renderer
+spelling with real SVG, Canvas, and WebGL, then offers drag checks for native
+capture, bubbling, and release outside the renderer. The unit tests mock the
+WebGL constructor because jsdom does not provide a GPU context.
 
 The development server runs the documentation site which imports the library components directly from the `lib/` directory, allowing you to see changes in real-time.
 

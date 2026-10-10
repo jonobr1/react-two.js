@@ -37,33 +37,12 @@ beforeEach(() => {
 
 describe('react-two.js Event System', () => {
   describe('hitTest Utility', () => {
-    it('should correctly hit-test shape/group using getBoundingClientRect and stage offsets', () => {
-      const mockTwo = {
-        width: 800,
-        height: 600,
-      } as Two;
-
-      // Create a mock group shape returning bounds [-50, -25, 50, 25] relative to center
-      const mockGroup = {
-        getBoundingClientRect: vi.fn().mockReturnValue({
-          left: -50,
-          right: 50,
-          top: -25,
-          bottom: 25,
-          width: 100,
-          height: 50,
-        }),
-      };
-
-      // Stage center offset: (400, 300)
-      // Top-Left DOM bounds: X in [350, 450], Y in [275, 325]
-
-      // Point inside bounds
-      expect(hitTest(mockGroup as unknown as Two.Group, 400, 300, mockTwo)).toBe(true);
-
-      // Point outside bounds
-      expect(hitTest(mockGroup as unknown as Two.Group, 200, 300, mockTwo)).toBe(false);
-      expect(hitTest(mockGroup as unknown as Two.Group, 400, 500, mockTwo)).toBe(false);
+    it('uses world bounds without an artificial stage-center offset', () => {
+      const shape = {
+        getBoundingClientRect: () => ({ left: -50, right: 50, top: -25, bottom: 25 }),
+      } as unknown as Two.Group;
+      expect(hitTest(shape, 0, 0)).toBe(true);
+      expect(hitTest(shape, 400, 300)).toBe(false);
     });
 
     it('should fallback to checking children if shape has no getBoundingClientRect or contains', () => {
@@ -88,21 +67,14 @@ describe('react-two.js Event System', () => {
       expect(hitTest(mockShape as unknown as Two.Shape, 10, 10)).toBe(false);
     });
 
-    it('should sort hits front-to-back (frontmost shape first)', () => {
-      const mockBackgroundShape = { id: 'bg' };
-      const mockForegroundShape = { id: 'fg' };
-
-      const shapesMap = new Map();
-      shapesMap.set(mockBackgroundShape, { shape: mockBackgroundShape, handlers: {} });
-      shapesMap.set(mockForegroundShape, { shape: mockForegroundShape, handlers: {} });
-
-      const hits = [mockBackgroundShape, mockForegroundShape];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sorted = sortFrontToBack(hits as any, shapesMap);
-
-      // Foreground shape registered later must be FIRST in the hits array
-      expect(sorted[0]).toBe(mockForegroundShape);
-      expect(sorted[1]).toBe(mockBackgroundShape);
+    it('keeps unrelated hits stable instead of inventing registration draw order', () => {
+      const back = new Two.Circle(0, 0, 10);
+      const front = new Two.Circle(0, 0, 10);
+      const registry = new Map([
+        [back, { shape: back, handlers: {} }],
+        [front, { shape: front, handlers: {} }],
+      ]);
+      expect(sortFrontToBack([back, front], registry)).toEqual([back, front]);
     });
 
     it('should sort hits based on parent.children index when sharing same parent group', () => {
@@ -142,7 +114,7 @@ describe('react-two.js Event System', () => {
             onPointerOut={onPointerOut}
             onPointerLeave={onPointerLeave}
           >
-            <RoundedRectangle width={100} height={50} />
+            <RoundedRectangle x={400} y={300} width={100} height={50} />
           </Group>
         </Canvas>
       );
@@ -176,7 +148,9 @@ describe('react-two.js Event System', () => {
       });
 
       // Verify pointer events dispatched
-      expect(canvasElement).toBeDefined();
+      expect(onPointerOver).toHaveBeenCalledTimes(1);
+      expect(onPointerOut).toHaveBeenCalledTimes(1);
+      expect(onPointerLeave).toHaveBeenCalledTimes(1);
     });
 
     it('should trigger over on top shape and out on bottom shape when moving onto overlapping top shape', () => {
