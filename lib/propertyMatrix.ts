@@ -877,6 +877,12 @@ export const PROPERTY_MATRIX: Record<string, ComponentPropertyMatrix> = {
     ],
   },
 
+  Stop: {
+    component: 'Stop',
+    twoClass: 'Two.Stop',
+    supportedProps: ['offset', 'color', 'opacity'],
+    omittedProps: [{ property: 'parent', reason: 'managed-by-react', description: 'The surrounding gradient owns stop attachment and JSX order.' }],
+  },
   Texture: {
     component: 'Texture',
     twoClass: 'Two.Texture',

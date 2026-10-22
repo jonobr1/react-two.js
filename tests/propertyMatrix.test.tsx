@@ -174,7 +174,7 @@ describe('Property Matrix & Declarative Coverage (Issue #30)', () => {
       expect(SUPPORTED_TWO_VERSION).toBe('0.8.24');
     });
 
-    it('should contain entries for all 19 exported components', () => {
+    it('should contain entries for every exported component', () => {
       const expectedComponents = [
         'Group',
         'SVG',
@@ -195,6 +195,7 @@ describe('Property Matrix & Declarative Coverage (Issue #30)', () => {
         'LinearGradient',
         'RadialGradient',
         'Texture',
+        'Stop',
       ];
 
       for (const name of expectedComponents) {

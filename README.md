@@ -396,32 +396,49 @@ function RotatingGroup() {
 
 ### Gradient Fill
 
+Use a gradient's render function to bind the same resource to one or more shapes,
+without callback refs or React state. Stops follow JSX order and support updates,
+removal, fragments, and custom components. Gradients do not create a scene Group;
+shapes remain children of the surrounding Canvas or Group.
+
 ```jsx
-function () {
-  const [gradient, setGradient] = useState(null);
+import { Canvas, LinearGradient, Stop, Rectangle, Circle } from 'react-two.js'
 
-  const updateRef = useMemo((ref) => {
-    if (ref) {
-      setGradient(ref);
-    }
-  }, [setGradient]);
-
+function GradientScene() {
   return (
     <Canvas width={800} height={600}>
-      <LinearGradient
-        ref={updateRef}
-        x1={0} y1={0}
-        x2={100} y2={100}
-        stops={[
-          { offset: 0, color: '#FF6B6B' },
-          { offset: 1, color: '#4ECDC4' }
-        ]}
-      />
-      <Rectangle width={200} height={200} fill={gradient} />
+      <LinearGradient x1={-100} y1={0} x2={100} y2={0} units="userSpaceOnUse">
+        {(gradient) => (
+          <>
+            <Stop offset={0} color="#FF6B6B" />
+            <Stop offset={1} color="#4ECDC4" />
+            <Rectangle x={200} y={200} width={200} height={200} fill={gradient} />
+            <Circle x={500} y={200} radius={80} fill="none" stroke={gradient} linewidth={12} />
+          </>
+        )}
+      </LinearGradient>
     </Canvas>
-  );
+  )
 }
 ```
+
+`RadialGradient` uses the same children API, with `x`, `y`, `radius`, `focalX`,
+and `focalY` options. Both gradients forward refs to their Two.js instance.
+`Stop` forwards a `RefStop` and accepts `offset` (default 0), `color` (default
+`#fff`), and `opacity` (default 1); removing a prop restores that default.
+
+Existing `stops={[new Two.Stop(0, 'red'), new Two.Stop(1, 'blue')]}` arrays remain
+supported. If combined with JSX stops, array stops come first. Array entries must
+be `Two.Stop` instances; plain objects are not supported. Supplied array stops
+are borrowed: cleanup detaches them without disposing their other listeners.
+
+React owns gradients created by these components. On unmount, their last stop
+values remain usable while another mounted react-two.js shape still uses the
+gradient as fill or stroke. Once the last consumer releases it, cleanup removes
+SVG definitions, clears the renderer effect cache, and detaches stop listeners.
+Cleanup is deferred until the commit finishes, including Strict Mode replay.
+Imperative consumers outside React must manage their own gradient resources;
+do not retain an owned gradient after its React owner and consumers unmount.
 
 ### Loading SVG Files
 

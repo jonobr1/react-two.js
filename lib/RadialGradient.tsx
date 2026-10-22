@@ -1,4 +1,5 @@
 import React from 'react';
+import { GradientChildren, type GradientChildNodes } from './GradientChildren';
 import Two from 'two.js';
 import type { RadialGradient as Instance } from 'two.js/src/effects/radial-gradient';
 import { applyVector, GradientProps, type VectorProp } from './Properties';
@@ -6,7 +7,7 @@ import { useTwoObject } from './useTwoObject';
 
 export type RadialGradientProps = GradientProps | 'center' | 'radius' | 'focal';
 
-type ComponentProps = React.PropsWithChildren<
+type ComponentProps =
   {
     [K in Extract<RadialGradientProps, keyof Instance>]?: K extends 'center' | 'focal'
       ? VectorProp
@@ -18,17 +19,16 @@ type ComponentProps = React.PropsWithChildren<
     focalY?: number;
     center?: VectorProp;
     focal?: VectorProp;
-  }
->;
+  } & { children?: GradientChildNodes<Instance> };
 
 export type RefRadialGradient = Instance;
 
-export const RadialGradient = React.forwardRef<Instance | null, ComponentProps>(
+export const RadialGradient = React.forwardRef<Instance, ComponentProps>(
   (props, forwardedRef) => {
-    useTwoObject(props as Record<string, unknown>, forwardedRef, {
+    const { instance } = useTwoObject(props as Record<string, unknown>, forwardedRef, {
       factory: () => new Two.RadialGradient(),
       isSceneObject: false,
-      specialProps: ['x', 'y', 'focalX', 'focalY', 'center', 'focal'],
+      specialProps: ['stops', 'x', 'y', 'focalX', 'focalY', 'center', 'focal'],
       applySpecialProps: (gradient, currentProps, changed, removed) => {
         const p = currentProps as unknown as ComponentProps;
         const grad = gradient as unknown as Instance;
@@ -73,6 +73,6 @@ export const RadialGradient = React.forwardRef<Instance | null, ComponentProps>(
       },
     });
 
-    return null;
+    return <GradientChildren gradient={instance} stops={props.stops}>{props.children}</GradientChildren>;
   }
 );
