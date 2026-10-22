@@ -69,3 +69,5 @@ export {
 } from './propertyMatrix';
 
 
+
+export { Stop, type StopProps, type RefStop } from './Stop';

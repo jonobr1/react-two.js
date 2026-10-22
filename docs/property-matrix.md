@@ -30,8 +30,9 @@ Where ergonomic improvements are possible without breaking Two.js parity (for ex
 | `<Image>` | `Two.Image` | All `<Rectangle>` props, plus `texture`, `mode`, `src` | `origin`, `mask`, `clip`, `strokeAttenuation` |
 | `<Sprite>` | `Two.Sprite` | All `<Rectangle>` props, plus `texture`, `columns`, `rows`, `frameRate`, `index`, `firstFrame`, `lastFrame`, `loop`, `src`, `autoPlay` | `origin`, `Two.Texture` as `src`, `mask`, `clip`, `strokeAttenuation` |
 | `<ImageSequence>` | `Two.ImageSequence` | All `<Rectangle>` props, plus `textures`, `frameRate`, `index`, `firstFrame`, `lastFrame`, `loop`, `src`, `autoPlay` | `origin`, `mask`, `clip`, `strokeAttenuation` |
-| `<LinearGradient>` | `Two.LinearGradient` | `id`, `className`, `spread`, `units`, `stops`, `left`, `right`, `x1`, `y1`, `x2`, `y2` | Full declarative parity |
-| `<RadialGradient>` | `Two.RadialGradient` | `id`, `className`, `spread`, `units`, `stops`, `center`, `radius`, `focal`, `x`, `y`, `focalX`, `focalY` | Full declarative parity |
+| `<LinearGradient>` | `Two.LinearGradient` | `id`, `className`, `spread`, `units`, `stops`, `left`, `right`, `x1`, `y1`, `x2`, `y2` | JSX stops and render-function binding |
+| `<RadialGradient>` | `Two.RadialGradient` | `id`, `className`, `spread`, `units`, `stops`, `center`, `radius`, `focal`, `x`, `y`, `focalX`, `focalY` | JSX stops and render-function binding |
+| `<Stop>` | `Two.Stop` | `offset`, `color`, `opacity` | JSX order, updates, and gradient attachment |
 | `<Texture>` | `Two.Texture` | `id`, `className`, `src`, `loaded`, `repeat`, `scale`, `offset`, `image` | Full declarative parity |
 
 ---

@@ -1,3 +1,4 @@
+import { collectGradients, trackGradientConsumer } from './gradientResources';
 import React, {
   useCallback,
   useContext,
@@ -252,6 +253,13 @@ export function useTwoObject<
   }
 
   const instance = instanceRef.current!;
+
+  useLayoutEffect(() => {
+    if (isSceneObject && typeof instance === 'object' && instance !== null) {
+      return trackGradientConsumer(instance);
+    }
+  }, [instance, isSceneObject]);
+  useLayoutEffect(() => { collectGradients(); });
 
   // Forward ref
   useImperativeHandle(forwardedRef, () => instance, [instance]);

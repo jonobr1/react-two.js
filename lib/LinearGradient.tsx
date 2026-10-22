@@ -1,4 +1,5 @@
 import React from 'react';
+import { GradientChildren, type GradientChildNodes } from './GradientChildren';
 import Two from 'two.js';
 import type { LinearGradient as Instance } from 'two.js/src/effects/linear-gradient';
 import { applyVector, GradientProps, type VectorProp } from './Properties';
@@ -6,7 +7,7 @@ import { useTwoObject } from './useTwoObject';
 
 export type LinearGradientProps = GradientProps | 'left' | 'right';
 
-type ComponentProps = React.PropsWithChildren<
+type ComponentProps =
   {
     [K in Extract<LinearGradientProps, keyof Instance>]?: K extends 'left' | 'right'
       ? VectorProp
@@ -18,17 +19,16 @@ type ComponentProps = React.PropsWithChildren<
     y2?: number;
     left?: VectorProp;
     right?: VectorProp;
-  }
->;
+  } & { children?: GradientChildNodes<Instance> };
 
 export type RefLinearGradient = Instance;
 
 export const LinearGradient = React.forwardRef<Instance, ComponentProps>(
   (props, forwardedRef) => {
-    useTwoObject(props as Record<string, unknown>, forwardedRef, {
+    const { instance } = useTwoObject(props as Record<string, unknown>, forwardedRef, {
       factory: () => new Two.LinearGradient(),
       isSceneObject: false,
-      specialProps: ['x1', 'y1', 'x2', 'y2', 'left', 'right'],
+      specialProps: ['stops', 'x1', 'y1', 'x2', 'y2', 'left', 'right'],
       applySpecialProps: (gradient, currentProps, changed, removed) => {
         const p = currentProps as unknown as ComponentProps;
         const grad = gradient as unknown as Instance;
@@ -73,6 +73,6 @@ export const LinearGradient = React.forwardRef<Instance, ComponentProps>(
       },
     });
 
-    return null;
+    return <GradientChildren gradient={instance} stops={props.stops}>{props.children}</GradientChildren>;
   }
 );
